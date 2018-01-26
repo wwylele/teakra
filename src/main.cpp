@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iomanip>
 #include "register.h"
+#include "interpreter.h"
 
 template< typename T >
 std::string ToHex( T i )
@@ -974,5 +975,9 @@ int main() {
     fclose(file);
 
     RegisterState r;
-
+    DspMemory m;
+    Interpreter interpreter(r, m);
+    for (u32 opcode = 0; opcode < 0x10000; ++opcode) {
+        Decode<Interpreter>((u16)opcode);
+    }
 }

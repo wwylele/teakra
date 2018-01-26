@@ -2,9 +2,21 @@
 #include <vector>
 #include <memory>
 #include "common_types.h"
+#include "oprand.h"
 
 struct RegisterState {
     u32 pc;
+
+    u16 GetPcL() {
+        return pc & 0xFFFF;
+    }
+    u16 GetPcH() {
+        return pc >> 16;
+    }
+    void SetPC(u16 low, u16 high) {
+        pc = low | ((u32)high << 16);
+    }
+
     u16 dvm;
     u16 repc;
     u16 lc;
@@ -93,6 +105,7 @@ struct RegisterState {
     }};
 
     u16 fz, fm, fn, fv, fc, fe, fl[2], fr;
+    u16 nimc;
     u16 ip[3], vip;
     u16 im[3], vim;
     u16 ic[3], vic;
@@ -132,7 +145,65 @@ struct RegisterState {
         {std::make_shared<RORedirector>(bcn), 12, 3},
         {std::make_shared<RORedirector>(lp), 15, 1},
     }};
+    PseudoRegister mod0 {{
+        {std::make_shared<Redirector>(sar), 0, 1},
 
+        {std::make_shared<Redirector>(ps[0]), 2, 2},
 
+        {std::make_shared<Redirector>(s), 7, 1},
+        {std::make_shared<Redirector>(ou[0]), 8, 1},
+        {std::make_shared<Redirector>(ou[0]), 9, 1},
+        {std::make_shared<Redirector>(ps[1]), 10, 2},
+
+        {std::make_shared<Redirector>(ps[2]), 13, 2},
+    }};
+    PseudoRegister mod1 {{
+        {std::make_shared<Redirector>(page), 0, 8},
+    }};
+    PseudoRegister mod2 {{
+        {std::make_shared<Redirector>(m[0]), 0, 1},
+        {std::make_shared<Redirector>(m[1]), 1, 1},
+        {std::make_shared<Redirector>(m[2]), 2, 1},
+        {std::make_shared<Redirector>(m[3]), 3, 1},
+        {std::make_shared<Redirector>(m[4]), 4, 1},
+        {std::make_shared<Redirector>(m[5]), 5, 1},
+        {std::make_shared<Redirector>(m[6]), 6, 1}, // ?
+        {std::make_shared<Redirector>(m[7]), 7, 1}, // ?
+    }};
+    PseudoRegister mod3 {{
+        {std::make_shared<Redirector>(nimc), 0, 1},
+        {std::make_shared<Redirector>(ic[0]), 1, 1},
+        {std::make_shared<Redirector>(ic[1]), 2, 1},
+        {std::make_shared<Redirector>(ic[2]), 3, 1},
+        {std::make_shared<Redirector>(vic), 4, 1}, // ?
+
+        {std::make_shared<Redirector>(ie), 7, 1},
+        {std::make_shared<Redirector>(im[0]), 8, 1},
+        {std::make_shared<Redirector>(im[1]), 9, 1},
+        {std::make_shared<Redirector>(im[2]), 10, 1},
+        {std::make_shared<Redirector>(vim), 11, 1}, // ?
+    }};
+
+    bool ConditionPass(Cond cond) {
+        switch(cond.GetName()) {
+        case CondValue::True: return true;
+        case CondValue::Eq: return fz == 1;
+        case CondValue::Neq: return fz == 0;
+        case CondValue::Gt: return fz == 0 && fm == 0;
+        case CondValue::Ge: return fm == 0;
+        case CondValue::Lt: return fm == 1;
+        case CondValue::Le: return fm == 1 || fz == 1;
+        case CondValue::Nn: return fn == 0;
+        case CondValue::C: return fc == 1;
+        case CondValue::V: return fv == 1;
+        case CondValue::E: return fe == 1;
+        case CondValue::L: return fl[0] == 1; // ??
+        case CondValue::Nr: return fr == 0;
+        case CondValue::Niu0: return iu[0] == 0;
+        case CondValue::Iu0: return iu[0] == 1;
+        case CondValue::Iu1: return iu[1] == 1;
+        default: throw "";
+        }
+    }
 
 };

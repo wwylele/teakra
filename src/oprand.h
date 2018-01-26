@@ -340,6 +340,7 @@ struct StepII2 : EnumAllOprand<StepII2Value> {};
 
 struct Address18_2 : Oprand<2> {};
 struct Address18_16 : Oprand<16> {};
+
 struct Address16 : Oprand<16> {};
 struct RelAddr7 : Oprand<7> {};
 
