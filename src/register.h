@@ -5,6 +5,11 @@
 #include "oprand.h"
 
 struct RegisterState {
+    void Reset() {
+        pc = 0;
+
+    }
+
     u32 pc;
 
     u16 GetPcL() {
@@ -113,7 +118,7 @@ struct RegisterState {
     u16 movpd;
     u16 bcn;
     u16 lp;
-    u16 sar;
+    u16 sar; // 0 - enable saturation; 1 - disable saturation
     u16 ps[3];
     u16 s;
     u16 ou[2];
