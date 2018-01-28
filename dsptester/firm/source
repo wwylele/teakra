@@ -56,7 +56,7 @@
 
      0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
      0003
-
+     
      5E66         pop r7
      0024         pop r6
      5E65         pop r5
@@ -128,7 +128,7 @@
      D3D3         push arp1 2ff4
      D3D4         push arp2 2ff3
      D3D5         push arp3 2ff2
-
+     
      0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
      0003
 

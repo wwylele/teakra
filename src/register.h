@@ -32,7 +32,7 @@ struct RegisterState {
     u16 r[8];
 
     struct Accumulator {
-        u64 value;
+        s64 value; // 40-bit 2's comp
     };
     Accumulator a[2];
     Accumulator b[2];
@@ -109,7 +109,9 @@ struct RegisterState {
         {std::make_shared<Redirector>(modj), 7, 9},
     }};
 
-    u16 fz, fm, fn, fv, fc, fe, fl[2], fr;
+    u16 fz, fm, fn, fv, fc, fe;
+    u16 fl[2]; // one fore sar, one for sar2?
+    u16 fr;
     u16 nimc;
     u16 ip[3], vip;
     u16 im[3], vim;
@@ -118,8 +120,10 @@ struct RegisterState {
     u16 movpd;
     u16 bcn;
     u16 lp;
-    u16 sar; // 0 - enable saturation; 1 - disable saturation
-    u16 ps[3];
+    u16 sar[2]; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
+    u16 ps;
+    u16 ps01[2];
+    u16 psm[2]; // product shift mode. 0: logic; 1: arithmatic?
     u16 s;
     u16 ou[2];
     u16 iu[2];
@@ -138,6 +142,9 @@ struct RegisterState {
     }};
     PseudoRegister stt1 {{
         {std::make_shared<Redirector>(fr), 4, 1},
+
+        {std::make_shared<Redirector>(psm[0]), 14, 1},
+        {std::make_shared<Redirector>(psm[1]), 15, 1},
     }};
     PseudoRegister stt2 {{
         {std::make_shared<RORedirector>(ip[0]), 0, 1},
@@ -151,16 +158,16 @@ struct RegisterState {
         {std::make_shared<RORedirector>(lp), 15, 1},
     }};
     PseudoRegister mod0 {{
-        {std::make_shared<Redirector>(sar), 0, 1},
-
-        {std::make_shared<Redirector>(ps[0]), 2, 2},
+        {std::make_shared<Redirector>(sar[0]), 0, 1},
+        {std::make_shared<Redirector>(sar[1]), 1, 1},
+        {std::make_shared<RORedirector>(ps), 2, 2},
 
         {std::make_shared<Redirector>(s), 7, 1},
         {std::make_shared<Redirector>(ou[0]), 8, 1},
         {std::make_shared<Redirector>(ou[0]), 9, 1},
-        {std::make_shared<Redirector>(ps[1]), 10, 2},
+        {std::make_shared<Redirector>(ps01[0]), 10, 2},
 
-        {std::make_shared<Redirector>(ps[2]), 13, 2},
+        {std::make_shared<Redirector>(ps01[1]), 13, 2},
     }};
     PseudoRegister mod1 {{
         {std::make_shared<Redirector>(page), 0, 8},

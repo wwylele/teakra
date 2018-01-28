@@ -383,50 +383,214 @@ public:
         throw "unimplemented";
     }
 
+    s64 LoadFromAcc(RegName name) {
+        switch(name) {
+        case RegName::a0: case RegName::a0h: case RegName::a0l: return regs.a[0].value;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: return regs.a[1].value;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: return regs.b[0].value;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: return regs.b[1].value;
+        default: throw "nope";
+        }
+    }
+
+    void StoreToAcc_UpdateFlag(s64 value) {
+        regs.fz = value == 0;
+        regs.fm = value < 0;
+        regs.fe = value > 0x7FFFFFFF || value < -0x80000000;
+        u64 unsigned_value = (u64)value;
+        u64 bit31 = (unsigned_value >> 31) & 1;
+        u64 bit30 = (unsigned_value >> 30) & 1;
+        regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);
+    }
+
+    void LoadFromAcc_Saturation(s64& value) {
+        if (regs.sar[0]) {
+            if (value > 0x7FFFFFFF) {
+                value = 0x7FFFFFFF;
+                regs.fl[0] = 1;
+            } else if (value < -0x80000000) {
+                value = -0x80000000;
+                regs.fl[0] = 1;
+            }
+            // note: fl[0 or 1] doesn't change value otherwise
+        }
+    }
+
+    u16 LoadFromAcc_GetPart(RegName name, s64 value) {
+        switch(name) {
+        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
+            return ((u64)value >> 16) & 0xFFFF;
+        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
+            return (u64)value & 0xFFFF;
+        default: throw "nope";
+        }
+    }
+
+    void StoreToAcc_Saturation(s64& value) {
+        if (regs.sar[1]) {
+            if (value > 0x7FFFFFFF) {
+                value = 0x7FFFFFFF;
+                regs.fl[0] = 1;
+            } else if (value < -0x80000000) {
+                value = -0x80000000;
+                regs.fl[0] = 1;
+            }
+            // note: fl[0 or 1] doesn't change value otherwise
+        }
+    }
+
+    void StoreToAcc(RegName name, s64 value) {
+        switch(name) {
+        case RegName::a0: case RegName::a0h: case RegName::a0l: regs.a[0].value = value; break;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: regs.a[1].value = value; break;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: regs.b[0].value = value; break;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: regs.b[1].value = value; break;
+        default: throw "nope";
+        }
+    }
+
     void mov(Ab a, Ab b) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        StoreToAcc_UpdateFlag(value);
+        StoreToAcc_Saturation(value);
+        StoreToAcc(b.GetName(), value);
     }
     void mov_dvm(Abl a) {
         throw "unimplemented";
     }
     void mov_x0(Abl a) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        regs.x[0] = value16;
     }
     void mov_x1(Abl a) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        regs.x[1] = value16;
     }
     void mov_y1(Abl a) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        regs.y[1] = value16;
     }
+
+    void StoreToMemory(MemImm8 addr, u16 value) {
+        mem.DWrite(addr.storage + (regs.page << 8), value);
+    }
+    void StoreToMemory(MemImm16 addr, u16 value) {
+        mem.DWrite(addr.storage, value);
+    }
+    void StoreToMemory(MemR7Imm16 addr, u16 value) {
+        mem.DWrite(addr.storage + regs.r[7], value);
+    }
+    void StoreToMemory(MemR7Imm7s addr, u16 value) {
+        mem.DWrite(addr.storage + regs.r[7], value);
+    }
+
     void mov(Ablh a, MemImm8 b) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        StoreToMemory(b, value16);
     }
     void mov(Axl a, MemImm16 b) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        StoreToMemory(b, value16);
     }
     void mov(Axl a, MemR7Imm16 b) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        StoreToMemory(b, value16);
     }
     void mov(Axl a, MemR7Imm7s b) {
-        throw "unimplemented";
+        s64 value;
+        value = LoadFromAcc(a.GetName());
+        LoadFromAcc_Saturation(value);
+        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        StoreToMemory(b, value16);
     }
+
+    s64 StoreToAcc_ExtendS16(u16 value) {
+        return (s16)value;
+    }
+
+    s64 StoreToAcc_ExtendU16(RegName r, u16 value) {
+        switch(name) {
+        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
+            return value;
+        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
+            return (s32)(u32)(value << 16);
+        default: throw "nope";
+        }
+    }
+
+    u16 LoadFromMemory(MemImm8 addr) {
+        return mem.DRead(addr.storage + (regs.page << 8));
+    }
+    u16 LoadFromMemory(MemImm16 addr) {
+        return mem.DRead(addr.storage);
+    }
+    u16 LoadFromMemory(MemR7Imm16 addr) {
+        return mem.DRead(addr.storage + regs.r[7]);
+    }
+    u16 LoadFromMemory(MemR7Imm7s addr) {
+        return mem.DRead(addr.storage + regs.r[7]);
+    }
+
     void mov(MemImm16 a, Ax b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        s64 value40 = StoreToAcc_ExtendS16(value);
+        StoreToAcc_UpdateFlag(value40);
+        // StoreToAcc_Saturation(value); no effect
+        StoreToAcc(b.GetName(), value40);
     }
     void mov(MemImm8 a, Ab b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        s64 value40 = StoreToAcc_ExtendS16(value);
+        StoreToAcc_UpdateFlag(value40);
+        // StoreToAcc_Saturation(value); no effect
+        StoreToAcc(b.GetName(), value40);
     }
     void mov(MemImm8 a, Ablh b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        s64 value40 = StoreToAcc_ExtendU16(b.GetName(), value);
+        StoreToAcc_UpdateFlag(value40);
+        // StoreToAcc_Saturation(value); no effect
+        StoreToAcc(b.GetName(), value40);
     }
     void mov_eu(MemImm8 a, Axh b) {
         throw "unimplemented";
     }
     void mov(MemImm8 a, RnOld b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+
+        switch(b.GetName()) {
+        case RegName::r0: regs.r[0] = value; break;
+        case RegName::r1: regs.r[1] = value; break;
+        case RegName::r2: regs.r[2] = value; break;
+        case RegName::r3: regs.r[3] = value; break;
+        case RegName::r4: regs.r[4] = value; break;
+        case RegName::r5: regs.r[5] = value; break;
+        case RegName::r7: regs.r[7] = value; break;
+        case RegName::y0: regs.y[0] = value; break;
+        }
     }
     void mov_sv(MemImm8 a) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        regs.sv = value;
     }
     void mov_dvm_to(Ab b) {
         throw "unimplemented";
@@ -435,7 +599,11 @@ public:
         throw "unimplemented";
     }
     void mov(Imm16 a, Bx b) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        s64 value40 = StoreToAcc_ExtendS16(value);
+        StoreToAcc_UpdateFlag(value40);
+        // StoreToAcc_Saturation(value); no effect
+        StoreToAcc(b.GetName(), value40);
     }
     void mov(Imm16 a, Register b) {
         throw "unimplemented";
