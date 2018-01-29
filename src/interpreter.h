@@ -383,101 +383,24 @@ public:
         throw "unimplemented";
     }
 
-    s64 LoadFromAcc(RegName name) {
-        switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: return regs.a[0].value;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: return regs.a[1].value;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: return regs.b[0].value;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: return regs.b[1].value;
-        default: throw "nope";
-        }
-    }
-
-    void StoreToAcc_UpdateFlag(s64 value) {
-        regs.fz = value == 0;
-        regs.fm = value < 0;
-        regs.fe = value > 0x7FFFFFFF || value < -0x80000000;
-        u64 unsigned_value = (u64)value;
-        u64 bit31 = (unsigned_value >> 31) & 1;
-        u64 bit30 = (unsigned_value >> 30) & 1;
-        regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);
-    }
-
-    void LoadFromAcc_Saturation(s64& value) {
-        if (regs.sar[0]) {
-            if (value > 0x7FFFFFFF) {
-                value = 0x7FFFFFFF;
-                regs.fl[0] = 1;
-            } else if (value < -0x80000000) {
-                value = -0x80000000;
-                regs.fl[0] = 1;
-            }
-            // note: fl[0 or 1] doesn't change value otherwise
-        }
-    }
-
-    u16 LoadFromAcc_GetPart(RegName name, s64 value) {
-        switch(name) {
-        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            return ((u64)value >> 16) & 0xFFFF;
-        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
-            return (u64)value & 0xFFFF;
-        default: throw "nope";
-        }
-    }
-
-    void StoreToAcc_Saturation(s64& value) {
-        if (regs.sar[1]) {
-            if (value > 0x7FFFFFFF) {
-                value = 0x7FFFFFFF;
-                regs.fl[0] = 1;
-            } else if (value < -0x80000000) {
-                value = -0x80000000;
-                regs.fl[0] = 1;
-            }
-            // note: fl[0 or 1] doesn't change value otherwise
-        }
-    }
-
-    void StoreToAcc(RegName name, s64 value) {
-        switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: regs.a[0].value = value; break;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: regs.a[1].value = value; break;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: regs.b[0].value = value; break;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: regs.b[1].value = value; break;
-        default: throw "nope";
-        }
-    }
-
     void mov(Ab a, Ab b) {
         s64 value;
-        value = LoadFromAcc(a.GetName());
-        StoreToAcc_UpdateFlag(value);
-        StoreToAcc_Saturation(value);
-        StoreToAcc(b.GetName(), value);
+        value = GetAcc(a.GetName());
+        SetAcc(b.GetName(), value);
     }
     void mov_dvm(Abl a) {
         throw "unimplemented";
     }
     void mov_x0(Abl a) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         regs.x[0] = value16;
     }
     void mov_x1(Abl a) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         regs.x[1] = value16;
     }
     void mov_y1(Abl a) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         regs.y[1] = value16;
     }
 
@@ -495,46 +418,20 @@ public:
     }
 
     void mov(Ablh a, MemImm8 b) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         StoreToMemory(b, value16);
     }
     void mov(Axl a, MemImm16 b) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         StoreToMemory(b, value16);
     }
     void mov(Axl a, MemR7Imm16 b) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         StoreToMemory(b, value16);
     }
     void mov(Axl a, MemR7Imm7s b) {
-        s64 value;
-        value = LoadFromAcc(a.GetName());
-        LoadFromAcc_Saturation(value);
-        u16 value16 = LoadFromAcc_GetPart(a.GetName(), value);
+        u16 value16 = RegToBus16(a.GetName());
         StoreToMemory(b, value16);
-    }
-
-    s64 StoreToAcc_ExtendS16(u16 value) {
-        return (s16)value;
-    }
-
-    s64 StoreToAcc_ExtendU16(RegName r, u16 value) {
-        switch(name) {
-        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            return value;
-        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
-            return (s32)(u32)(value << 16);
-        default: throw "nope";
-        }
     }
 
     u16 LoadFromMemory(MemImm8 addr) {
@@ -552,41 +449,22 @@ public:
 
     void mov(MemImm16 a, Ax b) {
         u16 value = LoadFromMemory(a);
-        s64 value40 = StoreToAcc_ExtendS16(value);
-        StoreToAcc_UpdateFlag(value40);
-        // StoreToAcc_Saturation(value); no effect
-        StoreToAcc(b.GetName(), value40);
+        RegFromBus16(b.GetName(), value);
     }
     void mov(MemImm8 a, Ab b) {
         u16 value = LoadFromMemory(a);
-        s64 value40 = StoreToAcc_ExtendS16(value);
-        StoreToAcc_UpdateFlag(value40);
-        // StoreToAcc_Saturation(value); no effect
-        StoreToAcc(b.GetName(), value40);
+        RegFromBus16(b.GetName(), value);
     }
     void mov(MemImm8 a, Ablh b) {
         u16 value = LoadFromMemory(a);
-        s64 value40 = StoreToAcc_ExtendU16(b.GetName(), value);
-        StoreToAcc_UpdateFlag(value40);
-        // StoreToAcc_Saturation(value); no effect
-        StoreToAcc(b.GetName(), value40);
+        RegFromBus16(b.GetName(), value);
     }
     void mov_eu(MemImm8 a, Axh b) {
         throw "unimplemented";
     }
     void mov(MemImm8 a, RnOld b) {
         u16 value = LoadFromMemory(a);
-
-        switch(b.GetName()) {
-        case RegName::r0: regs.r[0] = value; break;
-        case RegName::r1: regs.r[1] = value; break;
-        case RegName::r2: regs.r[2] = value; break;
-        case RegName::r3: regs.r[3] = value; break;
-        case RegName::r4: regs.r[4] = value; break;
-        case RegName::r5: regs.r[5] = value; break;
-        case RegName::r7: regs.r[7] = value; break;
-        case RegName::y0: regs.y[0] = value; break;
-        }
+        RegFromBus16(b.GetName(), value);
     }
     void mov_sv(MemImm8 a) {
         u16 value = LoadFromMemory(a);
@@ -600,34 +478,38 @@ public:
     }
     void mov(Imm16 a, Bx b) {
         u16 value = a.storage;
-        s64 value40 = StoreToAcc_ExtendS16(value);
-        StoreToAcc_UpdateFlag(value40);
-        // StoreToAcc_Saturation(value); no effect
-        StoreToAcc(b.GetName(), value40);
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, Register b) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_icr(Imm5 a) {
         throw "unimplemented";
     }
     void mov(Imm8s a, Axh b) {
-        throw "unimplemented";
+        u16 value = (u16)(s16)a.Value();
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Imm8s a, RnOld b) {
-        throw "unimplemented";
+        u16 value = (u16)(s16)a.Value();
+        RegFromBus16(b.GetName(), value);
     }
     void mov_sv(Imm8s a) {
-        throw "unimplemented";
+        u16 value = (u16)(s16)a.Value();
+        regs.sv = value;
     }
     void mov(Imm8 a, Axl b) {
-        throw "unimplemented";
+        u16 value = a.Value();
+        RegFromBus16(b.GetName(), value);
     }
     void mov(MemR7Imm16 a, Ax b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        RegFromBus16(b.GetName(), value);
     }
     void mov(MemR7Imm7s a, Ax b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Bx b) {
         throw "unimplemented";
@@ -636,10 +518,12 @@ public:
         throw "unimplemented";
     }
     void mov_memsp_to(Register b) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp);
+        RegFromBus16(b.GetName(), value);
     }
     void mov_mixp_to(Register b) {
-        throw "unimplemented";
+        u16 value = regs.mixp;
+        RegFromBus16(b.GetName(), value);
     }
     void mov(RnOld a, MemImm8 b) {
         throw "unimplemented";
@@ -648,91 +532,119 @@ public:
         throw "unimplemented";
     }
     void mov_mixp(Register a) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        regs.mixp = value;
     }
     void mov(Register a, Rn b, StepZIDS bs) {
         throw "unimplemented";
     }
     void mov(Register a, Bx b) {
         throw "unimplemented";
+        // need to test:
+        // Ax->Bx
+        // p->Bx
     }
     void mov(Register a, Register b) {
         throw "unimplemented";
+        // need to test:
+        // Ax->Ax
+        // p->Ax
     }
     void mov_repc_to(Ab b) {
-        throw "unimplemented";
+        u16 value = regs.repc;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_sv_to(MemImm8 b) {
-        throw "unimplemented";
+        u16 value = regs.repc;
+        StoreToMemory(b, value);
     }
     void mov_x0_to(Ab b) {
-        throw "unimplemented";
+        u16 value = regs.x[0];
+        RegFromBus16(b.GetName(), value);
     }
     void mov_x1_to(Ab b) {
-        throw "unimplemented";
+        u16 value = regs.x[1];
+        RegFromBus16(b.GetName(), value);
     }
     void mov_y1_to(Ab b) {
-        throw "unimplemented";
+        u16 value = regs.y[1];
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, ArArp b) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_r6(Imm16 a) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        regs.r[6] = value;
     }
     void mov_repc(Imm16 a) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        regs.repc = value;
     }
     void mov_stepi0(Imm16 a) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        regs.stepi0 = value;
     }
     void mov_stepj0(Imm16 a) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        regs.stepj0 = value;
     }
     void mov(Imm16 a, SttMod b) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_prpage(Imm4 a) {
         throw "unimplemented";
     }
 
     void mov_a0h_stepi0(Dummy) {
-        throw "unimplemented";
+        u16 value = RegToBus16(RegName::a0h);
+        regs.stepi0 = value;
     }
     void mov_a0h_stepj0(Dummy) {
-        throw "unimplemented";
+        u16 value = RegToBus16(RegName::a0h);
+        regs.stepj0 = value;
     }
     void mov_stepi0_a0h(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.stepi0;
+        RegFromBus16(RegName::a0h, value);
     }
     void mov_stepj0_a0h(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.stepj0;
+        RegFromBus16(RegName::a0h, value);
     }
 
     void mov_prpage(Abl a) {
         throw "unimplemented";
     }
     void mov_repc(Abl a) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        regs.repc = value;
     }
     void mov(Abl a, ArArp b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Abl a, SttMod b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        RegFromBus16(b.GetName(), value);
     }
 
     void mov_prpage_to(Abl b) {
         throw "unimplemented";
     }
     void mov_repc_to(Abl b) {
-        throw "unimplemented";
+        u16 value = regs.repc;
+        RegFromBus16(b.GetName(), value);
     }
     void mov(ArArp a, Abl b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        RegFromBus16(b.GetName(), value);
     }
     void mov(SttMod a, Abl b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        RegFromBus16(b.GetName(), value);
     }
 
     void mov_repc_to(R04 b, StepII2 bs) {
@@ -756,17 +668,21 @@ public:
     }
 
     void mov_repc_to(MemR7Imm16 b) {
-        throw "unimplemented";
+        u16 value = regs.repc;
+        StoreToMemory(b, value);
     }
     void mov(ArArpSttMod a, MemR7Imm16 b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        StoreToMemory(b, value);
     }
 
     void mov_repc(MemR7Imm16 a) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        regs.repc = value;
     }
     void mov(MemR7Imm16 a, ArArpSttMod b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        RegFromBus16(b.GetName(), value);
     }
 
     void mov_pc(Ax a) {
@@ -777,10 +693,12 @@ public:
     }
 
     void mov_mixp_to(Bx b) {
-        throw "unimplemented";
+        u16 value = regs.mixp;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_mixp_r6(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.mixp;
+        regs.r[6] = value;
     }
     void mov_p0h_to(Bx b) {
         throw "unimplemented";
@@ -854,4 +772,181 @@ public:
 private:
     RegisterState& regs;
     MemoryInterface& mem;
+
+    s64 GetAcc(RegName name) {
+        switch(name) {
+        case RegName::a0: case RegName::a0h: case RegName::a0l: return regs.a[0].value;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: return regs.a[1].value;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: return regs.b[0].value;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: return regs.b[1].value;
+        default: throw "nope";
+        }
+    }
+
+    s64 SaturateAcc(s64 value, bool storing) {
+        if (regs.sar[storing]) {
+            if (value > 0x7FFFFFFF) {
+                regs.fl[0] = 1;
+                return 0x7FFFFFFF;
+            } else if (value < -0x80000000) {
+                regs.fl[0] = 1;
+                return -0x80000000;
+            }
+            // note: fl[0] doesn't change value otherwise
+        }
+        return value;
+    }
+
+    u16 RegToBus16(RegName reg) {
+        switch(reg) {
+        case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
+            throw "undefined???";
+        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
+            return (u64)SaturateAcc(GetAcc(reg), false) & 0xFFFF;
+        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
+            return ((u64)SaturateAcc(GetAcc(reg), false) >> 16) & 0xFFFF;
+        case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
+            throw "?";
+
+        case RegName::r0: return regs.r[0];
+        case RegName::r1: return regs.r[1];
+        case RegName::r2: return regs.r[2];
+        case RegName::r3: return regs.r[3];
+        case RegName::r4: return regs.r[4];
+        case RegName::r5: return regs.r[5];
+        case RegName::r6: return regs.r[6];
+        case RegName::r7: return regs.r[7];
+
+        case RegName::x0: return regs.x[0];
+        case RegName::x1: return regs.x[1];
+        case RegName::y0: return regs.y[0];
+        case RegName::y1: return regs.y[1];
+        case RegName::p0:
+        case RegName::p1:throw "?";
+        case RegName::p:throw "?";
+
+        case RegName::pc: throw "?";
+        case RegName::sp: return regs.sp;
+        case RegName::sv: return regs.sv;
+        case RegName::lc: return regs.lc;
+
+        case RegName::ar0: return regs.ar[0];
+        case RegName::ar1: return regs.ar[1];
+
+        case RegName::arp0: return regs.arp[0];
+        case RegName::arp1: return regs.arp[1];
+        case RegName::arp2: return regs.arp[2];
+        case RegName::arp3: return regs.arp[3];
+
+        case RegName::ext0:
+        case RegName::ext1:
+        case RegName::ext2:
+        case RegName::ext3: throw "?";
+
+        case RegName::stt0: return regs.stt0.Get();
+        case RegName::stt1: return regs.stt1.Get();
+        case RegName::stt2: return regs.stt2.Get();
+
+        case RegName::st0:
+        case RegName::st1:
+        case RegName::st2: throw "?";
+
+        case RegName::cfgi: return regs.cfgi.Get();
+        case RegName::cfgj: return regs.cfgj.Get();
+
+        case RegName::mod0: return regs.mod0.Get();
+        case RegName::mod1: return regs.mod1.Get();
+        case RegName::mod2: return regs.mod2.Get();
+        case RegName::mod3: return regs.mod3.Get();
+        default: throw "?";
+        }
+    }
+
+    void SetAcc(RegName name, s64 value) {
+        regs.fz = value == 0;
+        regs.fm = value < 0;
+        regs.fe = value > 0x7FFFFFFF || value < -0x80000000;
+        u64 unsigned_value = (u64)value;
+        u64 bit31 = (unsigned_value >> 31) & 1;
+        u64 bit30 = (unsigned_value >> 30) & 1;
+        regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);
+
+        value = SaturateAcc(value, true);
+        switch(name) {
+        case RegName::a0: case RegName::a0h: case RegName::a0l: regs.a[0].value = value; break;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: regs.a[1].value = value; break;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: regs.b[0].value = value; break;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: regs.b[1].value = value; break;
+        default: throw "nope";
+        }
+    }
+
+
+    void RegFromBus16(RegName reg, u16 value) {
+        switch(reg) {
+        case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
+            SetAcc(reg, (s64)(s16)value);
+        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
+            SetAcc(reg, (s64)value);
+        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
+            SetAcc(reg, (s64)(s32)(u32)(value << 16));
+        case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
+            throw "?";
+
+        case RegName::r0: regs.r[0] = value; break;
+        case RegName::r1: regs.r[1] = value; break;
+        case RegName::r2: regs.r[2] = value; break;
+        case RegName::r3: regs.r[3] = value; break;
+        case RegName::r4: regs.r[4] = value; break;
+        case RegName::r5: regs.r[5] = value; break;
+        case RegName::r6: regs.r[6] = value; break;
+        case RegName::r7: regs.r[7] = value; break;
+
+        case RegName::x0: regs.x[0] = value; break;
+        case RegName::x1: regs.x[1] = value; break;
+        case RegName::y0: regs.y[0] = value; break;
+        case RegName::y1: regs.y[1] = value; break;
+        case RegName::p0:
+        case RegName::p1: throw "?";
+        case RegName::p: // p0h
+            regs.psm[0] = value > 0x7FFF; // ?
+            regs.p[0].value = (regs.p[0].value & 0xFFFF) | (value << 16);
+            break;
+
+        case RegName::pc: throw "?";
+        case RegName::sp: regs.sp = value; break;
+        case RegName::sv: regs.sv = value; break;
+        case RegName::lc: regs.lc = value; break;
+
+        case RegName::ar0: regs.ar[0] = value; break;
+        case RegName::ar1: regs.ar[1] = value; break;
+
+        case RegName::arp0: regs.arp[0] = value; break;
+        case RegName::arp1: regs.arp[1] = value; break;
+        case RegName::arp2: regs.arp[2] = value; break;
+        case RegName::arp3: regs.arp[3] = value; break;
+
+        case RegName::ext0:
+        case RegName::ext1:
+        case RegName::ext2:
+        case RegName::ext3: throw "?";
+
+        case RegName::stt0: regs.stt0.Set(value); break;
+        case RegName::stt1: regs.stt1.Set(value); break;
+        case RegName::stt2: regs.stt2.Set(value); break;
+
+        case RegName::st0:
+        case RegName::st1:
+        case RegName::st2: throw "?";
+
+        case RegName::cfgi: regs.cfgi.Set(value); break;
+        case RegName::cfgj: regs.cfgj.Set(value); break;
+
+        case RegName::mod0: regs.mod0.Set(value); break;
+        case RegName::mod1: regs.mod1.Set(value); break;
+        case RegName::mod2: regs.mod2.Set(value); break;
+        case RegName::mod3: regs.mod3.Set(value); break;
+        default: throw "?";
+        }
+    }
 };

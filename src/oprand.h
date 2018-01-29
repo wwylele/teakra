@@ -81,15 +81,12 @@ enum class RegName {
 
     r0, r1, r2, r3, r4, r5, r6, r7,
 
-    x0, y0, x1, y1, p0, p1,
+    x0, y0, x1, y1, p0, p1, p,
 
-    pc, sp, sv, mixp, lc, repc, dvm,
+    pc, sp, sv, lc,
 
     ar0, ar1,
     arp0, arp1, arp2, arp3,
-    stepi0, stepj0,
-    vtr0, vtr1,
-    prpage,
 
     ext0, ext1, ext2, ext3,
 
@@ -116,7 +113,7 @@ struct Register : RegOprand<
     RegName::st0,
     RegName::st1,
     RegName::st2,
-    RegName::p0,
+    RegName::p, // p0h for write, p0 for read?
     RegName::pc,
     RegName::sp,
     RegName::cfgi,
@@ -129,8 +126,8 @@ struct Register : RegOprand<
     RegName::ext1,
     RegName::ext2,
     RegName::ext3,
-    RegName::a0,
-    RegName::a1,
+    RegName::a0, // ?
+    RegName::a1, // ?
     RegName::a0l,
     RegName::a1l,
     RegName::a0h,

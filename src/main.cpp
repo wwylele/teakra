@@ -103,16 +103,7 @@ std::string DsmReg(RegT a) {
     case RegName::pc: return "pc";
     case RegName::sp: return "sp";
     case RegName::sv: return "sv";
-    case RegName::mixp: return "mxip";
     case RegName::lc: return "lc";
-    case RegName::repc: return "repc";
-    case RegName::dvm: return "dvm";
-
-    case RegName::stepi0: return "stepi0";
-    case RegName::stepj0: return "stepj0";
-    case RegName::vtr0: return "vtr0";
-    case RegName::vtr1: return "vtr1";
-    case RegName::prpage: return "prpage";
 
     case RegName::st0: return "st0";
     case RegName::st1: return "st1";

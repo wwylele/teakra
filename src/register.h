@@ -110,8 +110,9 @@ struct RegisterState {
     }};
 
     u16 fz, fm, fn, fv, fc, fe;
-    u16 fl[2]; // one fore sar, one for sar2?
+    u16 fl[2]; // when is fl[1] used?
     u16 fr;
+    u16 fc1; // used by max||max||vtrshr?
     u16 nimc;
     u16 ip[3], vip;
     u16 im[3], vim;
@@ -139,6 +140,7 @@ struct RegisterState {
         {std::make_shared<Redirector>(fn), 5, 1},
         {std::make_shared<Redirector>(fm), 6, 1},
         {std::make_shared<Redirector>(fz), 7, 1},
+        {std::make_shared<Redirector>(fc1), 11, 1},
     }};
     PseudoRegister stt1 {{
         {std::make_shared<Redirector>(fr), 4, 1},
