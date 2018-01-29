@@ -512,10 +512,14 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Bx b) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(a.GetName(), as);
+        u16 value = mem.DRead(address);
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Register b) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(a.GetName(), as);
+        u16 value = mem.DRead(address);
+        RegFromBus16(b.GetName(), value);
     }
     void mov_memsp_to(Register b) {
         u16 value = mem.DRead(regs.sp);
@@ -526,7 +530,8 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov(RnOld a, MemImm8 b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        StoreToMemory(b, value);
     }
     void mov_icr(Register a) {
         throw "unimplemented";
@@ -536,7 +541,11 @@ public:
         regs.mixp = value;
     }
     void mov(Register a, Rn b, StepZIDS bs) {
-        throw "unimplemented";
+        // a = a0 or a1 is overrided
+        // a = p0 untested
+        u16 value = RegToBus16(a.GetName());
+        u16 address = RnAddressAndModify(b.GetName(), bs);
+        mem.DWrite(address, value);
     }
     void mov(Register a, Bx b) {
         throw "unimplemented";
@@ -733,25 +742,35 @@ public:
     }
 
     void mov_r6_to(Bx b) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        RegFromBus16(b.GetName(), value);
     }
     void mov_r6_mixp(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        regs.mixp = value;
     }
     void mov_r6_to(Register b) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        RegFromBus16(b.GetName(), value);
     }
     void mov_r6(Register a) {
-        throw "unimplemented";
+        // untested: a = a0, a1, p0
+        u16 value = RegToBus16(a.GetName());
+        regs.r[6] = value;
     }
     void mov_memsp_r6(Dummy) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp);
+        regs.r[6] = value;
     }
     void mov_r6_to(Rn b, StepZIDS bs) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        u16 address = RnAddressAndModify(b.GetName(), bs);
+        mem.DWrite(address, value);
     }
     void mov_r6(Rn a, StepZIDS as) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(a.GetName(), as);
+        u16 value = mem.DRead(address);
+        regs.r[6] = value;
     }
 
     void movs(MemImm8 a, Ab b) {
@@ -935,9 +954,9 @@ private:
         case RegName::stt1: regs.stt1.Set(value); break;
         case RegName::stt2: regs.stt2.Set(value); break;
 
-        case RegName::st0:
-        case RegName::st1:
-        case RegName::st2: throw "?";
+        case RegName::st0: regs.st0.Set(value); break;
+        case RegName::st1: regs.st1.Set(value); break;
+        case RegName::st2: regs.st2.Set(value); break;
 
         case RegName::cfgi: regs.cfgi.Set(value); break;
         case RegName::cfgj: regs.cfgj.Set(value); break;
@@ -948,5 +967,72 @@ private:
         case RegName::mod3: regs.mod3.Set(value); break;
         default: throw "?";
         }
+    }
+
+    u16 RnAddressAndModify(RegName reg, StepZIDS step) {
+        // TODO: Verify this function is correct!!!
+        unsigned unit;
+        switch(reg) {
+        case RegName::r0: unit = 0; break;
+        case RegName::r1: unit = 1; break;
+        case RegName::r2: unit = 2; break;
+        case RegName::r3: unit = 3; break;
+        case RegName::r4: unit = 4; break;
+        case RegName::r5: unit = 5; break;
+        case RegName::r6: unit = 6; break;
+        case RegName::r7: unit = 7; break;
+        default: throw "?";
+        }
+        u16 ret = regs.r[unit];
+
+        u16 s;
+        switch(step.GetName()) {
+        case StepZIDSValue::Zero: s = 0; break;
+        case StepZIDSValue::Increase: s = 1; break;
+        case StepZIDSValue::Decrease: s = 0xFFFF; break;
+        case StepZIDSValue::PlusStep:
+            if (regs.ms[unit] && !regs.m[unit]) {
+                s = unit < 4 ? regs.stepi0 : regs.stepj0;
+            } else {
+                s = unit < 4 ? regs.stepi : regs.stepj;
+                if (s & (1 << 6)) {
+                    s |= 0b1111'1111'1000'0000; // sign extension
+                }
+            }
+        default: throw "?";
+        }
+
+        if (s == 0)
+            return ret;
+
+        u16 mod;
+        if (!regs.ms[unit] && regs.m[unit]) {
+            mod = unit < 4 ? regs.modi : regs.modj;
+        } else {
+            mod = 0;
+        }
+
+        if (!mod) {
+            regs.r[unit] += s;
+            return ret;
+        }
+
+        u16 mask = 0;
+        for (unsigned i = 0; i < 9; ++i) {
+            mask |= mod >> i;
+        }
+
+        u16 l = regs.r[unit] & mask;
+        regs.r[unit] &= ~mask;
+        if (l == mod && s < 0x8000) {
+            l = 0;
+        } else if (l == 0 && s >= 0x8000) {
+            l = mod;
+        } else {
+            l += s;
+            l &= mask;
+        }
+        regs.r[unit] |= l;
+        return ret;
     }
 };

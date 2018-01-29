@@ -46,8 +46,8 @@ struct RegisterState {
 
     u16 ar[2]; // ?
     u16 arp[4]; // ?
-    u16 stepi0, stepj0; // ?
-    u16 vtr[2]; // ?
+    u16 stepi0, stepj0; // alternative step
+    u16 vtr[2]; // fc/fc1 latching
 
     class RegisterProxy {
     public:
@@ -69,9 +69,40 @@ struct RegisterState {
         u16& target;
     };
 
+    class DoubleRedirector : public RegisterProxy {
+    public:
+        DoubleRedirector(u16& target0, u16& target1) : target0(target0), target1(target1) {}
+        u16 Get() override {
+            return target0 | target1;
+        }
+        void Set(u16 value) override {
+            target0 = target1 = value;
+        }
+    private:
+        u16& target0, target1;
+    };
+
     class RORedirector : public Redirector {
         using Redirector::Redirector;
         void Set(u16 value) override {}
+    };
+
+    class AccEProxy : public RegisterProxy {
+    public:
+        AccEProxy(Accumulator& target) : target(target) {}
+        u16 Get() override {
+            return ((u64)target.value >> 32) & 0xF;
+        }
+        void Set(u16 value) override {
+            u32 value32 = value;
+            if (value & (1 << 3)) {
+                value32 |= 0b1111'1111'1111'0000;
+            }
+            u64 low = (u64)target.value & 0xFFFFFFFF;
+            target.value = (s64)(((u64)value32 << 32) | low);
+        }
+    private:
+        Accumulator& target;
     };
 
     struct ProxySlot {
@@ -97,8 +128,8 @@ struct RegisterState {
         }
     };
 
-    u16 stepi, stepj;
-    u16 modi, modj;
+    u16 stepi, stepj; // 7 bit 2's comp
+    u16 modi, modj; // 9 bit
 
     PseudoRegister cfgi {{
         {std::make_shared<Redirector>(stepi), 0, 7},
@@ -122,14 +153,19 @@ struct RegisterState {
     u16 bcn;
     u16 lp;
     u16 sar[2]; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
-    u16 ps;
-    u16 ps01[2];
+    u16 ps[2];
     u16 psm[2]; // product shift mode. 0: logic; 1: arithmatic?
     u16 s;
     u16 ou[2];
     u16 iu[2];
     u16 page;
+
+    // m=0, ms=0: use stepi/j (no modulo)
+    // m=1, ms=0: use stepi/j with modulo
+    // m=0, ms=1: use stepi0/j0 (no modulo)
+    // m=1, ms=1: use stepi/j  (no modulo)??
     u16 m[8];
+    u16 ms[8];
 
     PseudoRegister stt0 {{
         {std::make_shared<Redirector>(fl[0]), 0, 1},
@@ -162,14 +198,14 @@ struct RegisterState {
     PseudoRegister mod0 {{
         {std::make_shared<Redirector>(sar[0]), 0, 1},
         {std::make_shared<Redirector>(sar[1]), 1, 1},
-        {std::make_shared<RORedirector>(ps), 2, 2},
+        //{std::make_shared<RORedirector>(??), 2, 2},
 
         {std::make_shared<Redirector>(s), 7, 1},
         {std::make_shared<Redirector>(ou[0]), 8, 1},
         {std::make_shared<Redirector>(ou[0]), 9, 1},
-        {std::make_shared<Redirector>(ps01[0]), 10, 2},
+        {std::make_shared<Redirector>(ps[0]), 10, 2},
 
-        {std::make_shared<Redirector>(ps01[1]), 13, 2},
+        {std::make_shared<Redirector>(ps[1]), 13, 2},
     }};
     PseudoRegister mod1 {{
         {std::make_shared<Redirector>(page), 0, 8},
@@ -181,8 +217,16 @@ struct RegisterState {
         {std::make_shared<Redirector>(m[3]), 3, 1},
         {std::make_shared<Redirector>(m[4]), 4, 1},
         {std::make_shared<Redirector>(m[5]), 5, 1},
-        {std::make_shared<Redirector>(m[6]), 6, 1}, // ?
-        {std::make_shared<Redirector>(m[7]), 7, 1}, // ?
+        {std::make_shared<Redirector>(m[6]), 6, 1},
+        {std::make_shared<Redirector>(m[7]), 7, 1},
+        {std::make_shared<Redirector>(ms[0]), 8, 1},
+        {std::make_shared<Redirector>(ms[1]), 9, 1},
+        {std::make_shared<Redirector>(ms[2]), 10, 1},
+        {std::make_shared<Redirector>(ms[3]), 11, 1},
+        {std::make_shared<Redirector>(ms[4]), 12, 1},
+        {std::make_shared<Redirector>(ms[5]), 13, 1},
+        {std::make_shared<Redirector>(ms[6]), 14, 1},
+        {std::make_shared<Redirector>(ms[7]), 15, 1},
     }};
     PseudoRegister mod3 {{
         {std::make_shared<Redirector>(nimc), 0, 1},
@@ -196,6 +240,55 @@ struct RegisterState {
         {std::make_shared<Redirector>(im[1]), 9, 1},
         {std::make_shared<Redirector>(im[2]), 10, 1},
         {std::make_shared<Redirector>(vim), 11, 1}, // ?
+    }};
+
+    PseudoRegister st0 {{
+        {std::make_shared<Redirector>(sar[0]), 0, 1},
+        {std::make_shared<Redirector>(ie), 1, 1},
+        {std::make_shared<Redirector>(im[0]), 2, 1},
+        {std::make_shared<Redirector>(im[1]), 3, 1},
+        {std::make_shared<Redirector>(fr), 4, 1},
+        {std::make_shared<DoubleRedirector>(fl[0], fl[1]), 5, 1},
+        {std::make_shared<Redirector>(fe), 6, 1},
+        {std::make_shared<Redirector>(fc), 7, 1},
+        {std::make_shared<Redirector>(fv), 8, 1},
+        {std::make_shared<Redirector>(fn), 9, 1},
+        {std::make_shared<Redirector>(fm), 10, 1},
+        {std::make_shared<Redirector>(fz), 11, 1},
+        {std::make_shared<AccEProxy>(a[01]), 12, 4},
+    }};
+    PseudoRegister st1 {{
+        {std::make_shared<Redirector>(page), 0, 8},
+        // 8, 9: reserved
+        {std::make_shared<Redirector>(ps[0]), 10, 2},
+        {std::make_shared<AccEProxy>(a[1]), 12, 4},
+    }};
+    PseudoRegister st2 {{
+        {std::make_shared<Redirector>(m[0]), 0, 1},
+        {std::make_shared<Redirector>(m[1]), 1, 1},
+        {std::make_shared<Redirector>(m[2]), 2, 1},
+        {std::make_shared<Redirector>(m[3]), 3, 1},
+        {std::make_shared<Redirector>(m[4]), 4, 1},
+        {std::make_shared<Redirector>(m[5]), 5, 1},
+        {std::make_shared<Redirector>(im[2]), 6, 1},
+        {std::make_shared<Redirector>(s), 7, 1},
+        {std::make_shared<Redirector>(ou[0]), 8, 1},
+        {std::make_shared<Redirector>(ou[1]), 9, 1},
+        {std::make_shared<RORedirector>(iu[0]), 10, 1},
+        {std::make_shared<RORedirector>(iu[1]), 11, 1},
+        // 12: reserved
+        {std::make_shared<RORedirector>(ip[2]), 13, 1},
+        {std::make_shared<RORedirector>(ip[0]), 14, 1},
+        {std::make_shared<RORedirector>(ip[1]), 15, 1},
+    }};
+    PseudoRegister icr {{
+        {std::make_shared<Redirector>(nimc), 0, 1},
+        {std::make_shared<Redirector>(ic[0]), 1, 1},
+        {std::make_shared<Redirector>(ic[1]), 2, 1},
+        {std::make_shared<Redirector>(ic[2]), 3, 1},
+        {std::make_shared<RORedirector>(lp), 4, 1},
+        {std::make_shared<RORedirector>(bcn), 5, 3},
+        // reserved
     }};
 
     bool ConditionPass(Cond cond) {
