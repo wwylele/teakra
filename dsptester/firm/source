@@ -81,13 +81,13 @@
      D494         pop x0
      5E7F         pop sv
 
-     47B1         pop b1
+     47B1         popa b1
      47B5         pop b1e
-     47B0         pop b0
+     47B0         popa b0
      47B4         pop b0e
-     47B3         pop a1
+     47B3         popa a1
      47B7         pop a1e
-     47B2         pop a0
+     47B2         popa a0
      47B6         pop a0e
 
      85C7         pop arp3
@@ -133,13 +133,13 @@
      0003
 
      D7CC         push a0e 2ff1
-     4384         push a0 2fef
+     4384         pusha a0 2fef
      D7CE         push a1e 2fee
-     43C4         push a1 2fec
+     43C4         pusha a1 2fec
      D7C8         push b0e 2feb
-     D788         push b0 2fe9
+     D788         pusha b0 2fe9
      D7CA         push b1e 2fe8
-     D78A         push b1 2fe6
+     D78A         pusha b1 2fe6
 
      5E5F         push sv 2fe5
      D4D4         push x0 2fe4

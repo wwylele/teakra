@@ -113,7 +113,7 @@ struct Register : RegOprand<
     RegName::st0,
     RegName::st1,
     RegName::st2,
-    RegName::p, // p0h for write, p0 for read?
+    RegName::p, // take special care of this as src oprand
     RegName::pc,
     RegName::sp,
     RegName::cfgi,
@@ -126,8 +126,8 @@ struct Register : RegOprand<
     RegName::ext1,
     RegName::ext2,
     RegName::ext3,
-    RegName::a0, // ?
-    RegName::a1, // ?
+    RegName::a0, // take special care of this as src oprand
+    RegName::a1, // take special care of this as src oprand
     RegName::a0l,
     RegName::a1l,
     RegName::a0h,

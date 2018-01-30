@@ -7,6 +7,7 @@
 #include <iomanip>
 #include "register.h"
 #include "interpreter.h"
+#include <thread>
 
 template< typename T >
 std::string ToHex( T i )
@@ -99,6 +100,7 @@ std::string DsmReg(RegT a) {
     case RegName::y1: return "y1";
     case RegName::p0: return "p0";
     case RegName::p1: return "p1";
+    case RegName::p: return "p*";
 
     case RegName::pc: return "pc";
     case RegName::sp: return "sp";
@@ -500,10 +502,10 @@ public:
         return "push y1";
     }
     std::string pusha(Ax a) {
-        return "push " + DsmReg(a);
+        return "pusha " + DsmReg(a);
     }
     std::string pusha(Bx a) {
-        return "push " + DsmReg(a);
+        return "pusha " + DsmReg(a);
     }
 
     std::string pop(Register a) {
@@ -540,7 +542,7 @@ public:
         return "pop y1";
     }
     std::string popa(Ab a) {
-        return "pop " + DsmReg(a);
+        return "popa " + DsmReg(a);
     }
 
     std::string rep(Imm8 a) {
@@ -965,10 +967,13 @@ int main() {
 
     fclose(file);
 
+    printf("Start interpreter...\n");
+
     RegisterState r;
-    DspMemory m;
+    DspMemorySharedWithCitra m;
     Interpreter interpreter(r, m);
-    for (u32 opcode = 0; opcode < 0x10000; ++opcode) {
-        Decode<Interpreter>((u16)opcode);
+    r.Reset();
+    while(1) {
+        interpreter.Run(1);
     }
 }

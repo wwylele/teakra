@@ -156,7 +156,7 @@ void InvalidateCache(void* ptr, u32 size) {
 void StartDspProgram() {
     dspD[1] = 1;
     FlushCache(&dspD[1], 2);
-	while(dspD[1])InvalidateCache(&dspD[1], 2);
+    while(dspD[1])InvalidateCache(&dspD[1], 2);
 }
 
 void StopDspProgram() {
@@ -188,17 +188,17 @@ void UdpInit() {
     #define SOC_BUFFERSIZE  0x100000
     static u32 *SOC_buffer;
     // allocate buffer for SOC service
-	SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
+    SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
     if(SOC_buffer == NULL) {
-		printf("memalign: failed to allocate\n");
+        printf("memalign: failed to allocate\n");
         return;
-	}
+    }
 
     Result ret;
     if ((ret = socInit(SOC_buffer, SOC_BUFFERSIZE)) != 0) {
-    	printf("socInit: 0x%08lX\n", ret);
+        printf("socInit: 0x%08lX\n", ret);
         return;
-	}
+    }
 
     sockaddr_in si_me;
 
@@ -245,7 +245,7 @@ int main() {
 
     PrintConsole topScreen, bottomScreen;
     consoleInit(GFX_TOP, &topScreen);
-	consoleInit(GFX_BOTTOM, &bottomScreen);
+    consoleInit(GFX_BOTTOM, &bottomScreen);
 
     consoleSelect(&bottomScreen);
     printf("Hello!\n");
@@ -312,87 +312,87 @@ int main() {
     grid[0][3] = MakeBinReg("cfgi", 0x2F);
 
     // Main loop
-	while (aptMainLoop())
-	{
-		//Scan all the inputs. This should be done once for each frame
-		hidScanInput();
+    while (aptMainLoop())
+    {
+        //Scan all the inputs. This should be done once for each frame
+        hidScanInput();
 
-		//hidKeysDown returns information about which buttons have been just pressed (and they weren't in the previous frame)
-		u32 kDown = hidKeysDown();
+        //hidKeysDown returns information about which buttons have been just pressed (and they weren't in the previous frame)
+        u32 kDown = hidKeysDown();
 
-		if (kDown & KEY_START) break; // break in order to return to hbmenu
+        if (kDown & KEY_START) break; // break in order to return to hbmenu
 
-		if (kDown & KEY_DOWN) {
-		    for (int next = (int)c_row + 1; next < (int)t_row; ++next) {
-		        if (grid[next][c_col]) {
-		            c_row = next;
-		            break;
-		        }
-		    }
-		}
+        if (kDown & KEY_DOWN) {
+            for (int next = (int)c_row + 1; next < (int)t_row; ++next) {
+                if (grid[next][c_col]) {
+                    c_row = next;
+                    break;
+                }
+            }
+        }
 
-		if (kDown & KEY_UP) {
-		    for (int next = (int)c_row - 1; next >= 0; --next) {
-		        if (grid[next][c_col]) {
-		            c_row = next;
-		            break;
-		        }
-		    }
-		}
+        if (kDown & KEY_UP) {
+            for (int next = (int)c_row - 1; next >= 0; --next) {
+                if (grid[next][c_col]) {
+                    c_row = next;
+                    break;
+                }
+            }
+        }
 
-		if (kDown & KEY_LEFT) {
-		    if(c_pos == grid[c_row][c_col]->GetLength() - 1) {
-		        for (int next = (int)c_col - 1; next >= 0; --next) {
-		            if (grid[c_row][next]) {
-		                c_col = next;
-		                c_pos = 0;
-		                break;
-		            }
-		        }
-		    } else {
-		        ++c_pos;
-		    }
-		}
+        if (kDown & KEY_LEFT) {
+            if(c_pos == grid[c_row][c_col]->GetLength() - 1) {
+                for (int next = (int)c_col - 1; next >= 0; --next) {
+                    if (grid[c_row][next]) {
+                        c_col = next;
+                        c_pos = 0;
+                        break;
+                    }
+                }
+            } else {
+                ++c_pos;
+            }
+        }
 
-		if (kDown & KEY_RIGHT) {
-		    if(c_pos == 0) {
-		        for (int next = (int)c_col + 1; next < (int)t_col; ++next) {
-		            if (grid[c_row][next]) {
-		                c_col = next;
-		                c_pos = grid[c_row][c_col]->GetLength() - 1;
-		                break;
-		            }
-		        }
-		    } else {
-		        --c_pos;
-		    }
-		}
+        if (kDown & KEY_RIGHT) {
+            if(c_pos == 0) {
+                for (int next = (int)c_col + 1; next < (int)t_col; ++next) {
+                    if (grid[c_row][next]) {
+                        c_col = next;
+                        c_pos = grid[c_row][c_col]->GetLength() - 1;
+                        break;
+                    }
+                }
+            } else {
+                --c_pos;
+            }
+        }
 
-		if (kDown & KEY_A) {
-		    unsigned v = grid[c_row][c_col]->GetSrcDigit(c_pos);
-		    ++v;
-		    if (v == grid[c_row][c_col]->GetDigitRange()) v = 0;
-		    grid[c_row][c_col]->SetSrcDigit(c_pos, v);
-		}
+        if (kDown & KEY_A) {
+            unsigned v = grid[c_row][c_col]->GetSrcDigit(c_pos);
+            ++v;
+            if (v == grid[c_row][c_col]->GetDigitRange()) v = 0;
+            grid[c_row][c_col]->SetSrcDigit(c_pos, v);
+        }
 
-		if (kDown & KEY_B) {
-		    unsigned v = grid[c_row][c_col]->GetSrcDigit(c_pos);
-		    if (v == 0) v = grid[c_row][c_col]->GetDigitRange();
-		    --v;
-		    grid[c_row][c_col]->SetSrcDigit(c_pos, v);
-		}
+        if (kDown & KEY_B) {
+            unsigned v = grid[c_row][c_col]->GetSrcDigit(c_pos);
+            if (v == 0) v = grid[c_row][c_col]->GetDigitRange();
+            --v;
+            grid[c_row][c_col]->SetSrcDigit(c_pos, v);
+        }
 
-		if (kDown & KEY_X) {
-		    UploadDspProgram({0x86A0}); // add r0, a0
+        if (kDown & KEY_X) {
+            UploadDspProgram({0x86A0}); // add r0, a0
         }
 
         if (kDown & KEY_Y) {
-		   UploadDspProgram({0x9AA0}); // sqr r0
+           UploadDspProgram({0x9AA0}); // sqr r0
         }
 
         FlushCache(&dspD[0x2000], 0x1000);
-		InvalidateCache(&dspD[0x2000], 0x2000);
-		PrintAll();
+        InvalidateCache(&dspD[0x2000], 0x2000);
+        PrintAll();
 
         auto program_package = CheckProgramPackage();
 
@@ -408,13 +408,13 @@ int main() {
             consoleSelect(&topScreen);
         }
 
-		// Flush and swap framebuffers
-		gfxFlushBuffers();
-		gfxSwapBuffers();
+        // Flush and swap framebuffers
+        gfxFlushBuffers();
+        gfxSwapBuffers();
 
-		//Wait for VBlank
-		gspWaitForVBlank();
-	}
+        //Wait for VBlank
+        gspWaitForVBlank();
+    }
     socExit();
     dspExit();
     gfxExit();

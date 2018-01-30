@@ -4,6 +4,7 @@
 #include "common_types.h"
 #include "oprand.h"
 
+
 struct RegisterState {
     void Reset() {
         pc = 0;
@@ -16,10 +17,10 @@ struct RegisterState {
         return pc & 0xFFFF;
     }
     u16 GetPcH() {
-        return pc >> 16;
+        return (pc >> 16) & 0xFFFF;
     }
     void SetPC(u16 low, u16 high) {
-        pc = low | ((u32)high << 16);
+        pc = (u32)low | ((u32)high << 16);
     }
 
     u16 dvm;
@@ -32,7 +33,9 @@ struct RegisterState {
     u16 r[8];
 
     struct Accumulator {
-        s64 value; // 40-bit 2's comp
+        // 40-bit 2's comp on real TeakLite.
+        // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
+        u64 value;
     };
     Accumulator a[2];
     Accumulator b[2];
@@ -91,15 +94,12 @@ struct RegisterState {
     public:
         AccEProxy(Accumulator& target) : target(target) {}
         u16 Get() override {
-            return ((u64)target.value >> 32) & 0xF;
+            return (u16)((target.value >> 32) & 0xF);
         }
         void Set(u16 value) override {
-            u32 value32 = value;
-            if (value & (1 << 3)) {
-                value32 |= 0b1111'1111'1111'0000;
-            }
-            u64 low = (u64)target.value & 0xFFFFFFFF;
-            target.value = (s64)(((u64)value32 << 32) | low);
+            u32 value32 = SignExtend<4>((u32)value);
+            target.value &= 0xFFFFFFFF;
+            target.value |= (u64)value32 << 32;
         }
     private:
         Accumulator& target;
@@ -301,10 +301,10 @@ struct RegisterState {
         case CondValue::Lt: return fm == 1;
         case CondValue::Le: return fm == 1 || fz == 1;
         case CondValue::Nn: return fn == 0;
-        case CondValue::C: return fc == 1;
+        case CondValue::C: return fc == 1; // ?
         case CondValue::V: return fv == 1;
         case CondValue::E: return fe == 1;
-        case CondValue::L: return fl[0] == 1; // ??
+        case CondValue::L: return fl[0] == 1 || fl[1] == 1; // ??
         case CondValue::Nr: return fr == 0;
         case CondValue::Niu0: return iu[0] == 0;
         case CondValue::Iu0: return iu[0] == 1;

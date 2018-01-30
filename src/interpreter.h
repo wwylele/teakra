@@ -4,10 +4,29 @@
 #include "register.h"
 #include "memory.h"
 
+
 class Interpreter {
 public:
 
     Interpreter (RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
+
+    void Run(unsigned cycles) {
+        for (unsigned i  = 0; i < cycles; ++i) {
+            u16 opcode = mem.PRead(regs.pc++);
+            auto decoder = Decode<Interpreter>(opcode);
+            if (!decoder)
+                throw "unknown code!";
+            u16 expand_value = 0;
+            if (decoder->NeedExpansion()) {
+                expand_value = mem.PRead(regs.pc++);
+            }
+
+            // TODO: bkrep and rep check
+
+            decoder->call(*this, opcode, expand_value);
+        }
+    }
+
     using instruction_return_type = void;
 
     void nop(Dummy) {
@@ -82,7 +101,10 @@ public:
     }
 
     void moda3(Moda3 op, Bx a, Cond cond) {
-        throw "unimplemented";
+        if (regs.ConditionPass(cond)) {
+            // HACK: hard code for the dsptester
+            regs.b[0].value = 0;
+        }
     }
 
     void bkrep(Imm8 a, Address16 addr) {
@@ -225,7 +247,7 @@ public:
         throw "unimplemented";
     }
     void load_page(Imm8 a) {
-        throw "unimplemented";
+        regs.page = a.storage;
     }
     void load_modi(Imm9 a) {
         throw "unimplemented";
@@ -241,80 +263,125 @@ public:
     }
 
     void push(Imm16 a) {
-        throw "unimplemented";
+        mem.DWrite(--regs.sp, a.storage);
     }
     void push(Register a) {
-        throw "unimplemented";
+        // need test: p0, aX
+        u16 value = RegToBus16(a.GetName());
+        mem.DWrite(--regs.sp, value);
     }
     void push(Abe a) {
-        throw "unimplemented";
+        u16 value = (SaturateAcc(GetAcc(a.GetName()), false) >> 32) & 0xFFFF;
+        mem.DWrite(--regs.sp, value);
     }
     void push(ArArpSttMod a) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        mem.DWrite(--regs.sp, value);
     }
     void push_prpage(Dummy) {
         throw "unimplemented";
     }
     void push(Px a) {
-        throw "unimplemented";
+        u32 value = (u32)ProductToBus40(a.GetName());
+        u16 h = value >> 16;
+        u16 l = value & 0xFFFF;
+        mem.DWrite(--regs.sp, l);
+        mem.DWrite(--regs.sp, h);
     }
     void push_r6(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        mem.DWrite(--regs.sp, value);
     }
     void push_repc(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.repc;
+        mem.DWrite(--regs.sp, value);
     }
     void push_x0(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.x[0];
+        mem.DWrite(--regs.sp, value);
     }
     void push_x1(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.x[1];
+        mem.DWrite(--regs.sp, value);
     }
     void push_y1(Dummy) {
-        throw "unimplemented";
+        u16 value = regs.y[1];
+        mem.DWrite(--regs.sp, value);
     }
     void pusha(Ax a) {
-        throw "unimplemented";
+        u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFF'FFFF;
+        u16 h = value >> 16;
+        u16 l = value & 0xFFFF;
+        mem.DWrite(--regs.sp, l);
+        mem.DWrite(--regs.sp, h);
     }
     void pusha(Bx a) {
-        throw "unimplemented";
+        u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFF'FFFF;
+        u16 h = value >> 16;
+        u16 l = value & 0xFFFF;
+        mem.DWrite(--regs.sp, l);
+        mem.DWrite(--regs.sp, h);
     }
 
     void pop(Register a) {
-        throw "unimplemented";
+        // need test: p0
+        u16 value = mem.DRead(regs.sp++);
+        RegFromBus16(a.GetName(), value);
     }
     void pop(Abe a) {
-        throw "unimplemented";
+        u32 value32 = SignExtend<8>((u32)(mem.DRead(regs.sp++) & 0xFF));
+        RegisterState::Accumulator* target;
+        switch(a.GetName()) {
+        case RegName::a0e: target = &regs.a[0]; break;
+        case RegName::a1e: target = &regs.a[1]; break;
+        case RegName::b0e: target = &regs.b[0]; break;
+        case RegName::b1e: target = &regs.b[1]; break;
+        default: throw "???";
+        }
+        SetAcc(a.GetName(), (target->value & 0xFFFFFFFF) | (u64)value32 << 32);
     }
     void pop(ArArpSttMod a) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        RegFromBus16(a.GetName(), value);
     }
     void pop(Bx a) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        RegFromBus16(a.GetName(), value);
     }
     void pop_prpage(Dummy) {
         throw "unimplemented";
     }
     void pop(Px a) {
-        throw "unimplemented";
+        u16 h = mem.DRead(regs.sp++);
+        u16 l = mem.DRead(regs.sp++);
+        u32 value = ((u32)h << 16) | l;
+        ProductFromBus32(a.GetName(), value);
     }
     void pop_r6(Dummy) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        regs.r[6] = value;
     }
     void pop_repc(Dummy) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        regs.repc = value;
     }
     void pop_x0(Dummy) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        regs.x[0] = value;
     }
     void pop_x1(Dummy) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        regs.x[1] = value;
     }
     void pop_y1(Dummy) {
-        throw "unimplemented";
+        u16 value = mem.DRead(regs.sp++);
+        regs.y[1] = value;
     }
     void popa(Ab a) {
-        throw "unimplemented";
+        u16 h = mem.DRead(regs.sp++);
+        u16 l = mem.DRead(regs.sp++);
+        u64 value = SignExtend<32>((u64)((h << 16) | l));
+        SetAcc(a.GetName(), value);
     }
 
     void rep(Imm8 a) {
@@ -384,8 +451,7 @@ public:
     }
 
     void mov(Ab a, Ab b) {
-        s64 value;
-        value = GetAcc(a.GetName());
+        u64 value = GetAcc(a.GetName());
         SetAcc(b.GetName(), value);
     }
     void mov_dvm(Abl a) {
@@ -534,7 +600,8 @@ public:
         StoreToMemory(b, value);
     }
     void mov_icr(Register a) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        regs.icr.Set(value);
     }
     void mov_mixp(Register a) {
         u16 value = RegToBus16(a.GetName());
@@ -548,16 +615,29 @@ public:
         mem.DWrite(address, value);
     }
     void mov(Register a, Bx b) {
-        throw "unimplemented";
-        // need to test:
-        // Ax->Bx
-        // p->Bx
+        if (a.GetName() == RegName::p) {
+            u64 value = ProductToBus40(RegName::p0);
+            SetAcc(b.GetName(), value);
+        } else if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
+            // Is there any difference from the mov(Ab, Ab) instruction?
+            u64 value = GetAcc(a.GetName());
+            SetAcc(b.GetName(), value);
+        } else {
+            u16 value = RegToBus16(a.GetName());
+            RegFromBus16(b.GetName(), value);
+        }
     }
     void mov(Register a, Register b) {
-        throw "unimplemented";
-        // need to test:
-        // Ax->Ax
-        // p->Ax
+        // a = a0 or a1 is overrided
+        if (a.GetName() == RegName::p) {
+            // b loses its typical meaning in this case
+            RegName b_name = (b.storage & 1) ? RegName::a0 : RegName::a1;
+            u64 value = ProductToBus40(RegName::p0);
+            SetAcc(b_name, value);
+        } else {
+            u16 value = RegToBus16(a.GetName());
+            RegFromBus16(b.GetName(), value);
+        }
     }
     void mov_repc_to(Ab b) {
         u16 value = regs.repc;
@@ -710,19 +790,24 @@ public:
         regs.r[6] = value;
     }
     void mov_p0h_to(Bx b) {
-        throw "unimplemented";
+        u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_p0h_r6(Dummy) {
-        throw "unimplemented";
+        u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+        regs.r[6] = value;
     }
     void mov_p0h_to(Register b) {
-        throw "unimplemented";
+        u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+        RegFromBus16(b.GetName(), value);
     }
     void mov_p0(Ab a) {
-        throw "unimplemented";
+        u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFFFFFF;
+        ProductFromBus32(RegName::p0, value);
     }
     void mov_p1_to(Ab b) {
-        throw "unimplemented";
+        u64 value = ProductToBus40(RegName::p0);
+        SetAcc(b.GetName(), value);
     }
 
     void mov2(Px a, R0425 b, StepII2D2S bs) {
@@ -754,7 +839,14 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_r6(Register a) {
-        // untested: a = a0, a1, p0
+        if (a.GetName() == RegName::p0) {
+            u64 value = ProductToBus40(RegName::p0);
+            regs.r[6] = (value >> 16) & 0xFFFF;
+        } if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
+            // get aXl, but unlike using RegName::aXl, this does never saturates
+            u64 value = GetAcc(RegName::p0);
+            regs.r[6] = value & 0xFFFF;
+        }
         u16 value = RegToBus16(a.GetName());
         regs.r[6] = value;
     }
@@ -792,24 +884,24 @@ private:
     RegisterState& regs;
     MemoryInterface& mem;
 
-    s64 GetAcc(RegName name) {
+    u64 GetAcc(RegName name) {
         switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: return regs.a[0].value;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: return regs.a[1].value;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: return regs.b[0].value;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: return regs.b[1].value;
+        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: return regs.a[0].value;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: return regs.a[1].value;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: return regs.b[0].value;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: return regs.b[1].value;
         default: throw "nope";
         }
     }
 
-    s64 SaturateAcc(s64 value, bool storing) {
-        if (regs.sar[storing]) {
-            if (value > 0x7FFFFFFF) {
+    u64 SaturateAcc(u64 value, bool storing) {
+        if (!regs.sar[storing]) {
+            if (value != SignExtend<32>(value)) {
                 regs.fl[0] = 1;
-                return 0x7FFFFFFF;
-            } else if (value < -0x80000000) {
-                regs.fl[0] = 1;
-                return -0x80000000;
+                if ((value >> 39) != 0)
+                    return 0xFFFF'FFFF'8000'0000;
+                else
+                    return 0x0000'0000'7FFF'FFFF;
             }
             // note: fl[0] doesn't change value otherwise
         }
@@ -821,9 +913,9 @@ private:
         case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
             throw "undefined???";
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
-            return (u64)SaturateAcc(GetAcc(reg), false) & 0xFFFF;
+            return SaturateAcc(GetAcc(reg), false) & 0xFFFF;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            return ((u64)SaturateAcc(GetAcc(reg), false) >> 16) & 0xFFFF;
+            return (SaturateAcc(GetAcc(reg), false) >> 16) & 0xFFFF;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
             throw "?";
 
@@ -881,21 +973,21 @@ private:
         }
     }
 
-    void SetAcc(RegName name, s64 value) {
+    void SetAcc(RegName name, u64 value, bool no_saturation = false) {
         regs.fz = value == 0;
-        regs.fm = value < 0;
-        regs.fe = value > 0x7FFFFFFF || value < -0x80000000;
-        u64 unsigned_value = (u64)value;
-        u64 bit31 = (unsigned_value >> 31) & 1;
-        u64 bit30 = (unsigned_value >> 30) & 1;
+        regs.fm = (value >> 39) != 0;
+        regs.fe = value == SignExtend<32>(value);
+        u64 bit31 = (value >> 31) & 1;
+        u64 bit30 = (value >> 30) & 1;
         regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);
 
-        value = SaturateAcc(value, true);
+        if (!no_saturation)
+            value = SaturateAcc(value, true);
         switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: regs.a[0].value = value; break;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: regs.a[1].value = value; break;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: regs.b[0].value = value; break;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: regs.b[1].value = value; break;
+        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0].value = value; break;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1].value = value; break;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: regs.b[0].value = value; break;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: regs.b[1].value = value; break;
         default: throw "nope";
         }
     }
@@ -904,11 +996,14 @@ private:
     void RegFromBus16(RegName reg, u16 value) {
         switch(reg) {
         case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
-            SetAcc(reg, (s64)(s16)value);
+            SetAcc(reg, SignExtend<16>((u64)value));
+            break;
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
-            SetAcc(reg, (s64)value);
+            SetAcc(reg, (u64)value);
+            break;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            SetAcc(reg, (s64)(s32)(u32)(value << 16));
+            SetAcc(reg, SignExtend<32>((u64)(value << 16)));
+            break;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
             throw "?";
 
@@ -995,10 +1090,9 @@ private:
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
             } else {
                 s = unit < 4 ? regs.stepi : regs.stepj;
-                if (s & (1 << 6)) {
-                    s |= 0b1111'1111'1000'0000; // sign extension
-                }
+                s = SignExtend<7>(s);
             }
+            break;
         default: throw "?";
         }
 
@@ -1034,5 +1128,54 @@ private:
         }
         regs.r[unit] |= l;
         return ret;
+    }
+
+    u64 ProductToBus40(RegName reg) {
+        unsigned unit;
+        switch(reg) {
+        case RegName::p0:
+            unit = 0; break;
+        case RegName::p1:
+            unit = 1; break;
+        default:
+            throw "???";
+        }
+        u64 value = regs.p[unit].value;
+        switch (regs.ps[unit]) {
+        case 0:
+            if (regs.psm[unit])
+                value = SignExtend<32>(value);
+            break;
+        case 1:
+            value >>= 1;
+            if (regs.psm[unit])
+                value = SignExtend<31>(value);
+            break;
+        case 2:
+            value <<= 1;
+            if (regs.psm[unit])
+                value = SignExtend<33>(value);
+            break;
+        case 3:
+            value <<= 2;
+            if (regs.psm[unit])
+                value = SignExtend<34>(value);
+            break;
+        }
+        return value;
+    }
+
+    void ProductFromBus32(RegName reg, u32 value) {
+        unsigned unit;
+        switch(reg) {
+        case RegName::p0:
+            unit = 0; break;
+        case RegName::p1:
+            unit = 1; break;
+        default:
+            throw "???";
+        }
+        regs.p[unit].value = value;
+        regs.psm[unit] = value >> 31;
     }
 };
