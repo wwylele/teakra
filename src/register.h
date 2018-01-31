@@ -15,10 +15,10 @@ struct RegisterState {
 
     u32 pc;
 
-    u16 GetPcL() {
+    u16 GetPcL() const {
         return pc & 0xFFFF;
     }
-    u16 GetPcH() {
+    u16 GetPcH() const {
         return (pc >> 16) & 0xFFFF;
     }
     void SetPC(u16 low, u16 high) {
@@ -55,14 +55,14 @@ struct RegisterState {
     class RegisterProxy {
     public:
         virtual ~RegisterProxy() = default;
-        virtual u16 Get() = 0;
+        virtual u16 Get() const = 0;
         virtual void Set(u16 value) = 0;
     };
 
     class Redirector : public RegisterProxy {
     public:
-        Redirector(u16& target) : target(target) {}
-        u16 Get() override {
+        explicit Redirector(u16& target) : target(target) {}
+        u16 Get() const override {
             return target;
         }
         void Set(u16 value) override {
@@ -75,7 +75,7 @@ struct RegisterState {
     class DoubleRedirector : public RegisterProxy {
     public:
         DoubleRedirector(u16& target0, u16& target1) : target0(target0), target1(target1) {}
-        u16 Get() override {
+        u16 Get() const override {
             return target0 | target1;
         }
         void Set(u16 value) override {
@@ -92,8 +92,8 @@ struct RegisterState {
 
     class AccEProxy : public RegisterProxy {
     public:
-        AccEProxy(Accumulator& target) : target(target) {}
-        u16 Get() override {
+        explicit AccEProxy(Accumulator& target) : target(target) {}
+        u16 Get() const override {
             return (u16)((target.value >> 32) & 0xF);
         }
         void Set(u16 value) override {
@@ -114,7 +114,7 @@ struct RegisterState {
     struct PseudoRegister {
         std::vector<ProxySlot> slots;
 
-        u16 Get() {
+        u16 Get() const {
             u16 result = 0;
             for (const auto& slot : slots) {
                 result |= slot.proxy->Get() << slot.position;
@@ -382,7 +382,7 @@ struct RegisterState {
     }};
 
 
-    bool ConditionPass(Cond cond) {
+    bool ConditionPass(Cond cond) const {
         switch(cond.GetName()) {
         case CondValue::True: return true;
         case CondValue::Eq: return fz == 1;
