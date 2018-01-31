@@ -1065,7 +1065,6 @@ private:
     }
 
     u16 RnAddressAndModify(RegName reg, StepZIDS step) {
-        // TODO: Verify this function is correct!!!
         unsigned unit;
         switch(reg) {
         case RegName::r0: unit = 0; break;
@@ -1099,34 +1098,35 @@ private:
         if (s == 0)
             return ret;
 
-        u16 mod;
         if (!regs.ms[unit] && regs.m[unit]) {
-            mod = unit < 4 ? regs.modi : regs.modj;
-        } else {
-            mod = 0;
-        }
+            // Do modular arithmatic
+            // this part is tested but really weird
+            u16 mod = unit < 4 ? regs.modi : regs.modj;
 
-        if (!mod) {
+            u16 mask = 0;
+            for (unsigned i = 0; i < 9; ++i) {
+                mask |= mod >> i;
+            }
+
+            u16 next;
+            if (s < 0x8000) {
+                next = (ret + s) & mask;
+                if (next == ((mod + 1) & mask)) {
+                    next = 0;
+                }
+            } else {
+                next = ret & mask;
+                if (next == 0) {
+                    next = mod + 1;
+                }
+                next += s;
+                next &= mask;
+            }
+            regs.r[unit] &= ~mask;
+            regs.r[unit] |= next;
+        } else {
             regs.r[unit] += s;
-            return ret;
         }
-
-        u16 mask = 0;
-        for (unsigned i = 0; i < 9; ++i) {
-            mask |= mod >> i;
-        }
-
-        u16 l = regs.r[unit] & mask;
-        regs.r[unit] &= ~mask;
-        if (l == mod && s < 0x8000) {
-            l = 0;
-        } else if (l == 0 && s >= 0x8000) {
-            l = mod;
-        } else {
-            l += s;
-            l &= mask;
-        }
-        regs.r[unit] |= l;
         return ret;
     }
 
