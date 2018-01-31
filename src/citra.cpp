@@ -14,13 +14,13 @@ DspMemorySharedWithCitra::DspMemorySharedWithCitra() {
     program = ptr;
     data = ptr + 0x20000;
 }
-u16 DspMemorySharedWithCitra::PRead(u32 addr) {
+u16 DspMemorySharedWithCitra::PRead(u32 addr) const {
     return program[addr];
 }
 void DspMemorySharedWithCitra::PWrite(u32 addr, u16 value) {
     program[addr] = value;
 }
-u16 DspMemorySharedWithCitra::DRead(u16 addr) {
+u16 DspMemorySharedWithCitra::DRead(u16 addr) const {
     return data[addr];
 }
 void DspMemorySharedWithCitra::DWrite(u16 addr, u16 value) {

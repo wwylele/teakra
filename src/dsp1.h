@@ -4,7 +4,7 @@
 
 class Dsp1 {
 public:
-    Dsp1(std::vector<u8> raw);
+    explicit Dsp1(const std::vector<u8>& raw);
 
     struct Header {
         u8 signature[0x100];
