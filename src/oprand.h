@@ -217,14 +217,6 @@ struct Rn : RegOprand<
     RegName::r6,
     RegName::r7
 > {};
-struct R01 : RegOprand<
-    RegName::r0,
-    RegName::r1
-> {};
-struct R04 : RegOprand<
-    RegName::r0,
-    RegName::r4
-> {};
 struct R45 : RegOprand<
     RegName::r4,
     RegName::r5
@@ -234,18 +226,6 @@ struct R0123 : RegOprand<
     RegName::r1,
     RegName::r2,
     RegName::r3
-> {};
-struct R0425 : RegOprand<
-    RegName::r0,
-    RegName::r4,
-    RegName::r2,
-    RegName::r5
-> {};
-struct R4567 : RegOprand<
-    RegName::r4,
-    RegName::r5,
-    RegName::r6,
-    RegName::r7
 > {};
 struct ArArpSttMod : RegOprand<
     RegName::ar0,
@@ -298,9 +278,6 @@ struct Arp : RegOprand<
 
 struct SwapTypes : Oprand<4> {};
 
-struct OffsZI : Oprand<1> {};
-struct OffsZIDZ : Oprand<2> {};
-
 enum class StepZIDSValue {
     Zero,
     Increase,
@@ -311,29 +288,6 @@ enum class StepZIDSValue {
 };
 
 struct StepZIDS : EnumAllOprand<StepZIDSValue> {};
-
-struct ModrStepZIDS : Oprand<2> {};
-
-enum class StepII2D2SValue {
-    Increase,
-    Increase2,
-    Decrease2,
-    PlusStep,
-
-    EnumEnd
-};
-
-struct StepII2D2S : EnumAllOprand<StepII2D2SValue> {};
-struct StepD2S : Oprand<1> {};
-struct ModrStepII2D2S0 : Oprand<2> {};
-
-enum class StepII2Value {
-    Increase,
-    Increase2,
-
-    EnumEnd
-};
-struct StepII2 : EnumAllOprand<StepII2Value> {};
 
 struct ArRn2 : Oprand<1> {};
 struct ArRn4 : Oprand<2> {};

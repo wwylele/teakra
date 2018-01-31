@@ -49,6 +49,16 @@ std::string DsmImm(ImmT a) {
     return ToHex(a.Value());
 }
 
+template <typename ArRn>
+std::string DsmArRn(ArRn a) {
+    return "arrn" + ToHex(a.storage);
+}
+
+template <typename ArStep>
+std::string DsmArStep(ArStep a) {
+    return "+ars" + ToHex(a.storage);
+}
+
 template <typename RegT>
 std::string DsmReg(RegT a) {
     switch (a.GetName()) {
@@ -237,24 +247,6 @@ std::string Dsm(StepZIDS step) {
     }
 }
 
-std::string Dsm(StepII2D2S step) {
-    switch (step.GetName()) {
-    case StepII2D2SValue::Increase: return "+0,++";
-    case StepII2D2SValue::Increase2: return "++,++";
-    case StepII2D2SValue::Decrease2: return "--,--";
-    case StepII2D2SValue::PlusStep: return "+0,++s";
-    default: throw "what";
-    }
-}
-
-std::string Dsm(StepII2 step) {
-    switch (step.GetName()) {
-    case StepII2Value::Increase: return "++";
-    case StepII2Value::Increase2: return "++2";
-    default: throw "what";
-    }
-}
-
 class Disassembler {
 public:
     using instruction_return_type = std::string;
@@ -343,14 +335,14 @@ public:
     std::string bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
         return "bkrep r6 " + Dsm(addr_low, addr_high);
     }
-    std::string bkreprst(R0425 a) {
-        return "bkreprst [" + DsmReg(a) + "]";
+    std::string bkreprst(ArRn4 a) {
+        return "bkreprst [" + DsmArRn(a) + "]";
     }
     std::string bkreprst_memsp(Dummy) {
         return "bkreprst [sp]";
     }
-    std::string bkrepsto(R0425 a) {
-        return "bkrepsto [" + DsmReg(a) + "]";
+    std::string bkrepsto(ArRn4 a) {
+        return "bkrepsto [" + DsmArRn(a) + "]";
     }
     std::string bkrepsto_memsp(Dummy) {
         return "bkrepsto [sp]";
@@ -562,11 +554,11 @@ public:
         return "shfi " + DsmReg(a) + " " + DsmReg(b) + " " + DsmImm(s);
     }
 
-    std::string tst4b(R0425 b, StepII2D2S bs) {
-        return "tst4b a0l [" + DsmReg(b) + Dsm(bs) + "]";
+    std::string tst4b(ArRn4 b, ArStep4 bs) {
+        return "tst4b a0l [" + DsmArRn(b) + DsmArStep(bs) + "]";
     }
-    std::string tst4b(R0425 b, StepII2D2S bs, Ax c) {
-        return "tst4b a0l [" + DsmReg(b) + Dsm(bs) + "] " + DsmReg(c);
+    std::string tst4b(ArRn4 b, ArStep4 bs, Ax c) {
+        return "tst4b a0l [" + DsmArRn(b) + DsmArStep(bs) + "] " + DsmReg(c);
     }
     std::string tstb(MemImm8 a, Imm4 b) {
         return "tstb " + Dsm(a) + " " + DsmImm(b);
@@ -795,24 +787,24 @@ public:
         return "mov " + DsmReg(a) + " " + DsmReg(b);
     }
 
-    std::string mov_repc_to(R04 b, StepII2 bs) {
-        return "mov repc [" + DsmReg(b) + Dsm(bs) + "]";
+    std::string mov_repc_to(ArRn2 b, ArStep2 bs) {
+        return "mov repc [" + DsmArRn(b) + DsmArStep(bs) + "]";
     }
-    std::string mov(ArArp a, R04 b, StepII2 bs) {
-        return "mov " + DsmReg(a) + " [" + DsmReg(b) + Dsm(bs) + "]";
+    std::string mov(ArArp a, ArRn2 b, ArStep2 bs) {
+        return "mov " + DsmReg(a) + " [" + DsmArRn(b) + DsmArStep(bs) + "]";
     }
-    std::string mov(SttMod a, R04 b, StepII2 bs) {
-        return "mov " + DsmReg(a) + " [" + DsmReg(b) + Dsm(bs) + "]";
+    std::string mov(SttMod a, ArRn2 b, ArStep2 bs) {
+        return "mov " + DsmReg(a) + " [" + DsmArRn(b) + DsmArStep(bs) + "]";
     }
 
-    std::string mov_repc(R04 a, StepII2 as) {
-        return "mov [" + DsmReg(a) + Dsm(as) + "] repc";
+    std::string mov_repc(ArRn2 a, ArStep2 as) {
+        return "mov [" + DsmArRn(a) + DsmArStep(as) + "] repc";
     }
-    std::string mov(R04 a, StepII2 as, ArArp b) {
-        return "mov [" + DsmReg(a) + Dsm(as) + "] " + DsmReg(b) ;
+    std::string mov(ArRn2 a, ArStep2 as, ArArp b) {
+        return "mov [" + DsmArRn(a) + DsmArStep(as) + "] " + DsmReg(b) ;
     }
-    std::string mov(R04 a, StepII2 as, SttMod b) {
-        return "mov [" + DsmReg(a) + Dsm(as) + "] " + DsmReg(b) ;
+    std::string mov(ArRn2 a, ArStep2 as, SttMod b) {
+        return "mov [" + DsmArRn(a) + DsmArStep(as) + "] " + DsmReg(b) ;
     }
 
     std::string mov_repc_to(MemR7Imm16 b) {
@@ -858,20 +850,20 @@ public:
         return "mov p1 " + DsmReg(b);
     }
 
-    std::string mov2(Px a, R0425 b, StepII2D2S bs) {
-        return "mov " + DsmReg(a) + " [" + DsmReg(b) + Dsm(bs) + "]";
+    std::string mov2(Px a, ArRn4 b, ArStep4 bs) {
+        return "mov " + DsmReg(a) + " [" + DsmArRn(b) + DsmArStep(bs) + "]";
     }
-    std::string mov2s(Px a, R0425 b, StepII2D2S bs) {
-        return "mov " + DsmReg(a) + " [" + DsmReg(b) + Dsm(bs) + "] s";
+    std::string mov2s(Px a, ArRn4 b, ArStep4 bs) {
+        return "mov " + DsmReg(a) + " [" + DsmArRn(b) + DsmArStep(bs) + "] s";
     }
-    std::string mov2(R0425 a, StepII2D2S as, Px b) {
-        return "mov [" + DsmReg(a) + Dsm(as) + "] " + DsmReg(b);
+    std::string mov2(ArRn4 a, ArStep4 as, Px b) {
+        return "mov [" + DsmArRn(a) + DsmArStep(as) + "] " + DsmReg(b);
     }
-    std::string mova(Ab a, R0425 b, StepII2D2S bs) {
-        return "mova " + DsmReg(a) + " [" + DsmReg(b) + Dsm(bs) + "]";
+    std::string mova(Ab a, ArRn4 b, ArStep4 bs) {
+        return "mova " + DsmReg(a) + " [" + DsmArRn(b) + DsmArStep(bs) + "]";
     }
-    std::string mova(R0425 a, StepII2D2S as, Ab b) {
-        return "mov [" + DsmReg(a) + Dsm(as) + "] " + DsmReg(b);
+    std::string mova(ArRn4 a, ArStep4 as, Ab b) {
+        return "mov [" +DsmArRn(a) + DsmArStep(as) + "] " + DsmReg(b);
     }
 
     std::string mov_r6_to(Bx b) {

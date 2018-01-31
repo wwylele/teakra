@@ -116,13 +116,13 @@ public:
     void bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
         throw "unimplemented";
     }
-    void bkreprst(R0425 a) {
+    void bkreprst(ArRn4 a) {
         throw "unimplemented";
     }
     void bkreprst_memsp(Dummy) {
         throw "unimplemented";
     }
-    void bkrepsto(R0425 a) {
+    void bkrepsto(ArRn4 a) {
         throw "unimplemented";
     }
     void bkrepsto_memsp(Dummy) {
@@ -401,10 +401,10 @@ public:
         throw "unimplemented";
     }
 
-    void tst4b(R0425 b, StepII2D2S bs) {
+    void tst4b(ArRn4 b, ArStep4 bs) {
         throw "unimplemented";
     }
-    void tst4b(R0425 b, StepII2D2S bs, Ax c) {
+    void tst4b(ArRn4 b, ArStep4 bs, Ax c) {
         throw "unimplemented";
     }
     void tstb(MemImm8 a, Imm4 b) {
@@ -736,23 +736,23 @@ public:
         RegFromBus16(b.GetName(), value);
     }
 
-    void mov_repc_to(R04 b, StepII2 bs) {
+    void mov_repc_to(ArRn2 b, ArStep2 bs) {
         throw "unimplemented";
     }
-    void mov(ArArp a, R04 b, StepII2 bs) {
+    void mov(ArArp a, ArRn2 b, ArStep2 bs) {
         throw "unimplemented";
     }
-    void mov(SttMod a, R04 b, StepII2 bs) {
+    void mov(SttMod a, ArRn2 b, ArStep2 bs) {
         throw "unimplemented";
     }
 
-    void mov_repc(R04 a, StepII2 as) {
+    void mov_repc(ArRn2 a, ArStep2 as) {
         throw "unimplemented";
     }
-    void mov(R04 a, StepII2 as, ArArp b) {
+    void mov(ArRn2 a, ArStep2 as, ArArp b) {
         throw "unimplemented";
     }
-    void mov(R04 a, StepII2 as, SttMod b) {
+    void mov(ArRn2 a, ArStep2 as, SttMod b) {
         throw "unimplemented";
     }
 
@@ -810,19 +810,19 @@ public:
         SetAcc(b.GetName(), value);
     }
 
-    void mov2(Px a, R0425 b, StepII2D2S bs) {
+    void mov2(Px a, ArRn4 b, ArStep4 bs) {
         throw "unimplemented";
     }
-    void mov2s(Px a, R0425 b, StepII2D2S bs) {
+    void mov2s(Px a, ArRn4 b, ArStep4 bs) {
         throw "unimplemented";
     }
-    void mov2(R0425 a, StepII2D2S as, Px b) {
+    void mov2(ArRn4 a, ArStep4 as, Px b) {
         throw "unimplemented";
     }
-    void mova(Ab a, R0425 b, StepII2D2S bs) {
+    void mova(Ab a, ArRn4 b, ArStep4 bs) {
         throw "unimplemented";
     }
-    void mova(R0425 a, StepII2D2S as, Ab b) {
+    void mova(ArRn4 a, ArStep4 as, Ab b) {
         throw "unimplemented";
     }
 

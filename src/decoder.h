@@ -124,9 +124,9 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(bkrep, 0x5C00, At<Imm8, 0>, At<Address16, 16>),
     INST(bkrep, 0x5D00, At<Register, 0>, At<Address18_16, 16>, At<Address18_2, 5>),
     INST(bkrep_r6, 0x8FDC, At<Address18_16, 16>, At<Address18_2, 0>),
-    INST(bkreprst, 0xDA9C, At<R0425, 0>), // MemR0425
+    INST(bkreprst, 0xDA9C, At<ArRn4, 0>), // MemR0425
     INST(bkreprst_memsp, 0x5F48, DummyMatch), // Unused2@0
-    INST(bkrepsto, 0xDADC, At<R0425, 0>), // MemR0425, Unused1@10
+    INST(bkrepsto, 0xDADC, At<ArRn4, 0>), // MemR0425, Unused1@10
     INST(bkrepsto_memsp, 0x9468, DummyMatch), // Unused3@0
 
     // <<< Bank >>>
@@ -216,8 +216,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(shfi, 0x9240, At<Ab, 10>, At<Ab, 7>, At<Imm6s, 0>),
 
     // <<< TSTB >>>
-    INST(tst4b, 0x80C1, At<R0425, 10>, At<StepII2D2S, 8>),
-    INST(tst4b, 0x4780, At<R0425, 2>, At<StepII2D2S, 0>, At<Ax, 4>),
+    INST(tst4b, 0x80C1, At<ArRn4, 10>, At<ArStep4, 8>),
+    INST(tst4b, 0x4780, At<ArRn4, 2>, At<ArStep4, 0>, At<Ax, 4>),
     INST(tstb, 0xF000, At<MemImm8, 0>, At<Imm4, 8>),
     INST(tstb, 0x9020, At<Rn, 0>, At<StepZIDS, 3>, At<Imm4, 8>),
     INST(tstb, 0x9000, At<Register, 0>, At<Imm4, 8>)
@@ -315,13 +315,13 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov, 0x9560, At<ArArp, 0>, At<Abl, 3>),
     INST(mov, 0xD2F8, At<SttMod, 0>, At<Abl, 10>),
 
-    INST(mov_repc_to, 0xD7D0, At<R04, 1>, At<StepII2, 0>),
-    INST(mov, 0xD488, At<ArArp, 0>, At<R04, 8>, At<StepII2, 5>),
-    INST(mov, 0x49A0, At<SttMod, 0>, At<R04, 4>, At<StepII2, 3>),
+    INST(mov_repc_to, 0xD7D0, At<ArRn2, 1>, At<ArStep2, 0>),
+    INST(mov, 0xD488, At<ArArp, 0>, At<ArRn2, 8>, At<ArStep2, 5>),
+    INST(mov, 0x49A0, At<SttMod, 0>, At<ArRn2, 4>, At<ArStep2, 3>),
 
-    INST(mov_repc, 0xD7D4, At<R04, 1>, At<StepII2, 0>),
-    INST(mov, 0x8062, At<R04, 4>, At<StepII2, 3>, At<ArArp, 8>),
-    INST(mov, 0x8063, At<R04, 4>, At<StepII2, 3>, At<SttMod, 8>),
+    INST(mov_repc, 0xD7D4, At<ArRn2, 1>, At<ArStep2, 0>),
+    INST(mov, 0x8062, At<ArRn2, 4>, At<ArStep2, 3>, At<ArArp, 8>),
+    INST(mov, 0x8063, At<ArRn2, 4>, At<ArStep2, 3>, At<SttMod, 8>),
 
     INST(mov_repc_to, 0xD3C8, At<MemR7Imm16, 16>), // unused3@0
     INST(mov, 0x5F50, At<ArArpSttMod, 0>, At<MemR7Imm16, 16>),
@@ -340,11 +340,11 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov_p0, 0x8FD4, At<Ab, 0>),
     INST(mov_p1_to, 0x8FD8, At<Ab, 0>),
 
-    INST(mov2, 0x88D0, At<Px, 1>, At<R0425, 8>, At<StepII2D2S, 2>),
-    INST(mov2s, 0x88D1, At<Px, 1>, At<R0425, 8>, At<StepII2D2S, 2>),
-    INST(mov2, 0xD292, At<R0425, 10>, At<StepII2D2S, 5>, At<Px, 0>),
-    INST(mova, 0x4DC0, At<Ab, 4>, At<R0425, 2>, At<StepII2D2S, 0>),
-    INST(mova, 0x4BC0, At<R0425, 2>, At<StepII2D2S, 0>, At<Ab, 4>),
+    INST(mov2, 0x88D0, At<Px, 1>, At<ArRn4, 8>, At<ArStep4, 2>),
+    INST(mov2s, 0x88D1, At<Px, 1>, At<ArRn4, 8>, At<ArStep4, 2>),
+    INST(mov2, 0xD292, At<ArRn4, 10>, At<ArStep4, 5>, At<Px, 0>),
+    INST(mova, 0x4DC0, At<Ab, 4>, At<ArRn4, 2>, At<ArStep4, 0>),
+    INST(mova, 0x4BC0, At<ArRn4, 2>, At<ArStep4, 0>, At<Ab, 4>),
 
     INST(mov_r6_to, 0xD481, At<Bx, 8>),
     INST(mov_r6_mixp, 0x43C1, DummyMatch),
