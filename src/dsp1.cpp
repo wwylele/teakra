@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cstdio>
 
-Dsp1::Dsp1(std::vector<u8> raw) {
+Dsp1::Dsp1(const std::vector<u8>& raw) {
     Header header;
     std::memcpy(&header, raw.data(), sizeof(header));
 
