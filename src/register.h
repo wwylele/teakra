@@ -49,8 +49,6 @@ struct RegisterState {
     std::array<u16, 2> y;
     std::array<Product, 2> p;
 
-    std::array<u16, 2> ar; // ?
-    std::array<u16, 4> arp; // ?
     u16 stepi0, stepj0; // alternative step
     std::array<u16, 2> vtr; // fc/fc1 latching
 
@@ -305,20 +303,20 @@ struct RegisterState {
     // 5: -2
     // 6: +2 ?
     // 7: -2 ?
-    u16 arstep[4], arpstepi[4], arpstepj[4];
+    std::array<u16, 4> arstep, arpstepi, arpstepj;
 
     // 2 bits each
     // 0: +0
     // 1: +1
     // 2: -1
     // 3: -1 ?
-    u16 aroffset[4], arpoffseti[4], arpoffsetj[4];
+    std::array<u16, 4> aroffset, arpoffseti, arpoffsetj;
 
     // 3 bits each, represent r0~r7
-    u16 arrn[4];
+    std::array<u16, 4> arrn;
 
     // 2 bits each. for i represent r0~r4, for j represents r5~r7
-    u16 arprni[4], arprnj[4];
+    std::array<u16, 4> arprni, arprnj;
 
     PseudoRegister ar0 {{
         {std::make_shared<Redirector>(arstep[1]), 0, 3},

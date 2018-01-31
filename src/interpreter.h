@@ -941,13 +941,13 @@ private:
         case RegName::sv: return regs.sv;
         case RegName::lc: return regs.lc;
 
-        case RegName::ar0: return regs.ar[0];
-        case RegName::ar1: return regs.ar[1];
+        case RegName::ar0: return regs.ar0.Get();
+        case RegName::ar1: return regs.ar1.Get();
 
-        case RegName::arp0: return regs.arp[0];
-        case RegName::arp1: return regs.arp[1];
-        case RegName::arp2: return regs.arp[2];
-        case RegName::arp3: return regs.arp[3];
+        case RegName::arp0: return regs.arp0.Get();
+        case RegName::arp1: return regs.arp1.Get();
+        case RegName::arp2: return regs.arp2.Get();
+        case RegName::arp3: return regs.arp3.Get();
 
         case RegName::ext0:
         case RegName::ext1:
@@ -1032,13 +1032,13 @@ private:
         case RegName::sv: regs.sv = value; break;
         case RegName::lc: regs.lc = value; break;
 
-        case RegName::ar0: regs.ar[0] = value; break;
-        case RegName::ar1: regs.ar[1] = value; break;
+        case RegName::ar0: regs.ar0.Set(value); break;
+        case RegName::ar1: regs.ar1.Set(value); break;
 
-        case RegName::arp0: regs.arp[0] = value; break;
-        case RegName::arp1: regs.arp[1] = value; break;
-        case RegName::arp2: regs.arp[2] = value; break;
-        case RegName::arp3: regs.arp[3] = value; break;
+        case RegName::arp0: regs.arp0.Set(value); break;
+        case RegName::arp1: regs.arp1.Set(value); break;
+        case RegName::arp2: regs.arp2.Set(value); break;
+        case RegName::arp3: regs.arp3.Set(value); break;
 
         case RegName::ext0:
         case RegName::ext1:
