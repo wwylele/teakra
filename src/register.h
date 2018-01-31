@@ -1,6 +1,8 @@
 #pragma once
-#include <vector>
+
+#include <array>
 #include <memory>
+#include <vector>
 #include "common_types.h"
 #include "oprand.h"
 
@@ -30,27 +32,27 @@ struct RegisterState {
     u16 sv;
     u16 sp;
 
-    u16 r[8];
+    std::array<u16, 8> r;
 
     struct Accumulator {
         // 40-bit 2's comp on real TeakLite.
         // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
         u64 value;
     };
-    Accumulator a[2];
-    Accumulator b[2];
+    std::array<Accumulator, 2> a;
+    std::array<Accumulator, 2> b;
 
     struct Product {
         u32 value;
     };
-    u16 x[2];
-    u16 y[2];
-    Product p[2];
+    std::array<u16, 2> x;
+    std::array<u16, 2> y;
+    std::array<Product, 2> p;
 
-    u16 ar[2]; // ?
-    u16 arp[4]; // ?
+    std::array<u16, 2> ar; // ?
+    std::array<u16, 4> arp; // ?
     u16 stepi0, stepj0; // alternative step
-    u16 vtr[2]; // fc/fc1 latching
+    std::array<u16, 2> vtr; // fc/fc1 latching
 
     class RegisterProxy {
     public:
@@ -141,31 +143,34 @@ struct RegisterState {
     }};
 
     u16 fz, fm, fn, fv, fc, fe;
-    u16 fl[2]; // when is fl[1] used?
+    std::array<u16, 2> fl; // when is fl[1] used?
     u16 fr;
     u16 fc1; // used by max||max||vtrshr?
     u16 nimc;
-    u16 ip[3], vip;
-    u16 im[3], vim;
-    u16 ic[3], vic;
+    std::array<u16, 3> ip;
+    u16 vip;
+    std::array<u16, 3> im;
+    u16 vim;
+    std::array<u16, 3> ic;
+    u16 vic;
     u16 ie;
     u16 movpd;
     u16 bcn;
     u16 lp;
-    u16 sar[2]; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
-    u16 ps[2];
-    u16 psm[2]; // product shift mode. 0: logic; 1: arithmatic?
+    std::array<u16, 2> sar; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
+    std::array<u16, 2> ps;
+    std::array<u16, 2> psm; // product shift mode. 0: logic; 1: arithmatic?
     u16 s;
-    u16 ou[2];
-    u16 iu[2];
+    std::array<u16, 2> ou;
+    std::array<u16, 2> iu;
     u16 page;
 
     // m=0, ms=0: use stepi/j (no modulo)
     // m=1, ms=0: use stepi/j with modulo
     // m=0, ms=1: use stepi0/j0 (no modulo)
     // m=1, ms=1: use stepi/j  (no modulo)??
-    u16 m[8];
-    u16 ms[8];
+    std::array<u16, 8> m;
+    std::array<u16, 8> ms;
 
     PseudoRegister stt0 {{
         {std::make_shared<Redirector>(fl[0]), 0, 1},

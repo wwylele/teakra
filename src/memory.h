@@ -1,4 +1,6 @@
 #pragma once
+
+#include <array>
 #include "common_types.h"
 
 class MemoryInterface {
@@ -12,8 +14,9 @@ public:
 
 class DspMemory : public MemoryInterface {
 public:
-    u16 program[0x20000];
-    u16 data[0x20000];
+    std::array<u16, 0x20000> program;
+    std::array<u16, 0x20000> data;
+
     u16 PRead(u32 addr) override {
         return program[addr];
     }
