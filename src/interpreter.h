@@ -976,7 +976,7 @@ private:
     void SetAcc(RegName name, u64 value, bool no_saturation = false) {
         regs.fz = value == 0;
         regs.fm = (value >> 39) != 0;
-        regs.fe = value == SignExtend<32>(value);
+        regs.fe = value != SignExtend<32>(value);
         u64 bit31 = (value >> 31) & 1;
         u64 bit30 = (value >> 30) & 1;
         regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);

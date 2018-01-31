@@ -335,6 +335,15 @@ enum class StepII2Value {
 };
 struct StepII2 : EnumAllOprand<StepII2Value> {};
 
+struct ArRn2 : Oprand<1> {};
+struct ArRn4 : Oprand<2> {};
+struct ArStep2 : Oprand<1> {};
+struct ArStep4 : Oprand<2> {};
+struct ArpRn2 : Oprand<1> {};
+struct ArpRn4 : Oprand<2> {};
+struct ArpStep2 : Oprand<1> {};
+struct ArpStep4 : Oprand<2> {};
+
 struct Address18_2 : Oprand<2> {};
 struct Address18_16 : Oprand<16> {};
 

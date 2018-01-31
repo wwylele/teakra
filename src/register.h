@@ -291,6 +291,94 @@ struct RegisterState {
         // reserved
     }};
 
+    // 3 bits each
+    // 0: +0
+    // 1: +1
+    // 2: -1
+    // 3: +s
+    // 4: +2
+    // 5: -2
+    // 6: +2 ?
+    // 7: -2 ?
+    u16 arstep[4], arpstepi[4], arpstepj[4];
+
+    // 2 bits each
+    // 0: +0
+    // 1: +1
+    // 2: -1
+    // 3: -1 ?
+    u16 aroffset[4], arpoffseti[4], arpoffsetj[4];
+
+    // 3 bits each, represent r0~r7
+    u16 arrn[4];
+
+    // 2 bits each. for i represent r0~r4, for j represents r5~r7
+    u16 arprni[4], arprnj[4];
+
+    PseudoRegister ar0 {{
+        {std::make_shared<Redirector>(arstep[1]), 0, 3},
+        {std::make_shared<Redirector>(aroffset[1]), 3, 2},
+        {std::make_shared<Redirector>(arstep[0]), 5, 3},
+        {std::make_shared<Redirector>(aroffset[0]), 8, 2},
+        {std::make_shared<Redirector>(arrn[1]), 10, 3},
+        {std::make_shared<Redirector>(arrn[0]), 13, 3},
+    }};
+
+    PseudoRegister ar1 {{
+        {std::make_shared<Redirector>(arstep[3]), 0, 3},
+        {std::make_shared<Redirector>(aroffset[3]), 3, 2},
+        {std::make_shared<Redirector>(arstep[2]), 5, 3},
+        {std::make_shared<Redirector>(aroffset[2]), 8, 2},
+        {std::make_shared<Redirector>(arrn[3]), 10, 3},
+        {std::make_shared<Redirector>(arrn[2]), 13, 3},
+    }};
+
+    // TODO: i or j at higher bits?
+    PseudoRegister arp0 {{
+        {std::make_shared<Redirector>(arpstepj[0]), 0, 3},
+        {std::make_shared<Redirector>(arpoffsetj[0]), 3, 2},
+        {std::make_shared<Redirector>(arpstepi[0]), 5, 3},
+        {std::make_shared<Redirector>(arpoffseti[0]), 8, 2},
+        {std::make_shared<Redirector>(arprnj[0]), 10, 2},
+        // bit 12 reserved
+        {std::make_shared<Redirector>(arprni[0]), 13, 2},
+        // bit 15 reserved
+    }};
+
+    PseudoRegister arp1 {{
+        {std::make_shared<Redirector>(arpstepj[1]), 0, 3},
+        {std::make_shared<Redirector>(arpoffsetj[1]), 3, 2},
+        {std::make_shared<Redirector>(arpstepi[1]), 5, 3},
+        {std::make_shared<Redirector>(arpoffseti[1]), 8, 2},
+        {std::make_shared<Redirector>(arprnj[1]), 10, 2},
+        // bit 12 reserved
+        {std::make_shared<Redirector>(arprni[1]), 13, 2},
+        // bit 15 reserved
+    }};
+
+    PseudoRegister arp2 {{
+        {std::make_shared<Redirector>(arpstepj[2]), 0, 3},
+        {std::make_shared<Redirector>(arpoffsetj[2]), 3, 2},
+        {std::make_shared<Redirector>(arpstepi[2]), 5, 3},
+        {std::make_shared<Redirector>(arpoffseti[2]), 8, 2},
+        {std::make_shared<Redirector>(arprnj[2]), 10, 2},
+        // bit 12 reserved
+        {std::make_shared<Redirector>(arprni[2]), 13, 2},
+        // bit 15 reserved
+    }};
+
+    PseudoRegister arp3 {{
+        {std::make_shared<Redirector>(arpstepj[3]), 0, 3},
+        {std::make_shared<Redirector>(arpoffsetj[3]), 3, 2},
+        {std::make_shared<Redirector>(arpstepi[3]), 5, 3},
+        {std::make_shared<Redirector>(arpoffseti[3]), 8, 2},
+        {std::make_shared<Redirector>(arprnj[3]), 10, 2},
+        // bit 12 reserved
+        {std::make_shared<Redirector>(arprni[3]), 13, 2},
+        // bit 15 reserved
+    }};
+
+
     bool ConditionPass(Cond cond) {
         switch(cond.GetName()) {
         case CondValue::True: return true;
