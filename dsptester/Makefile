@@ -130,8 +130,8 @@ $(OUTPUT).cia   :	$(OUTPUT).cxi
 	@$(MAKEROM) -f cia -o $(OUTPUT).cia -target t -i $(OUTPUT).cxi:0:0
 	@echo built ... $(OUTPUT).cia
 
-$(OUTPUT).cxi   :   $(OUTPUT).elf $(TOPDIR)/icon.icn $(TOPDIR)/rsf.rsf $(TOPDIR)/banner.bnr
-	@$(MAKEROM) -o $(OUTPUT).cxi -rsf $(TOPDIR)/rsf.rsf -target t -elf $(OUTPUT).elf -icon $(TOPDIR)/icon.icn -banner $(TOPDIR)/banner.bnr
+$(OUTPUT).cxi   :   $(OUTPUT).elf $(OUTPUT).smdh $(TOPDIR)/rsf.rsf $(TOPDIR)/banner.bnr
+	@$(MAKEROM) -o $(OUTPUT).cxi -rsf $(TOPDIR)/rsf.rsf -target t -elf $(OUTPUT).elf -icon $(OUTPUT).smdh -banner $(TOPDIR)/banner.bnr
 	@echo built ... $(OUTPUT).cxi
 
 $(OUTPUT).elf	:	$(OFILES)

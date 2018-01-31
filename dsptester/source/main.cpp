@@ -268,20 +268,23 @@ int main() {
     grid[2][0] = MakeHexReg("r2", 5);
     grid[1][0] = MakeHexReg("r1", 6);
     grid[0][0] = MakeHexReg("r0", 7);
-    grid[0][2] = MakeHexReg("mixp", 8);
-    grid[1][2] = MakeHexReg("repc", 9);
-    grid[4][2] = MakeHexReg("stj0", 0xA);
-    grid[3][2] = MakeHexReg("sti0", 0xB);
-    grid[2][2] = MakeHexReg("lc", 0xC);
-    grid[7][1] = MakeHexReg("p1h", 0xD);
-    grid[6][1] = MakeHexReg("p1l", 0xE);
-    grid[5][1] = MakeHexReg("y1", 0xF);
-    grid[4][1] = MakeHexReg("x1", 0x10);
-    grid[3][1] = MakeHexReg("p0h", 0x11);
-    grid[2][1] = MakeHexReg("p0l", 0x12);
-    grid[1][1] = MakeHexReg("y0", 0x13);
+
+    grid[6][1] = MakeHexReg("mixp", 8);
+    grid[7][1] = MakeHexReg("repc", 9);
+    grid[5][1] = MakeHexReg("stj0", 0xA);
+    grid[5][2] = MakeHexReg("sti0", 0xB);
+    grid[7][2] = MakeHexReg("lc", 0xC);
+
+    grid[3][1] = MakeHexReg("p1h", 0xD);
+    grid[3][2] = MakeHexReg("p1l", 0xE);
+    grid[2][2] = MakeHexReg("y1", 0xF);
+    grid[2][1] = MakeHexReg("x1", 0x10);
+    grid[1][1] = MakeHexReg("p0h", 0x11);
+    grid[1][2] = MakeHexReg("p0l", 0x12);
+    grid[0][2] = MakeHexReg("y0", 0x13);
     grid[0][1] = MakeHexReg("x0", 0x14);
-    grid[5][2] = MakeHexReg("sv", 0x15);
+
+    grid[6][2] = MakeHexReg("sv", 0x15);
 
     grid[12][1] = MakeHexReg("b1h", 0x16);
     grid[12][2] = MakeHexReg("b1l", 0x17);
