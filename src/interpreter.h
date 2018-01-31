@@ -578,12 +578,12 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Bx b) {
-        u16 address = RnAddressAndModify(a.GetName(), as);
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u16 value = mem.DRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Register b) {
-        u16 address = RnAddressAndModify(a.GetName(), as);
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u16 value = mem.DRead(address);
         RegFromBus16(b.GetName(), value);
     }
@@ -611,7 +611,7 @@ public:
         // a = a0 or a1 is overrided
         // a = p0 untested
         u16 value = RegToBus16(a.GetName());
-        u16 address = RnAddressAndModify(b.GetName(), bs);
+        u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         mem.DWrite(address, value);
     }
     void mov(Register a, Bx b) {
@@ -737,23 +737,36 @@ public:
     }
 
     void mov_repc_to(ArRn2 b, ArStep2 bs) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
+        u16 value = regs.repc;
+        mem.DWrite(address, value);
     }
     void mov(ArArp a, ArRn2 b, ArStep2 bs) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
+        u16 value = RegToBus16(a.GetName());
+        mem.DWrite(address, value);
     }
     void mov(SttMod a, ArRn2 b, ArStep2 bs) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
+        u16 value = RegToBus16(a.GetName());
+        mem.DWrite(address, value);
     }
 
     void mov_repc(ArRn2 a, ArStep2 as) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
+        u16 value = mem.DRead(address);
+        regs.repc = value;
     }
     void mov(ArRn2 a, ArStep2 as, ArArp b) {
-        throw "unimplemented";
+        // are you sure it is ok to both use and modify ar registers?
+        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
+        u16 value = mem.DRead(address);
+        RegFromBus16(a.GetName(), value);
     }
     void mov(ArRn2 a, ArStep2 as, SttMod b) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
+        u16 value = mem.DRead(address);
+        RegFromBus16(a.GetName(), value);
     }
 
     void mov_repc_to(MemR7Imm16 b) {
@@ -856,11 +869,11 @@ public:
     }
     void mov_r6_to(Rn b, StepZIDS bs) {
         u16 value = regs.r[6];
-        u16 address = RnAddressAndModify(b.GetName(), bs);
+        u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         mem.DWrite(address, value);
     }
     void mov_r6(Rn a, StepZIDS as) {
-        u16 address = RnAddressAndModify(a.GetName(), as);
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u16 value = mem.DRead(address);
         regs.r[6] = value;
     }
@@ -1064,27 +1077,47 @@ private:
         }
     }
 
-    u16 RnAddressAndModify(RegName reg, StepZIDS step) {
-        unsigned unit;
+    unsigned GetRnUnit(RegName reg) {
         switch(reg) {
-        case RegName::r0: unit = 0; break;
-        case RegName::r1: unit = 1; break;
-        case RegName::r2: unit = 2; break;
-        case RegName::r3: unit = 3; break;
-        case RegName::r4: unit = 4; break;
-        case RegName::r5: unit = 5; break;
-        case RegName::r6: unit = 6; break;
-        case RegName::r7: unit = 7; break;
+        case RegName::r0: return 0; break;
+        case RegName::r1: return 1; break;
+        case RegName::r2: return 2; break;
+        case RegName::r3: return 3; break;
+        case RegName::r4: return 4; break;
+        case RegName::r5: return 5; break;
+        case RegName::r6: return 6; break;
+        case RegName::r7: return 7; break;
         default: throw "?";
         }
+    }
+
+    unsigned GetArRnUnit(u16 arrn) {
+        return regs.arrn[arrn];
+    }
+
+    StepValue GetArStep(u16 arstep) {
+        switch(regs.arstep[arstep]) {
+        case 0: return StepValue::Zero;
+        case 1: return StepValue::Increase;
+        case 2: return StepValue::Decrease;
+        case 3: return StepValue::PlusStep;
+        case 4: case 6: return StepValue::Increase2;
+        case 5: case 7: return StepValue::Decrease2;
+        default: throw "???";
+        }
+    }
+
+    u16 RnAddressAndModify(unsigned unit, StepValue step) {
         u16 ret = regs.r[unit];
 
         u16 s;
-        switch(step.GetName()) {
-        case StepZIDSValue::Zero: s = 0; break;
-        case StepZIDSValue::Increase: s = 1; break;
-        case StepZIDSValue::Decrease: s = 0xFFFF; break;
-        case StepZIDSValue::PlusStep:
+        switch(step) {
+        case StepValue::Zero: s = 0; break;
+        case StepValue::Increase: s = 1; break;
+        case StepValue::Decrease: s = 0xFFFF; break;
+        case StepValue::Increase2: s = 2; break;
+        case StepValue::Decrease2: s = 0xFFFE; break;
+        case StepValue::PlusStep:
             if (regs.ms[unit] && !regs.m[unit]) {
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
             } else {

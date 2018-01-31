@@ -278,16 +278,21 @@ struct Arp : RegOprand<
 
 struct SwapTypes : Oprand<4> {};
 
-enum class StepZIDSValue {
+enum class StepValue {
     Zero,
     Increase,
     Decrease,
     PlusStep,
-
-    EnumEnd
+    Increase2,
+    Decrease2,
 };
 
-struct StepZIDS : EnumAllOprand<StepZIDSValue> {};
+using StepZIDS = EnumOprand<StepValue,
+    StepValue::Zero,
+    StepValue::Increase,
+    StepValue::Decrease,
+    StepValue::PlusStep
+>;
 
 struct ArRn2 : Oprand<1> {};
 struct ArRn4 : Oprand<2> {};

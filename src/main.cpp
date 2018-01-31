@@ -239,10 +239,10 @@ std::string Dsm(Address18_16 addr_low, Address18_2 addr_high) {
 
 std::string Dsm(StepZIDS step) {
     switch (step.GetName()) {
-    case StepZIDSValue::Zero: return "";
-    case StepZIDSValue::Increase: return "++";
-    case StepZIDSValue::Decrease: return "--";
-    case StepZIDSValue::PlusStep: return "++s";
+    case StepValue::Zero: return "";
+    case StepValue::Increase: return "++";
+    case StepValue::Decrease: return "--";
+    case StepValue::PlusStep: return "++s";
     default: throw "what";
     }
 }
