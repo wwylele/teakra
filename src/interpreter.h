@@ -238,28 +238,29 @@ public:
     }
 
     void load_ps(Imm2 a) {
-        throw "unimplemented";
+        regs.ps[0] = a.storage;
     }
     void load_stepi(Imm7s a) {
-        throw "unimplemented";
+        regs.stepi = a.storage;
     }
     void load_stepj(Imm7s a) {
-        throw "unimplemented";
+        regs.stepj = a.storage;
     }
     void load_page(Imm8 a) {
         regs.page = a.storage;
     }
     void load_modi(Imm9 a) {
-        throw "unimplemented";
+        regs.modi = a.storage;
     }
     void load_modj(Imm9 a) {
-        throw "unimplemented";
+        regs.modj = a.storage;
     }
     void load_movpd(Imm2 a) {
-        throw "unimplemented";
+        regs.movpd = a.storage;
     }
     void load_ps01(Imm4 a) {
-        throw "unimplemented";
+        regs.ps[0] = a.storage & 3;
+        regs.ps[0] = a.storage >> 2;
     }
 
     void push(Imm16 a) {
