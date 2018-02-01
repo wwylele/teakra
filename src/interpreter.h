@@ -54,20 +54,75 @@ public:
         throw "unimplemented";
     }
 
+    void AluGeneric(Alu op, u16 a, Ax b) {
+        switch(op.GetName()) {
+        case AluOp::Or: {
+            u64 value = GetAcc(b.GetName());
+            value |= a;
+            SetAcc_NoSaturation(b.GetName(), value);
+            break;
+        }
+        case AluOp::And: {
+            u64 value = GetAcc(b.GetName());
+            value &= a;
+            SetAcc_NoSaturation(b.GetName(), value);
+            break;
+        }
+        case AluOp::Xor: {
+            u64 value = GetAcc(b.GetName());
+            value ^= a;
+            SetAcc_NoSaturation(b.GetName(), value);
+            break;
+        }
+        case AluOp::Cmp:
+        case AluOp::Sub:
+        case AluOp::Add: {
+            u64 value = GetAcc(b.GetName()) & 0xFF'FFFF'FFFF;
+            u64 a_extend = SignExtend<16, u64>(a) & 0xFF'FFFF'FFFF;
+            u64 result;
+            if (op.GetName() == AluOp::Add)
+                result = value + a_extend;
+            else
+                result = value - a_extend;
+            regs.fc = (result >> 40) & 1;
+            regs.fv = ((~(value ^ a_extend) & (value ^ result)) >> 39) & 1;
+            if (regs.fv) {
+                regs.flv = 1;
+            }
+            result = SignExtend<40>(result);
+            if (op.GetName() == AluOp::Cmp) {
+                SetAccFlag(result);
+            } else {
+                SetAcc(b.GetName(), result);
+            }
+            break;
+        }
+        default:throw "???";
+        }
+    }
+
     void alu(Alu op, MemImm16 a, Ax b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        AluGeneric(op, value, b);
     }
     void alu(Alu op, MemR7Imm16 a, Ax b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        AluGeneric(op, value, b);
     }
     void alu(Alu op, Imm16 a, Ax b) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        AluGeneric(op, value, b);
     }
     void alu(Alu op, Imm8 a, Ax b) {
-        throw "unimplemented";
+        u16 value = a.storage;
+        if (op.GetName() == AluOp::And) {
+            value &= 0xFF00; // for And operation, value is 1-extended to 16-bit.
+        }
+        AluGeneric(op, value, b);
     }
     void alu(Alu op, MemR7Imm7s a, Ax b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        AluGeneric(op, value, b);
     }
 
     void or_(Ab a, Ax b, Ax c) {
@@ -80,20 +135,123 @@ public:
         throw "unimplemented";
     }
 
+    u16 GenericAlb(Alb op, u16 a, u16 b) {
+        u16 result;
+        switch (op.GetName()) {
+        case AlbOp::Set: {
+            result = a | b;
+            break;
+        }
+        case AlbOp::Rst: {
+            result = ~a & b;
+            break;
+        }
+        case AlbOp::Chng: {
+            result = a ^ b;
+            break;
+        }
+        case AlbOp::Addv: {
+            u32 r = a + b;
+            regs.fc = (r >> 16) != 0;
+            result = r & 0xFFFF;
+            break;
+        }
+        case AlbOp::Tst0: {
+            result = (a & b) != 0;
+            break;
+        }
+        case AlbOp::Tst1: {
+            result = (a & ~b) != 0;
+            break;
+        }
+        case AlbOp::Cmpv:
+        case AlbOp::Subv: {
+            u32 r = b - a;
+            regs.fc = (r >> 16) != 0;
+            result = r & 0xFFFF;
+            break;
+        }
+        default: throw "???";
+        }
+        regs.fm = result >> 15;
+        regs.fz = result == 0;
+        return result;
+    }
+
+    bool IsAlbModifying(Alb op) {
+        switch (op.GetName()) {
+        case AlbOp::Set:
+        case AlbOp::Rst:
+        case AlbOp::Chng:
+        case AlbOp::Addv:
+        case AlbOp::Subv:
+            return true;
+        case AlbOp::Tst0:
+        case AlbOp::Tst1:
+        case AlbOp::Cmpv:
+            return false;
+        default: throw "???";
+        }
+    }
+
     void alb(Alb op, Imm16 a, MemImm8 b) {
-        throw "unimplemented";
+        u16 bv = LoadFromMemory(b);
+        u16 result = GenericAlb(op, a.storage, bv);
+        if (IsAlbModifying(op))
+            StoreToMemory(b, result);
     }
     void alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        u16 bv = mem.DRead(address);
+        u16 result = GenericAlb(op, a.storage, bv);
+        if (IsAlbModifying(op))
+            mem.DWrite(address, result);
     }
     void alb(Alb op, Imm16 a, Register b) {
-        throw "unimplemented";
+        u16 bv;
+        if (b.GetName() == RegName::p) {
+            bv = ProductToBus40(RegName::p0) >> 16;
+        } else if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
+            throw "weird effect";
+        } else if (b.GetName() == RegName::a0l || b.GetName() == RegName::a1l
+            || b.GetName() == RegName::b0l || b.GetName() == RegName::b1l) {
+            bv = GetAcc(b.GetName()) & 0xFFFF;
+        } else if (b.GetName() == RegName::a0l || b.GetName() == RegName::a1l
+            || b.GetName() == RegName::b0l || b.GetName() == RegName::b1l) {
+            bv = (GetAcc(b.GetName()) >> 16) & 0xFFFF;
+        } else {
+            bv = RegToBus16(b.GetName());
+        }
+        u16 result = GenericAlb(op, a.storage, bv);
+        if (IsAlbModifying(op)) {
+            switch (b.GetName()) {
+            case RegName::a0: case RegName::a1:
+                throw "weird effect";
+            // operation on accumulators doesn't go through regular bus with flag and saturation
+            case RegName::a0l: regs.a[0].value = (regs.a[0].value & 0xFF'FFFF'0000) | result; break;
+            case RegName::a1l: regs.a[1].value = (regs.a[1].value & 0xFF'FFFF'0000) | result; break;
+            case RegName::b0l: regs.b[0].value = (regs.b[0].value & 0xFF'FFFF'0000) | result; break;
+            case RegName::b1l: regs.b[1].value = (regs.b[1].value & 0xFF'FFFF'0000) | result; break;
+            case RegName::a0h: regs.a[0].value = (regs.a[0].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::a1h: regs.a[1].value = (regs.a[1].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::b0h: regs.b[0].value = (regs.b[0].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::b1h: regs.b[1].value = (regs.b[1].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
+            default:
+                RegFromBus16(b.GetName(), result); // including RegName:p (p0h)
+            }
+        }
     }
     void alb_r6(Alb op, Imm16 a) {
-        throw "unimplemented";
+        u16 bv = regs.r[6];
+        u16 result = GenericAlb(op, a.storage, bv);
+        if (IsAlbModifying(op))
+            regs.r[6] = result;
     }
     void alb(Alb op, Imm16 a, SttMod b) {
-        throw "unimplemented";
+        u16 bv = RegToBus16(b.GetName());
+        u16 result = GenericAlb(op, a.storage, bv);
+        if (IsAlbModifying(op))
+            RegFromBus16(b.GetName(), result);
     }
 
     void Moda(ModaOp op, RegName a, Cond cond) {
@@ -154,7 +312,7 @@ public:
                 regs.fv = value == 0xFFFF'FF80'0000'0000; // ?
                 if (regs.fv)
                     regs.flv = 1;
-                u64 result = SignExtend<40>((u64)(~GetAcc(a) + 1));
+                u64 result = SignExtend<40, u64>(~GetAcc(a) + 1);
                 SetAcc(a, result);
                 break;
             }
@@ -441,7 +599,7 @@ public:
         RegFromBus16(a.GetName(), value);
     }
     void pop(Abe a) {
-        u32 value32 = SignExtend<8>((u32)(mem.DRead(regs.sp++) & 0xFF));
+        u32 value32 = SignExtend<8, u32>(mem.DRead(regs.sp++) & 0xFF);
         RegisterState::Accumulator* target;
         switch(a.GetName()) {
         case RegName::a0e: target = &regs.a[0]; break;
@@ -492,7 +650,7 @@ public:
     void popa(Ab a) {
         u16 h = mem.DRead(regs.sp++);
         u16 l = mem.DRead(regs.sp++);
-        u64 value = SignExtend<32>((u64)((h << 16) | l));
+        u64 value = SignExtend<32, u64>((h << 16) | l);
         SetAcc(a.GetName(), value);
     }
 
@@ -515,7 +673,7 @@ public:
     }
     void shfi(Ab a, Ab b, Imm6s s) {
         u64 value = GetAcc(a.GetName());
-        u16 sv = SignExtend<6>((u16)s.storage);
+        u16 sv = SignExtend<6, u16>(s.storage);
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
 
@@ -979,7 +1137,7 @@ public:
         u16 address2 = address + GetArOffset(as.storage);
         u16 l = mem.DRead(address);
         u16 h = mem.DRead(address2);
-        u64 value = SignExtend<32>((u64)((h << 16) | l));
+        u64 value = SignExtend<32, u64>((h << 16) | l);
         ProductFromBus32(b.GetName(), value);
     }
     void mova(Ab a, ArRn4 b, ArStep4 bs) {
@@ -996,7 +1154,7 @@ public:
         u16 address2 = address + GetArOffset(as.storage);
         u16 l = mem.DRead(address);
         u16 h = mem.DRead(address2);
-        u64 value = SignExtend<32>((u64)((h << 16) | l));
+        u64 value = SignExtend<32, u64>((h << 16) | l);
         SetAcc(b.GetName(), value);
     }
 
@@ -1089,7 +1247,7 @@ public:
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
     void movs(Register a, Ab b) {
-        u64 value = SignExtend<16>((u64)RegToBus16(a.GetName()));
+        u64 value = SignExtend<16, u64>(RegToBus16(a.GetName()));
         u16 sv = regs.sv;
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
@@ -1099,8 +1257,8 @@ public:
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
     void movsi(RnOld a, Ab b, Imm5s s) {
-        u64 value = SignExtend<16>((u64)RegToBus16(a.GetName()));
-        u16 sv = SignExtend<5>((u16)s.storage);
+        u64 value = SignExtend<16, u64>(RegToBus16(a.GetName()));
+        u16 sv = SignExtend<5, u16>(s.storage);
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
 private:
@@ -1204,16 +1362,23 @@ private:
         }
     }
 
-    void SetAcc(RegName name, u64 value, bool no_saturation = false) {
+    void SetAccFlag(u64 value) {
+        if (value != SignExtend<40>(value))
+            throw "remove this check later";
         regs.fz = value == 0;
         regs.fm = (value >> 39) != 0;
         regs.fe = value != SignExtend<32>(value);
         u64 bit31 = (value >> 31) & 1;
         u64 bit30 = (value >> 30) & 1;
         regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);
+    }
+
+    void SetAcc(RegName name, u64 value, bool no_saturation = false) {
+        SetAccFlag(value);
 
         if (!no_saturation)
             value = SaturateAcc(value, true);
+
         switch(name) {
         case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0].value = value; break;
         case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1].value = value; break;
@@ -1231,13 +1396,13 @@ private:
     void RegFromBus16(RegName reg, u16 value) {
         switch(reg) {
         case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
-            SetAcc(reg, SignExtend<16>((u64)value));
+            SetAcc(reg, SignExtend<16, u64>(value));
             break;
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
             SetAcc(reg, (u64)value);
             break;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            SetAcc(reg, SignExtend<32>((u64)(value << 16)));
+            SetAcc(reg, SignExtend<32, u64>(value << 16));
             break;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
             throw "?";
