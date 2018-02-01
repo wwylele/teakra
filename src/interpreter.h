@@ -96,15 +96,105 @@ public:
         throw "unimplemented";
     }
 
+    void Moda(ModaOp op, RegName a, Cond cond) {
+        if (regs.ConditionPass(cond)) {
+            switch (op) {
+            case ModaOp::Shr: {
+                u64 result = ShiftBus40(GetAcc(a), 0xFFFF);
+                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                break;
+            }
+            case ModaOp::Shr4: {
+                u64 result = ShiftBus40(GetAcc(a), 0xFFFC);
+                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                break;
+            }
+            case ModaOp::Shl: {
+                u64 result = ShiftBus40(GetAcc(a), 1);
+                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                break;
+            }
+            case ModaOp::Shl4: {
+                u64 result = ShiftBus40(GetAcc(a), 4);
+                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                break;
+            }
+            case ModaOp::Ror: {
+                u64 value = GetAcc(a) & 0xFF'FFFF'FFFF;
+                u16 old_fc = regs.fc;
+                regs.fc = value & 1;
+                value >>= 1;
+                value |= (u64)old_fc << 39;
+                value = SignExtend<40>(value);
+                SetAcc_NoSaturation(a, value);
+                break;
+            }
+            case ModaOp::Rol: {
+                u64 value = GetAcc(a);
+                u16 old_fc = regs.fc;
+                regs.fc = (value >> 39) & 1;
+                value <<= 1;
+                value |= old_fc;
+                value = SignExtend<40>(value);
+                SetAcc_NoSaturation(a, value);
+                break;
+            }
+            case ModaOp::Clr: {
+                SetAcc(a, 0);
+                break;
+            }
+            case ModaOp::Not: {
+                u64 result = ~GetAcc(a);
+                SetAcc_NoSaturation(a, result);
+                break;
+            }
+            case ModaOp::Neg: {
+                u64 value = GetAcc(a);
+                regs.fc = value != 0; // ?
+                regs.fv = value == 0xFFFF'FF80'0000'0000; // ?
+                if (regs.fv)
+                    regs.flv = 1;
+                u64 result = SignExtend<40>((u64)(~GetAcc(a) + 1));
+                SetAcc(a, result);
+                break;
+            }
+            case ModaOp::Rnd: {
+                // TODO: after impl add
+                break;
+            }
+            case ModaOp::Pacr: {
+                // TODO: after impl add
+                break;
+            }
+            case ModaOp::Clrr: {
+                SetAcc(a, 0x8000);
+                break;
+            }
+            case ModaOp::Inc: {
+                // TODO: after impl add
+                break;
+            }
+            case ModaOp::Dec: {
+                // TODO: after impl add
+                break;
+            }
+            case ModaOp::Copy: {
+                // note: bX doesn't support
+                u64 value = GetAcc(a == RegName::a0 ? RegName::a1 : RegName::a0);
+                SetAcc(a, value);
+            }
+            default:
+                throw "??";
+            }
+        }
+    }
+
     void moda4(Moda4 op, Ax a, Cond cond) {
-        throw "unimplemented";
+        Moda(op.GetName(), a.GetName(), cond);
     }
 
     void moda3(Moda3 op, Bx a, Cond cond) {
-        if (regs.ConditionPass(cond)) {
-            // HACK: hard code for the dsptester
-            regs.b[0].value = 0;
-        }
+        Moda(op.GetName(), a.GetName(), cond);
     }
 
     void bkrep(Imm8 a, Address16 addr) {
@@ -145,14 +235,27 @@ public:
         throw "unimplemented";
     }
 
+    void BitReverse(u32 unit) {
+        u16 value = regs.r[unit];
+        u16 result = 0;
+        for (u32 i = 0; i < 16; ++i) {
+            result |= ((value >> i) & 1) << (15 - i);
+        }
+        regs.r[unit] = result;
+    }
     void bitrev(Rn a) {
-        throw "unimplemented";
+        u32 unit = GetRnUnit(a.GetName());
+        BitReverse(unit);
     }
     void bitrev_dbrv(Rn a) {
-        throw "unimplemented";
+        u32 unit = GetRnUnit(a.GetName());
+        BitReverse(unit);
+        regs.ms[unit] = 0; // what does this do with bitrev, though?
     }
     void bitrev_ebrv(Rn a) {
-        throw "unimplemented";
+        u32 unit = GetRnUnit(a.GetName());
+        BitReverse(unit);
+        regs.ms[unit] = 1;
     }
 
     void br(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
@@ -181,10 +284,18 @@ public:
         }
     }
     void calla(Axl a) {
-        throw "unimplemented";
+        u16 l = regs.GetPcL();
+        u16 h = regs.GetPcH();
+        mem.DWrite(--regs.sp, l);
+        mem.DWrite(--regs.sp, h);
+        regs.pc = RegToBus16(a.GetName()); // use movpd?
     }
     void calla(Ax a) {
-        throw "unimplemented";
+        u16 l = regs.GetPcL();
+        u16 h = regs.GetPcH();
+        mem.DWrite(--regs.sp, l);
+        mem.DWrite(--regs.sp, h);
+        regs.pc = GetAcc(a.GetName()) & 0x3FFFF; // no saturation ?
     }
     void callr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
@@ -396,10 +507,16 @@ public:
     }
 
     void shfc(Ab a, Ab b, Cond cond) {
-        throw "unimplemented";
+        if (regs.ConditionPass(cond)) {
+            u64 value = GetAcc(a.GetName());
+            u16 sv = regs.sv;
+            SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        }
     }
     void shfi(Ab a, Ab b, Imm6s s) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName());
+        u16 sv = SignExtend<6>((u16)s.storage);
+        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
 
     void tst4b(ArRn4 b, ArStep4 bs) {
@@ -429,10 +546,10 @@ public:
     }
 
     void dint(Dummy) {
-        throw "unimplemented";
+        regs.ie = 0;
     }
     void eint(Dummy) {
-        throw "unimplemented";
+        regs.ie = 1;
     }
 
     void movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
@@ -660,7 +777,7 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_sv_to(MemImm8 b) {
-        u16 value = regs.repc;
+        u16 value = regs.sv;
         StoreToMemory(b, value);
     }
     void mov_x0_to(Ab b) {
@@ -963,28 +1080,28 @@ public:
     void movs(MemImm8 a, Ab b) {
         u16 value = LoadFromMemory(a);
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv));
+        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
     void movs(Rn a, StepZIDS as, Ab b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u16 value = mem.DRead(address);
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv));
+        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
     void movs(Register a, Ab b) {
         u64 value = SignExtend<16>((u64)RegToBus16(a.GetName()));
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv));
+        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
     void movs_r6_to(Ax b) {
         u16 value = regs.r[6];
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv));
+        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
     void movsi(RnOld a, Ab b, Imm5s s) {
         u64 value = SignExtend<16>((u64)RegToBus16(a.GetName()));
         u16 sv = SignExtend<5>((u16)s.storage);
-        SetAcc(b.GetName(), ShiftBus40(value, sv));
+        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
 private:
     RegisterState& regs;
@@ -1104,6 +1221,10 @@ private:
         case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: regs.b[1].value = value; break;
         default: throw "nope";
         }
+    }
+
+    void SetAcc_NoSaturation(RegName name, u64 value) {
+        SetAcc(name, value, true);
     }
 
 

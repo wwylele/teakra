@@ -5,6 +5,7 @@
 #include <string>
 
 #include "common_types.h"
+#include "oprand.h"
 
 template<typename T>
 std::string ToHex(T i)
