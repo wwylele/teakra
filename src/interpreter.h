@@ -436,19 +436,33 @@ public:
     }
 
     void movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
-        throw "unimplemented";
+        u16 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u32 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        address_d |= (u32)regs.movpd << 16;
+        mem.PWrite(address_d, mem.DRead(address_s));
     }
     void movp(Axl a, Register b) {
-        throw "unimplemented";
+        u32 address = RegToBus16(a.GetName());
+        address |= (u32)regs.movpd << 16;
+        u16 value = mem.PRead(address);
+        RegFromBus16(b.GetName(), value);
     }
     void movp(Ax a, Register b) {
-        throw "unimplemented";
+        u32 address = GetAcc(a.GetName()) & 0x3FFFF; // no saturation
+        u16 value = mem.PRead(address);
+        RegFromBus16(b.GetName(), value);
     }
     void movp(Rn a, StepZIDS as, R0123 b, StepZIDS bs) {
-        throw "unimplemented";
+        u32 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        address_s |= (u32)regs.movpd << 16;
+        mem.DWrite(address_d, mem.PRead(address_s));
     }
     void movpdw(Ax a) {
-        throw "unimplemented";
+        u32 address = GetAcc(a.GetName()) & 0x3FFFF; // no saturation
+        u16 h = mem.PRead(address);
+        u16 l = mem.PRead(address);
+        regs.SetPC(l, h);
     }
 
     void mov(Ab a, Ab b) {
@@ -541,7 +555,8 @@ public:
         throw "unimplemented";
     }
     void mov_icr_to(Ab b) {
-        throw "unimplemented";
+        u16 value = regs.icr.Get();
+        RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, Bx b) {
         u16 value = a.storage;
