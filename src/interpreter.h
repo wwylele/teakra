@@ -925,7 +925,7 @@ private:
     RegisterState& regs;
     MemoryInterface& mem;
 
-    u64 GetAcc(RegName name) {
+    u64 GetAcc(RegName name) const {
         switch(name) {
         case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: return regs.a[0].value;
         case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: return regs.a[1].value;
@@ -1105,7 +1105,7 @@ private:
         }
     }
 
-    unsigned GetRnUnit(RegName reg) {
+    static u32 GetRnUnit(RegName reg) {
         switch(reg) {
         case RegName::r0: return 0; break;
         case RegName::r1: return 1; break;
@@ -1119,11 +1119,11 @@ private:
         }
     }
 
-    unsigned GetArRnUnit(u16 arrn) {
+    u32 GetArRnUnit(u16 arrn) const {
         return regs.arrn[arrn];
     }
 
-    StepValue GetArStep(u16 arstep) {
+    StepValue GetArStep(u16 arstep) const {
         switch(regs.arstep[arstep]) {
         case 0: return StepValue::Zero;
         case 1: return StepValue::Increase;
@@ -1135,7 +1135,7 @@ private:
         }
     }
 
-    u16 GetArOffset(u16 arstep) {
+    u16 GetArOffset(u16 arstep) const {
         switch(regs.aroffset[arstep]) {
         case 0: return 0;
         case 1: return 1;
@@ -1200,8 +1200,8 @@ private:
         return ret;
     }
 
-    u32 ProductToBus32_NoShift(RegName reg) {
-        unsigned unit;
+    u32 ProductToBus32_NoShift(RegName reg) const {
+        u32 unit;
         switch(reg) {
         case RegName::p0:
             unit = 0; break;
@@ -1213,8 +1213,8 @@ private:
         return regs.p[unit].value;
     }
 
-    u64 ProductToBus40(RegName reg) {
-        unsigned unit;
+    u64 ProductToBus40(RegName reg) const {
+        u32 unit;
         switch(reg) {
         case RegName::p0:
             unit = 0; break;
@@ -1249,7 +1249,7 @@ private:
     }
 
     void ProductFromBus32(RegName reg, u32 value) {
-        unsigned unit;
+        u32 unit;
         switch(reg) {
         case RegName::p0:
             unit = 0; break;
