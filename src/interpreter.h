@@ -178,7 +178,7 @@ public:
         return result;
     }
 
-    bool IsAlbModifying(Alb op) {
+    static bool IsAlbModifying(Alb op) {
         switch (op.GetName()) {
         case AlbOp::Set:
         case AlbOp::Rst:
