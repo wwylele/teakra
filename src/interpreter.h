@@ -896,14 +896,6 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_r6(Register a) {
-        if (a.GetName() == RegName::p0) {
-            u64 value = ProductToBus40(RegName::p0);
-            regs.r[6] = (value >> 16) & 0xFFFF;
-        } if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
-            // get aXl, but unlike using RegName::aXl, this does never saturates
-            u64 value = GetAcc(RegName::p0);
-            regs.r[6] = value & 0xFFFF;
-        }
         u16 value = RegToBus16(a.GetName());
         regs.r[6] = value;
     }
@@ -922,20 +914,77 @@ public:
         regs.r[6] = value;
     }
 
+    u64 ShiftBus40(u64 value, u16 sv) {
+        value &= 0xFF'FFFF'FFFF;
+        if (sv < 0x8000) {
+            if (sv > 40) {
+                if (regs.s == 0) {
+                    regs.fv = 1;
+                    regs.flv = 1;
+                }
+                value = 0;
+                regs.fc = 0;
+            } else {
+                if (regs.s == 0) {
+                    regs.fv = SignExtend<40>(value) != SignExtend(value, 40 - sv);
+                    if (regs.fv) {
+                        regs.flv = 1;
+                    }
+                }
+                value <<= sv;
+                regs.fc = (value & ((u64)1 << 40)) != 0;
+            }
+        } else {
+            u16 nsv = ~sv + 1;
+            if (nsv > 40) {
+                if (regs.s == 0) {
+                    value = 0xFF'FFFF'FFFF;
+                    regs.fc = 1;
+                } else {
+                    value = 0;
+                    regs.fc = 0;
+                }
+            } else {
+                regs.fc = (value & ((u64)1 << (nsv - 1))) != 0;
+                value >>= nsv;
+                if (regs.s == 0) {
+                    value = SignExtend(value, 40 - nsv);
+                }
+            }
+
+            if (regs.s == 0) {
+                regs.fv = 0;
+            }
+        }
+
+        return SignExtend<40>(value);
+    }
+
     void movs(MemImm8 a, Ab b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        u16 sv = regs.sv;
+        SetAcc(b.GetName(), ShiftBus40(value, sv));
     }
     void movs(Rn a, StepZIDS as, Ab b) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 value = mem.DRead(address);
+        u16 sv = regs.sv;
+        SetAcc(b.GetName(), ShiftBus40(value, sv));
     }
     void movs(Register a, Ab b) {
-        throw "unimplemented";
+        u64 value = SignExtend<16>((u64)RegToBus16(a.GetName()));
+        u16 sv = regs.sv;
+        SetAcc(b.GetName(), ShiftBus40(value, sv));
     }
     void movs_r6_to(Ax b) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        u16 sv = regs.sv;
+        SetAcc(b.GetName(), ShiftBus40(value, sv));
     }
     void movsi(RnOld a, Ab b, Imm5s s) {
-        throw "unimplemented";
+        u64 value = SignExtend<16>((u64)RegToBus16(a.GetName()));
+        u16 sv = SignExtend<5>((u16)s.storage);
+        SetAcc(b.GetName(), ShiftBus40(value, sv));
     }
 private:
     RegisterState& regs;
@@ -954,13 +1003,13 @@ private:
     u64 SaturateAcc(u64 value, bool storing) {
         if (!regs.sar[storing]) {
             if (value != SignExtend<32>(value)) {
-                regs.fl[0] = 1;
+                regs.fls = 1;
                 if ((value >> 39) != 0)
                     return 0xFFFF'FFFF'8000'0000;
                 else
                     return 0x0000'0000'7FFF'FFFF;
             }
-            // note: fl[0] doesn't change value otherwise
+            // note: fls doesn't change value otherwise
         }
         return value;
     }
@@ -968,7 +1017,10 @@ private:
     u16 RegToBus16(RegName reg) {
         switch(reg) {
         case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
-            throw "undefined???";
+            // get aXl, but unlike using RegName::aXl, this does never saturate.
+            // This only happen to insturctions using "Register" oprand,
+            // and doesn't apply to all instructions. Need test and special check.
+            return GetAcc(reg) & 0xFFFF;
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
             return SaturateAcc(GetAcc(reg), false) & 0xFFFF;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
@@ -991,7 +1043,12 @@ private:
         case RegName::y1: return regs.y[1];
         case RegName::p0:
         case RegName::p1:throw "?";
-        case RegName::p:throw "?";
+
+
+        case RegName::p:
+            // This only happen to insturctions using "Register" oprand,
+            // and doesn't apply to all instructions. Need test and special check.
+            return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
 
         case RegName::pc: throw "?";
         case RegName::sp: return regs.sp;

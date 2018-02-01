@@ -13,7 +13,7 @@ struct RegisterState {
 
     }
 
-    u32 pc;
+    u32 pc; // 18-bit
 
     u16 GetPcL() const {
         return pc & 0xFFFF;
@@ -37,20 +37,20 @@ struct RegisterState {
     struct Accumulator {
         // 40-bit 2's comp on real TeakLite.
         // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
-        u64 value;
+        u64 value = 0;
     };
     std::array<Accumulator, 2> a;
     std::array<Accumulator, 2> b;
 
     struct Product {
-        u32 value;
+        u32 value = 0;
     };
-    std::array<u16, 2> x;
-    std::array<u16, 2> y;
+    std::array<u16, 2> x{};
+    std::array<u16, 2> y{};
     std::array<Product, 2> p;
 
-    u16 stepi0, stepj0; // alternative step
-    std::array<u16, 2> vtr; // fc/fc1 latching
+    u16 stepi0 = 0, stepj0 = 0; // alternative step
+    std::array<u16, 2> vtr{}; // fc/fc1 latching
 
     class RegisterProxy {
     public:
@@ -128,8 +128,8 @@ struct RegisterState {
         }
     };
 
-    u16 stepi, stepj; // 7 bit 2's comp
-    u16 modi, modj; // 9 bit
+    u16 stepi = 0, stepj = 0; // 7 bit 2's comp
+    u16 modi = 0, modj = 0; // 9 bit
 
     PseudoRegister cfgi {{
         {std::make_shared<Redirector>(stepi), 0, 7},
@@ -140,39 +140,40 @@ struct RegisterState {
         {std::make_shared<Redirector>(modj), 7, 9},
     }};
 
-    u16 fz, fm, fn, fv, fc, fe;
-    std::array<u16, 2> fl; // when is fl[1] used?
-    u16 fr;
-    u16 fc1; // used by max||max||vtrshr?
-    u16 nimc;
-    std::array<u16, 3> ip;
-    u16 vip;
-    std::array<u16, 3> im;
-    u16 vim;
-    std::array<u16, 3> ic;
-    u16 vic;
-    u16 ie;
-    u16 movpd;
-    u16 bcn;
-    u16 lp;
-    std::array<u16, 2> sar; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
-    std::array<u16, 2> ps;
-    std::array<u16, 2> psm; // product shift mode. 0: logic; 1: arithmatic?
-    u16 s;
-    std::array<u16, 2> ou;
-    std::array<u16, 2> iu;
-    u16 page;
+    u16 fz = 0, fm = 0, fn = 0, fv = 0, fc = 0, fe = 0;
+    u16 fls = 0; // set on saturation
+    u16 flv = 0; // latching fv
+    u16 fr = 0;
+    u16 fc1 = 0; // used by max||max||vtrshr?
+    u16 nimc = 0;
+    std::array<u16, 3> ip{};
+    u16 vip = 0;
+    std::array<u16, 3> im{};
+    u16 vim = 0;
+    std::array<u16, 3> ic{};
+    u16 vic = 0;
+    u16 ie = 0;
+    u16 movpd = 0; // 2-bit
+    u16 bcn = 0;
+    u16 lp = 0;
+    std::array<u16, 2> sar{}; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
+    std::array<u16, 2> ps{}; // 2-bit
+    std::array<u16, 2> psm{}; // product shift mode. 0: logic; 1: arithmatic?
+    u16 s = 0; // 1 bit. 0 - arithmetic, 1 - logic
+    std::array<u16, 2> ou{};
+    std::array<u16, 2> iu{};
+    u16 page = 0; // 8-bit
 
     // m=0, ms=0: use stepi/j (no modulo)
     // m=1, ms=0: use stepi/j with modulo
     // m=0, ms=1: use stepi0/j0 (no modulo)
     // m=1, ms=1: use stepi/j  (no modulo)??
-    std::array<u16, 8> m;
-    std::array<u16, 8> ms;
+    std::array<u16, 8> m{};
+    std::array<u16, 8> ms{};
 
     PseudoRegister stt0 {{
-        {std::make_shared<Redirector>(fl[0]), 0, 1},
-        {std::make_shared<Redirector>(fl[1]), 1, 1},
+        {std::make_shared<Redirector>(fls), 0, 1},
+        {std::make_shared<Redirector>(flv), 1, 1},
         {std::make_shared<Redirector>(fe), 2, 1},
         {std::make_shared<Redirector>(fc), 3, 1},
         {std::make_shared<Redirector>(fv), 4, 1},
@@ -251,7 +252,7 @@ struct RegisterState {
         {std::make_shared<Redirector>(im[0]), 2, 1},
         {std::make_shared<Redirector>(im[1]), 3, 1},
         {std::make_shared<Redirector>(fr), 4, 1},
-        {std::make_shared<DoubleRedirector>(fl[0], fl[1]), 5, 1},
+        {std::make_shared<DoubleRedirector>(fls, flv), 5, 1},
         {std::make_shared<Redirector>(fe), 6, 1},
         {std::make_shared<Redirector>(fc), 7, 1},
         {std::make_shared<Redirector>(fv), 8, 1},
@@ -303,20 +304,20 @@ struct RegisterState {
     // 5: -2
     // 6: +2 ?
     // 7: -2 ?
-    std::array<u16, 4> arstep, arpstepi, arpstepj;
+    std::array<u16, 4> arstep{}, arpstepi{}, arpstepj{};
 
     // 2 bits each
     // 0: +0
     // 1: +1
     // 2: -1
     // 3: -1 ?
-    std::array<u16, 4> aroffset, arpoffseti, arpoffsetj;
+    std::array<u16, 4> aroffset{}, arpoffseti{}, arpoffsetj{};
 
     // 3 bits each, represent r0~r7
-    std::array<u16, 4> arrn;
+    std::array<u16, 4> arrn{};
 
     // 2 bits each. for i represent r0~r4, for j represents r5~r7
-    std::array<u16, 4> arprni, arprnj;
+    std::array<u16, 4> arprni{}, arprnj{};
 
     PseudoRegister ar0 {{
         {std::make_shared<Redirector>(arstep[1]), 0, 3},
@@ -395,7 +396,7 @@ struct RegisterState {
         case CondValue::C: return fc == 1; // ?
         case CondValue::V: return fv == 1;
         case CondValue::E: return fe == 1;
-        case CondValue::L: return fl[0] == 1 || fl[1] == 1; // ??
+        case CondValue::L: return fls == 1 || flv == 1; // ??
         case CondValue::Nr: return fr == 0;
         case CondValue::Niu0: return iu[0] == 0;
         case CondValue::Iu0: return iu[0] == 1;
