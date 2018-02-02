@@ -576,11 +576,30 @@ public:
         }
     }
 
+    void ContextStore() {
+        for (auto& reg : regs.shadow_registers)
+            reg.Store();
+        for (auto& reg : regs.shadow_swap_registers)
+            reg.Swap();
+        u64 a = regs.a[1].value;
+        u64 b = regs.b[1].value;
+        regs.b[1].value = a;
+        SetAcc_NoSaturation(RegName::a1, b); // Flag set on b1->a1
+    }
+
+    void ContextRestore() {
+        for (auto& reg : regs.shadow_registers)
+            reg.Restore();
+        for (auto& reg : regs.shadow_swap_registers)
+            reg.Swap();
+        std::swap(regs.a[1].value, regs.b[1].value);
+    }
+
     void cntx_s(Dummy) {
-        throw "unimplemented";
+        ContextStore();
     }
     void cntx_r(Dummy) {
-        throw "unimplemented";
+        ContextRestore();
     }
 
     void ret(Cond c) {
@@ -602,7 +621,13 @@ public:
         }
     }
     void retic(Cond c) {
-        throw "unimplemented";
+        if (regs.ConditionPass(c)) {
+            u16 h = mem.DRead(regs.sp++);
+            u16 l = mem.DRead(regs.sp++);
+            regs.SetPC(l, h);
+            regs.ie = 1;
+            ContextRestore();
+        }
     }
     void retid(Dummy) {
         throw "unimplemented";

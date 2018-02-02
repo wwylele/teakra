@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <vector>
@@ -157,12 +158,14 @@ struct RegisterState {
     u16 bcn = 0;
     u16 lp = 0;
     std::array<u16, 2> sar{}; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
+    u16 mod0_unk = 0; // 2-bit
     std::array<u16, 2> ps{}; // 2-bit
     std::array<u16, 2> psm{}; // product shift mode. 0: logic; 1: arithmatic?
     u16 s = 0; // 1 bit. 0 - arithmetic, 1 - logic
     std::array<u16, 2> ou{};
     std::array<u16, 2> iu{};
     u16 page = 0; // 8-bit
+    u16 mod1_unk = 0; // 4-bit
 
     // m=0, ms=0: use stepi/j (no modulo)
     // m=1, ms=0: use stepi/j with modulo
@@ -202,8 +205,8 @@ struct RegisterState {
     PseudoRegister mod0 {{
         {std::make_shared<Redirector>(sar[0]), 0, 1},
         {std::make_shared<Redirector>(sar[1]), 1, 1},
-        //{std::make_shared<RORedirector>(??), 2, 2},
-
+        //{std::make_shared<RORedirector>(??), 2, 3},
+        {std::make_shared<Redirector>(mod0_unk), 5, 2},
         {std::make_shared<Redirector>(s), 7, 1},
         {std::make_shared<Redirector>(ou[0]), 8, 1},
         {std::make_shared<Redirector>(ou[1]), 9, 1},
@@ -213,6 +216,8 @@ struct RegisterState {
     }};
     PseudoRegister mod1 {{
         {std::make_shared<Redirector>(page), 0, 8},
+
+        {std::make_shared<Redirector>(mod1_unk), 12, 4},
     }};
     PseudoRegister mod2 {{
         {std::make_shared<Redirector>(m[0]), 0, 1},
@@ -382,6 +387,110 @@ struct RegisterState {
         // bit 15 reserved
     }};
 
+    class ShadowRegister {
+    public:
+        ShadowRegister(u16& origin): origin(origin) {}
+        void Store() {
+            shadow = origin;
+        }
+        void Restore() {
+            origin = shadow;
+        }
+    private:
+        u16& origin;
+        u16 shadow = 0;
+    };
+
+    class ShadowSwapRegister {
+    public:
+        ShadowSwapRegister(u16& origin): origin(origin) {}
+        void Swap() {
+            std::swap(origin, shadow);
+        }
+    private:
+        u16& origin;
+        u16 shadow = 0;
+    };
+
+    std::vector<ShadowRegister> shadow_registers {
+        ShadowRegister(fls),
+        ShadowRegister(flv),
+        ShadowRegister(fe),
+        ShadowRegister(fc),
+        ShadowRegister(fv),
+        ShadowRegister(fn),
+        ShadowRegister(fm),
+        ShadowRegister(fz),
+        ShadowRegister(fc1),
+    };
+
+    std::vector<ShadowSwapRegister> shadow_swap_registers {
+        ShadowSwapRegister(movpd),
+        ShadowSwapRegister(sar[0]),
+        ShadowSwapRegister(sar[1]),
+        ShadowSwapRegister(mod0_unk),
+        ShadowSwapRegister(s),
+        ShadowSwapRegister(ps[0]),
+        ShadowSwapRegister(ps[1]),
+        ShadowSwapRegister(page),
+        ShadowSwapRegister(mod1_unk),
+        ShadowSwapRegister(m[0]),
+        ShadowSwapRegister(m[1]),
+        ShadowSwapRegister(m[2]),
+        ShadowSwapRegister(m[3]),
+        ShadowSwapRegister(m[4]),
+        ShadowSwapRegister(m[5]),
+        ShadowSwapRegister(m[6]),
+        ShadowSwapRegister(m[7]),
+        ShadowSwapRegister(ms[0]),
+        ShadowSwapRegister(ms[1]),
+        ShadowSwapRegister(ms[2]),
+        ShadowSwapRegister(ms[3]),
+        ShadowSwapRegister(ms[4]),
+        ShadowSwapRegister(ms[5]),
+        ShadowSwapRegister(ms[6]),
+        ShadowSwapRegister(ms[7]),
+        ShadowSwapRegister(im[0]), // ?
+        ShadowSwapRegister(im[1]), // ?
+        ShadowSwapRegister(im[2]), // ?
+        ShadowSwapRegister(vim), // ?
+        ShadowSwapRegister(arstep[0]),
+        ShadowSwapRegister(arstep[1]),
+        ShadowSwapRegister(arstep[2]),
+        ShadowSwapRegister(arstep[3]),
+        ShadowSwapRegister(arpstepi[0]),
+        ShadowSwapRegister(arpstepi[1]),
+        ShadowSwapRegister(arpstepi[2]),
+        ShadowSwapRegister(arpstepi[3]),
+        ShadowSwapRegister(arpstepj[0]),
+        ShadowSwapRegister(arpstepj[1]),
+        ShadowSwapRegister(arpstepj[2]),
+        ShadowSwapRegister(arpstepj[3]),
+        ShadowSwapRegister(aroffset[0]),
+        ShadowSwapRegister(aroffset[1]),
+        ShadowSwapRegister(aroffset[2]),
+        ShadowSwapRegister(aroffset[3]),
+        ShadowSwapRegister(arpoffseti[0]),
+        ShadowSwapRegister(arpoffseti[1]),
+        ShadowSwapRegister(arpoffseti[2]),
+        ShadowSwapRegister(arpoffseti[3]),
+        ShadowSwapRegister(arpoffsetj[0]),
+        ShadowSwapRegister(arpoffsetj[1]),
+        ShadowSwapRegister(arpoffsetj[2]),
+        ShadowSwapRegister(arpoffsetj[3]),
+        ShadowSwapRegister(arrn[0]),
+        ShadowSwapRegister(arrn[1]),
+        ShadowSwapRegister(arrn[2]),
+        ShadowSwapRegister(arrn[3]),
+        ShadowSwapRegister(arprni[0]),
+        ShadowSwapRegister(arprni[1]),
+        ShadowSwapRegister(arprni[2]),
+        ShadowSwapRegister(arprni[3]),
+        ShadowSwapRegister(arprnj[0]),
+        ShadowSwapRegister(arprnj[1]),
+        ShadowSwapRegister(arprnj[2]),
+        ShadowSwapRegister(arprnj[3]),
+    };
 
     bool ConditionPass(Cond cond) const {
         switch(cond.GetName()) {
