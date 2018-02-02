@@ -422,6 +422,7 @@ struct RegisterState {
         ShadowRegister(fm),
         ShadowRegister(fz),
         ShadowRegister(fc1),
+        ShadowRegister(fr),
     };
 
     std::vector<ShadowSwapRegister> shadow_swap_registers {
