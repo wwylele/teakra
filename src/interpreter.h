@@ -471,13 +471,13 @@ public:
     void bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
         throw "unimplemented";
     }
-    void bkreprst(ArRn4 a) {
+    void bkreprst(ArRn2 a) {
         throw "unimplemented";
     }
     void bkreprst_memsp(Dummy) {
         throw "unimplemented";
     }
-    void bkrepsto(ArRn4 a) {
+    void bkrepsto(ArRn2 a) {
         throw "unimplemented";
     }
     void bkrepsto_memsp(Dummy) {
@@ -784,10 +784,10 @@ public:
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
 
-    void tst4b(ArRn4 b, ArStep4 bs) {
+    void tst4b(ArRn2 b, ArStep2 bs) {
         throw "unimplemented";
     }
-    void tst4b(ArRn4 b, ArStep4 bs, Ax c) {
+    void tst4b(ArRn2 b, ArStep2 bs, Ax c) {
         throw "unimplemented";
     }
     void tstb(MemImm8 a, Imm4 b) {
@@ -1134,34 +1134,34 @@ public:
         RegFromBus16(b.GetName(), value);
     }
 
-    void mov_repc_to(ArRn2 b, ArStep2 bs) {
+    void mov_repc_to(ArRn1 b, ArStep1 bs) {
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 value = regs.repc;
         mem.DWrite(address, value);
     }
-    void mov(ArArp a, ArRn2 b, ArStep2 bs) {
+    void mov(ArArp a, ArRn1 b, ArStep1 bs) {
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 value = RegToBus16(a.GetName());
         mem.DWrite(address, value);
     }
-    void mov(SttMod a, ArRn2 b, ArStep2 bs) {
+    void mov(SttMod a, ArRn1 b, ArStep1 bs) {
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 value = RegToBus16(a.GetName());
         mem.DWrite(address, value);
     }
 
-    void mov_repc(ArRn2 a, ArStep2 as) {
+    void mov_repc(ArRn1 a, ArStep1 as) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 value = mem.DRead(address);
         regs.repc = value;
     }
-    void mov(ArRn2 a, ArStep2 as, ArArp b) {
+    void mov(ArRn1 a, ArStep1 as, ArArp b) {
         // are you sure it is ok to both use and modify ar registers?
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 value = mem.DRead(address);
         RegFromBus16(b.GetName(), value);
     }
-    void mov(ArRn2 a, ArStep2 as, SttMod b) {
+    void mov(ArRn1 a, ArStep1 as, SttMod b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 value = mem.DRead(address);
         RegFromBus16(b.GetName(), value);
@@ -1221,7 +1221,7 @@ public:
         SetAcc(b.GetName(), value);
     }
 
-    void mov2(Px a, ArRn4 b, ArStep4 bs) {
+    void mov2(Px a, ArRn2 b, ArStep2 bs) {
         u32 value = ProductToBus32_NoShift(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
@@ -1230,7 +1230,7 @@ public:
         mem.DWrite(address, l);
         mem.DWrite(address2, h);
     }
-    void mov2s(Px a, ArRn4 b, ArStep4 bs) {
+    void mov2s(Px a, ArRn2 b, ArStep2 bs) {
         u64 value = ProductToBus40(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
@@ -1239,7 +1239,7 @@ public:
         mem.DWrite(address, l);
         mem.DWrite(address2, h);
     }
-    void mov2(ArRn4 a, ArStep4 as, Px b) {
+    void mov2(ArRn2 a, ArStep2 as, Px b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
         u16 l = mem.DRead(address);
@@ -1247,7 +1247,7 @@ public:
         u64 value = SignExtend<32, u64>((h << 16) | l);
         ProductFromBus32(b.GetName(), value);
     }
-    void mova(Ab a, ArRn4 b, ArStep4 bs) {
+    void mova(Ab a, ArRn2 b, ArStep2 bs) {
         u64 value = SaturateAcc(GetAcc(a.GetName()), false);
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
@@ -1256,7 +1256,7 @@ public:
         mem.DWrite(address, l);
         mem.DWrite(address2, h);
     }
-    void mova(ArRn4 a, ArStep4 as, Ab b) {
+    void mova(ArRn2 a, ArStep2 as, Ab b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
         u16 l = mem.DRead(address);

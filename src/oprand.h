@@ -294,14 +294,14 @@ using StepZIDS = EnumOprand<StepValue,
     StepValue::PlusStep
 >;
 
-struct ArRn2 : Oprand<1> {};
-struct ArRn4 : Oprand<2> {};
-struct ArStep2 : Oprand<1> {};
-struct ArStep4 : Oprand<2> {};
-struct ArpRn2 : Oprand<1> {};
-struct ArpRn4 : Oprand<2> {};
-struct ArpStep2 : Oprand<1> {};
-struct ArpStep4 : Oprand<2> {};
+struct ArRn1 : Oprand<1> {};
+struct ArRn2 : Oprand<2> {};
+struct ArStep1 : Oprand<1> {};
+struct ArStep2 : Oprand<2> {};
+struct ArpRn1 : Oprand<1> {};
+struct ArpRn2 : Oprand<2> {};
+struct ArpStep1 : Oprand<1> {};
+struct ArpStep2 : Oprand<2> {};
 
 struct Address18_2 : Oprand<2> {};
 struct Address18_16 : Oprand<16> {};
