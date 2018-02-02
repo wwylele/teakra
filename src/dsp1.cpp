@@ -23,7 +23,7 @@ Dsp1::Dsp1(const std::vector<u8>& raw) {
         segment.target = header.segments[i].address;/*header.segments[i].address * 2 +
             (segment.memory_type == 2 ? 0x1FF40000 : 0x1FF00000);*/
 
-        printf("[Segment %d]\n", i);
+        printf("[Segment %u]\n", i);
         printf("memory_type = %d\n", segment.memory_type);
         printf("target = %08X\n", segment.target);
         printf("size = %08X\n", static_cast<u32>(segment.data.size()));
