@@ -135,11 +135,12 @@ public:
             u64 result = AddSub(value, product, false);
             SetAcc(b.GetName(), result);
         }
-        [[fallthrough]]
-        case AlmOp::Sqr:
+        [[fallthrough]];
+        case AlmOp::Sqr: {
             regs.y[0] = regs.x[0] =  a & 0xFFFF;
             DoMultiplication(0, true, true);
             break;
+        }
 
         default:throw "???";
         }
