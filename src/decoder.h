@@ -115,6 +115,14 @@ std::vector<Matcher<V>> GetDecodeTable() {
     //INST(alb, 0x????, Const<Alb, 6>, At<Imm,16, 16>, At<SttMod, 0>),
     //INST(alb, 0x????, Const<Alb, 7>, At<Imm,16, 16>, At<SttMod, 0>),
 
+    // <<< Mul >>>
+    INST(mul, 0x8000, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Imm16, 16>, At<Ax, 11>),
+    INST(mul_y0, 0x8020, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 11>),
+    INST(mul_y0, 0x8040, At<Mul3, 8>, At<Register, 0>, At<Ax, 11>),
+    INST(mul, 0xD000, At<Mul3, 8>, At<R45, 2>, At<StepZIDS, 5>, At<R0123, 0>, At<StepZIDS, 3>, At<Ax, 11>),
+    INST(mul_y0_r6, 0x5EA0, At<Mul3, 1>, At<Ax, 0>),
+    INST(mul_y0, 0xE000, At<Mul2, 9>, At<MemImm8, 0>, At<Ax, 11>),
+
     // <<< MODA >>>
     INST(moda4, 0x6700, At<Moda4, 4>, At<Ax, 12>, At<Cond, 0>)
         .EXCEPT(AtConst<Moda4, 4, 7>),

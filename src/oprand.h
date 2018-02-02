@@ -415,6 +415,35 @@ enum class AlbOp {
 
 using Alb = EnumAllOprand<AlbOp>;
 
+enum class MulOp {
+    Mpy,
+    Mpysu,
+    Mac,
+    Macus,
+    Maa,
+    Macuu,
+    Macsu,
+    Maasu,
+};
+
+using Mul3 = EnumOprand<MulOp,
+    MulOp::Mpy,
+    MulOp::Mpysu,
+    MulOp::Mac,
+    MulOp::Macus,
+    MulOp::Maa,
+    MulOp::Macuu,
+    MulOp::Macsu,
+    MulOp::Maasu
+>;
+
+using Mul2 = EnumOprand<MulOp,
+    MulOp::Mpy,
+    MulOp::Mac,
+    MulOp::Maa,
+    MulOp::Macsu
+>;
+
 enum class ModaOp {
     Shr,
     Shr4,

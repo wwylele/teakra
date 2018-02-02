@@ -585,6 +585,25 @@ public:
         return "eint";
     }
 
+    std::string mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
+        return "";
+    }
+    std::string mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
+        return "";
+    }
+    std::string mul_y0(Mul3 op, Register x, Ax a) {
+        return "";
+    }
+    std::string mul(Mul3 op, R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
+        return "";
+    }
+    std::string mul_y0_r6(Mul3 op, Ax a) {
+        return "";
+    }
+    std::string mul_y0(Mul2 op, MemImm8 x, Ax a) {
+        return "";
+    }
+
     std::string movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
         return "movd [" + DsmReg(a) + Dsm(as) + "] [Prog:" + DsmReg(b) + Dsm(bs) + "]";
     }

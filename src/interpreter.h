@@ -50,7 +50,10 @@ public:
         if (y_sign)
             y = SignExtend<16>(y);
         regs.p[unit].value = x * y;
-        regs.psm[unit] = regs.p[unit].value >> 31;
+        if (x_sign || y_sign)
+            regs.psm[unit] = regs.p[unit].value >> 31;
+        else
+            regs.psm[unit] = 0;
     }
 
     u64 AddSub(u64 a, u64 b, bool sub) {
@@ -815,6 +818,67 @@ public:
     }
     void eint(Dummy) {
         regs.ie = 1;
+    }
+
+    void MulGeneric(MulOp op, Ax a) {
+        if (op != MulOp::Mpy && op != MulOp::Mpysu) {
+            u64 value = GetAcc(a.GetName());
+            u64 product = ProductToBus40(RegName::p0);
+            if (op == MulOp::Maa || op == MulOp::Maasu) {
+                product >>= 16;
+                product = SignExtend<24>(product);
+            }
+            u64 result = AddSub(value, product, false);
+            SetAcc(a.GetName(), result);
+        }
+
+        switch(op) {
+        case MulOp::Mpy: case MulOp::Mac: case MulOp::Maa:
+            DoMultiplication(0, true, true);
+            break;
+        case MulOp::Mpysu: case MulOp::Macsu: case MulOp::Maasu:
+            // Note: the naming conventin of "mpysu" is "multiply signed *y* by unsigned *x*"
+            DoMultiplication(0, false, true);
+            break;
+        case MulOp::Macus:
+            DoMultiplication(0, true, false);
+            break;
+        case MulOp::Macuu:
+            DoMultiplication(0, false, false);
+            break;
+        }
+    }
+
+    void mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
+        u16 address = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
+        regs.y[0] = mem.DRead(address);
+        regs.x[0] = x.storage;
+        MulGeneric(op.GetName(), a);
+    }
+    void mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
+        u16 address = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
+        regs.x[0] = mem.DRead(address);
+        MulGeneric(op.GetName(), a);
+    }
+    void mul_y0(Mul3 op, Register x, Ax a) {
+        // a0, a1, p?
+        regs.x[0] = RegToBus16(x.GetName());
+        MulGeneric(op.GetName(), a);
+    }
+    void mul(Mul3 op, R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
+        u16 address_y = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
+        u16 address_x = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
+        regs.y[0] = mem.DRead(address_y);
+        regs.x[0] = mem.DRead(address_x);
+        MulGeneric(op.GetName(), a);
+    }
+    void mul_y0_r6(Mul3 op, Ax a) {
+        regs.x[0] = regs.r[6];
+        MulGeneric(op.GetName(), a);
+    }
+    void mul_y0(Mul2 op, MemImm8 x, Ax a) {
+        regs.x[0] = LoadFromMemory(x);
+        MulGeneric(op.GetName(), a);
     }
 
     void movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
