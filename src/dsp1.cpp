@@ -1,6 +1,7 @@
 #include "dsp1.h"
-#include <cstring>
 #include <cstdio>
+#include <cstring>
+#include <utility>
 
 Dsp1::Dsp1(const std::vector<u8>& raw) {
     Header header;
@@ -21,11 +22,12 @@ Dsp1::Dsp1(const std::vector<u8>& raw) {
         segment.memory_type = header.segments[i].memory_type;
         segment.target = header.segments[i].address;/*header.segments[i].address * 2 +
             (segment.memory_type == 2 ? 0x1FF40000 : 0x1FF00000);*/
-        segments.push_back(segment);
 
         printf("[Segment %d]\n", i);
         printf("memory_type = %d\n", segment.memory_type);
         printf("target = %08X\n", segment.target);
-        printf("size = %08X\n", (u32)segment.data.size());
+        printf("size = %08X\n", static_cast<u32>(segment.data.size()));
+
+        segments.push_back(std::move(segment));
     }
 }
