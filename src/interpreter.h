@@ -3,7 +3,7 @@
 #include "oprand.h"
 #include "register.h"
 #include "memory.h"
-
+#include <unordered_set>
 
 class Interpreter {
 public:
@@ -41,88 +41,187 @@ public:
         throw "unimplemented";
     }
 
-    void alm(Alm op, MemImm8 a, Ax b) {
-        throw "unimplemented";
-    }
-    void alm(Alm op, Rn a, StepZIDS as, Ax b) {
-        throw "unimplemented";
-    }
-    void alm(Alm op, Register a, Ax b) {
-        throw "unimplemented";
-    }
-    void alm_r6(Alm op, Ax b) {
-        throw "unimplemented";
+    void DoMultiplication(u32 unit, bool x_sign, bool y_sign) {
+        // Am I doing it right?
+        u32 x = regs.x[unit];
+        u32 y = regs.y[unit];
+        if (x_sign)
+            x = SignExtend<16>(x);
+        if (y_sign)
+            y = SignExtend<16>(y);
+        regs.p[unit].value = x * y;
+        regs.psm[unit] = regs.p[unit].value >> 31;
     }
 
-    void AluGeneric(Alu op, u16 a, Ax b) {
-        switch(op.GetName()) {
-        case AluOp::Or: {
+    u64 AddSub(u64 a, u64 b, bool sub) {
+        a &= 0xFF'FFFF'FFFF;
+        b &= 0xFF'FFFF'FFFF;
+        u64 result = sub ? a - b : a + b;
+        regs.fc = (result >> 40) & 1;
+        regs.fv = ((~(a ^ b) & (a ^ result)) >> 39) & 1;
+        if (regs.fv) {
+            regs.flv = 1;
+        }
+        return SignExtend<40>(result);
+    };
+
+    void AlmGeneric(AlmOp op, u64 a, Ax b) {
+        switch(op) {
+        case AlmOp::Or: {
             u64 value = GetAcc(b.GetName());
             value |= a;
+            value = SignExtend<40>(value);
             SetAcc_NoSaturation(b.GetName(), value);
             break;
         }
-        case AluOp::And: {
+        case AlmOp::And: {
             u64 value = GetAcc(b.GetName());
             value &= a;
+            value = SignExtend<40>(value);
             SetAcc_NoSaturation(b.GetName(), value);
             break;
         }
-        case AluOp::Xor: {
+        case AlmOp::Xor: {
             u64 value = GetAcc(b.GetName());
             value ^= a;
+            value = SignExtend<40>(value);
             SetAcc_NoSaturation(b.GetName(), value);
             break;
         }
-        case AluOp::Cmp:
-        case AluOp::Sub:
-        case AluOp::Add: {
-            u64 value = GetAcc(b.GetName()) & 0xFF'FFFF'FFFF;
-            u64 a_extend = SignExtend<16, u64>(a) & 0xFF'FFFF'FFFF;
-            u64 result;
-            if (op.GetName() == AluOp::Add)
-                result = value + a_extend;
-            else
-                result = value - a_extend;
-            regs.fc = (result >> 40) & 1;
-            regs.fv = ((~(value ^ a_extend) & (value ^ result)) >> 39) & 1;
-            if (regs.fv) {
-                regs.flv = 1;
-            }
-            result = SignExtend<40>(result);
-            if (op.GetName() == AluOp::Cmp) {
+        case AlmOp::Tst0: {
+            u64 value = GetAcc(b.GetName()) & 0xFFFF;
+            regs.fz = (value & a) == 0;
+            break;
+        }
+        case AlmOp::Tst1: {
+            u64 value = GetAcc(b.GetName()) & 0xFFFF;
+            regs.fz = (value & ~a) == 0;
+            break;
+        }
+        case AlmOp::Cmp:
+        case AlmOp::Cmpu:
+        case AlmOp::Sub:
+        case AlmOp::Subl:
+        case AlmOp::Subh:
+        case AlmOp::Add:
+        case AlmOp::Addl:
+        case AlmOp::Addh: {
+            u64 value = GetAcc(b.GetName());
+            bool sub = !(op == AlmOp::Add || op == AlmOp::Addl || op == AlmOp::Addh);
+            u64 result = AddSub(value, a, sub);
+            if (op == AlmOp::Cmp || op == AlmOp::Cmpu) {
                 SetAccFlag(result);
             } else {
                 SetAcc(b.GetName(), result);
             }
             break;
         }
+        case AlmOp::Msu: {
+            u64 value = GetAcc(b.GetName());
+            u64 product = ProductToBus40(RegName::p0);
+            u64 result = AddSub(value, product, true);
+            SetAcc(b.GetName(), result);
+
+            regs.x[0] = a & 0xFFFF;
+            DoMultiplication(0, true, true);
+            break;
+        }
+        case AlmOp::Sqra: {
+            u64 value = GetAcc(b.GetName());
+            u64 product = ProductToBus40(RegName::p0);
+            u64 result = AddSub(value, product, false);
+            SetAcc(b.GetName(), result);
+        }
+        [[fallthrough]]
+        case AlmOp::Sqr:
+            regs.y[0] = regs.x[0] =  a & 0xFFFF;
+            DoMultiplication(0, true, true);
+            break;
+
         default:throw "???";
         }
     }
 
+    u64 ExtendOprandForAlm(AlmOp op, u16 a) {
+        switch(op) {
+        case AlmOp::Cmp:
+        case AlmOp::Sub:
+        case AlmOp::Add:
+            return SignExtend<16, u64>(a);
+        case AlmOp::Addh:
+        case AlmOp::Subh:
+            return SignExtend<32, u64>((u64)a << 16);
+        default:
+            return a;
+        }
+    }
+
+    void alm(Alm op, MemImm8 a, Ax b) {
+        u16 value = LoadFromMemory(a);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+    }
+    void alm(Alm op, Rn a, StepZIDS as, Ax b) {
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 value = mem.DRead(address);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+    }
+    void alm(Alm op, Register a, Ax b) {
+        u64 value;
+        auto CheckBus40OprandAllowed = [op] {
+            static const std::unordered_set<AlmOp> allowed_instruction {
+                AlmOp::Or,
+                AlmOp::And,
+                AlmOp::Xor,
+                AlmOp::Add,
+                AlmOp::Cmp,
+                AlmOp::Sub,
+            };
+            if (allowed_instruction.count(op.GetName()) == 0)
+                throw "weird effect. probably undefined";
+        };
+        switch (a.GetName()) {
+        // need more test
+        case RegName::p:
+            CheckBus40OprandAllowed();
+            value = ProductToBus40(RegName::p0);
+            break;
+        case RegName::a0: case RegName::a1:
+            CheckBus40OprandAllowed();
+            value = GetAcc(a.GetName());
+            break;
+        default:
+            value = ExtendOprandForAlm(op.GetName(), RegToBus16(a.GetName()));
+            break;
+        }
+        AlmGeneric(op.GetName(), value, b);
+    }
+    void alm_r6(Alm op, Ax b) {
+        u16 value = regs.r[6];
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+    }
+
     void alu(Alu op, MemImm16 a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AluGeneric(op, value, b);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, MemR7Imm16 a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AluGeneric(op, value, b);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, Imm16 a, Ax b) {
         u16 value = a.storage;
-        AluGeneric(op, value, b);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, Imm8 a, Ax b) {
         u16 value = a.storage;
-        if (op.GetName() == AluOp::And) {
+        if (op.GetName() == AlmOp::And) {
             value &= 0xFF00; // for And operation, value is 1-extended to 16-bit.
         }
-        AluGeneric(op, value, b);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, MemR7Imm7s a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AluGeneric(op, value, b);
+        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
 
     void or_(Ab a, Ax b, Ax c) {
@@ -317,11 +416,15 @@ public:
                 break;
             }
             case ModaOp::Rnd: {
-                // TODO: after impl add
+                u64 value = GetAcc(a);
+                u64 result = AddSub(value, 0x8000, false);
+                SetAcc(a, result);
                 break;
             }
             case ModaOp::Pacr: {
-                // TODO: after impl add
+                u64 value = ProductToBus40(RegName::p0);
+                u64 result = AddSub(value, 0x8000, false);
+                SetAcc(a, result);
                 break;
             }
             case ModaOp::Clrr: {
@@ -329,11 +432,15 @@ public:
                 break;
             }
             case ModaOp::Inc: {
-                // TODO: after impl add
+                u64 value = GetAcc(a);
+                u64 result = AddSub(value, 1, false);
+                SetAcc(a, result);
                 break;
             }
             case ModaOp::Dec: {
-                // TODO: after impl add
+                u64 value = GetAcc(a);
+                u64 result = AddSub(value, 1, true);
+                SetAcc(a, result);
                 break;
             }
             case ModaOp::Copy: {

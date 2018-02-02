@@ -146,12 +146,12 @@ std::string Dsm(Alm alm) {
 
 std::string Dsm(Alu alu) {
     switch (alu.GetName()) {
-    case AluOp::Or: return "or";
-    case AluOp::And: return "and";
-    case AluOp::Xor: return "xor";
-    case AluOp::Add: return "add";
-    case AluOp::Cmp: return "cmp";
-    case AluOp::Sub: return "sub";
+    case AlmOp::Or: return "or";
+    case AlmOp::And: return "and";
+    case AlmOp::Xor: return "xor";
+    case AlmOp::Add: return "add";
+    case AlmOp::Cmp: return "cmp";
+    case AlmOp::Sub: return "sub";
     default: throw "what";
     }
 }

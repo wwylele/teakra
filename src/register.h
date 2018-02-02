@@ -206,7 +206,7 @@ struct RegisterState {
 
         {std::make_shared<Redirector>(s), 7, 1},
         {std::make_shared<Redirector>(ou[0]), 8, 1},
-        {std::make_shared<Redirector>(ou[0]), 9, 1},
+        {std::make_shared<Redirector>(ou[1]), 9, 1},
         {std::make_shared<Redirector>(ps[0]), 10, 2},
 
         {std::make_shared<Redirector>(ps[1]), 13, 2},

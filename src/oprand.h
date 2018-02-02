@@ -367,25 +367,38 @@ enum class AlmOp {
     Sqra,
     Cmpu,
 
-    EnumEnd
+    Reserved
 };
 
-using Alm = EnumAllOprand<AlmOp>;
+using Alm = EnumOprand<AlmOp,
+    AlmOp::Or,
+    AlmOp::And,
+    AlmOp::Xor,
+    AlmOp::Add,
+    AlmOp::Tst0,
+    AlmOp::Tst1,
+    AlmOp::Cmp,
+    AlmOp::Sub,
+    AlmOp::Msu,
+    AlmOp::Addh,
+    AlmOp::Addl,
+    AlmOp::Subh,
+    AlmOp::Subl,
+    AlmOp::Sqr,
+    AlmOp::Sqra,
+    AlmOp::Cmpu
+>;
 
-enum class AluOp {
-    Or,
-    And,
-    Xor,
-    Add,
-    ReservedA,
-    ReservedB,
-    Cmp,
-    Sub,
-
-    EnumEnd
-};
-
-using Alu = EnumAllOprand<AluOp>;
+using Alu = EnumOprand<AlmOp,
+    AlmOp::Or,
+    AlmOp::And,
+    AlmOp::Xor,
+    AlmOp::Add,
+    AlmOp::Reserved,
+    AlmOp::Reserved,
+    AlmOp::Cmp,
+    AlmOp::Sub
+>;
 
 enum class AlbOp {
     Set,
