@@ -14,7 +14,7 @@ struct RegisterState {
 
     }
 
-    u32 pc; // 18-bit
+    u32 pc = 0; // 18-bit
 
     u16 GetPcL() const {
         return pc & 0xFFFF;
@@ -26,13 +26,14 @@ struct RegisterState {
         pc = (u32)low | ((u32)high << 16);
     }
 
-    u16 dvm;
-    u16 repc;
-    u16 mixp;
-    u16 sv;
-    u16 sp;
+    u16 dvm = 0;
+    u16 repc = 0;
+    bool rep = false; // true when in rep loop
+    u16 mixp = 0;
+    u16 sv = 0;
+    u16 sp = 0;
 
-    std::array<u16, 8> r;
+    std::array<u16, 8> r{};
 
     struct Accumulator {
         // 40-bit 2's comp on real TeakLite.

@@ -21,7 +21,7 @@ void DspMemorySharedWithCitra::PWrite(u32 addr, u16 value) {
     program[addr] = value;
 }
 u16 DspMemorySharedWithCitra::DRead(u16 addr) const {
-    printf("DRead @ %04X\n", addr);
+    printf("DRead @ %04X (%04X)\n", addr, data[addr]);
     return data[addr];
 }
 void DspMemorySharedWithCitra::DWrite(u16 addr, u16 value) {

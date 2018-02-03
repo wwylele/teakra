@@ -21,7 +21,14 @@ public:
                 expand_value = mem.PRead(regs.pc++);
             }
 
-            // TODO: and rep check
+            if (regs.rep) {
+                if (regs.repc == 0) {
+                    regs.rep = false;
+                } else {
+                    --regs.repc;
+                    --regs.pc;
+                }
+            }
 
             if (regs.lp && regs.bkrep_stack[regs.bcn - 1].end + 1 == regs.pc) {
                 if (regs.bkrep_stack[regs.bcn - 1].lc == 0) {
@@ -859,14 +866,19 @@ public:
         SetAcc(a.GetName(), value);
     }
 
+    void Repeat(u16 repc) {
+        regs.repc = repc;
+        regs.rep = true;
+    }
+
     void rep(Imm8 a) {
-        throw "unimplemented";
+        Repeat(a.storage);
     }
     void rep(Register a) {
-        throw "unimplemented";
+        Repeat(RegToBus16(a.GetName()));
     }
     void rep_r6(Dummy) {
-        throw "unimplemented";
+        Repeat(regs.r[6]);
     }
 
     void shfc(Ab a, Ab b, Cond cond) {
