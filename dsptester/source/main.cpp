@@ -36,7 +36,7 @@ void SetColor(Color color) {
 
 class IReg {
 public:
-    IReg(const std::string& name): name(name) {}
+    IReg(const std::string& name, const std::string& flags): name(name), flags(flags) {}
     virtual ~IReg() = default;
     virtual unsigned GetLength() = 0;
     virtual unsigned GetSrcDigit(unsigned pos) = 0;
@@ -53,19 +53,25 @@ public:
             unsigned dst = GetDstDigit(len - i - 1);
             MoveCursor(row, col + i);
             SetColor(len - i - 1 == selected ? Yellow : Reset);
-            printf("%X", src);
+            if (flags.empty())
+                printf("%X", src);
+            else
+                printf("%c", src ? flags[i] : '-');
             MoveCursor(row + 1, col + i);
             SetColor(src == dst ? Blue : Green);
-            printf("%X", dst);
+            if (flags.empty())
+                printf("%X", dst);
+            else
+                printf("%c", dst ? flags[i] : '-');
         }
     }
 private:
-    std::string name;
+    std::string name, flags;
 };
 
 class HexReg : public IReg{
 public:
-    HexReg(const std::string& name, u16& src, u16& dst) : IReg(name), src(src), dst(dst) {}
+    HexReg(const std::string& name, u16& src, u16& dst) : IReg(name, ""), src(src), dst(dst) {}
     unsigned GetLength() override {
         return 4;
     }
@@ -89,7 +95,7 @@ private:
 
 class BinReg : public IReg{
 public:
-    BinReg(const std::string& name, u16& src, u16& dst) : IReg(name), src(src), dst(dst) {}
+    BinReg(const std::string& name, u16& src, u16& dst, const std::string flags) : IReg(name, flags), src(src), dst(dst) {}
     unsigned GetLength() override {
         return 16;
     }
@@ -121,8 +127,8 @@ IReg* MakeHexReg(const std::string& name, unsigned offset) {
     return new HexReg(name, srcBase[offset], dstBase[offset]);
 }
 
-IReg* MakeBinReg(const std::string& name, unsigned offset) {
-    return new BinReg(name, srcBase[offset], dstBase[offset]);
+IReg* MakeBinReg(const std::string& name, unsigned offset, const std::string flags = "") {
+    return new BinReg(name, srcBase[offset], dstBase[offset], flags);
 }
 
 constexpr unsigned t_row = 15;
@@ -299,20 +305,20 @@ int main() {
     grid[9][2] = MakeHexReg("a0l", 0x20);
     grid[9][0] = MakeHexReg("a0e", 0x21);
 
-    grid[13][3] = MakeBinReg("arp3", 0x22);
-    grid[12][3] = MakeBinReg("arp2", 0x23);
-    grid[11][3] = MakeBinReg("arp1", 0x24);
-    grid[10][3] = MakeBinReg("arp0", 0x25);
-    grid[9][3] = MakeBinReg("ar1", 0x26);
-    grid[8][3] = MakeBinReg("ar0", 0x27);
-    grid[7][3] = MakeBinReg("mod2", 0x28);
-    grid[6][3] = MakeBinReg("mod1", 0x29);
-    grid[5][3] = MakeBinReg("mod0", 0x2A);
-    grid[4][3] = MakeBinReg("stt2", 0x2B);
-    grid[3][3] = MakeBinReg("stt1", 0x2C);
-    grid[2][3] = MakeBinReg("stt0", 0x2D);
-    grid[1][3] = MakeBinReg("cfgj", 0x2E);
-    grid[0][3] = MakeBinReg("cfgi", 0x2F);
+    grid[13][3] = MakeBinReg("arp3", 0x22, "#RR#RRiiiiijjjjj");
+    grid[12][3] = MakeBinReg("arp2", 0x23, "#RR#RRiiiiijjjjj");
+    grid[11][3] = MakeBinReg("arp1", 0x24, "#RR#RRiiiiijjjjj");
+    grid[10][3] = MakeBinReg("arp0", 0x25, "#RR#RRiiiiijjjjj");
+    grid[9][3] = MakeBinReg("ar1", 0x26, "RRRRRRoosssoosss");
+    grid[8][3] = MakeBinReg("ar0", 0x27, "RRRRRRoosssoosss");
+    grid[7][3] = MakeBinReg("mod2", 0x28, "7654321m7654321M");
+    grid[6][3] = MakeBinReg("mod1", 0x29, "????####pppppppp");
+    grid[5][3] = MakeBinReg("mod0", 0x2A, "#QQ#PPooS??###SS");
+    grid[4][3] = MakeBinReg("stt2", 0x2B, "LBBB####mm##V21I");
+    grid[3][3] = MakeBinReg("stt1", 0x2C, "QP#########R####");
+    grid[2][3] = MakeBinReg("stt0", 0x2D, "####C###ZMNVCELL");
+    grid[1][3] = MakeBinReg("cfgj", 0x2E, "mmmmmmmmmsssssss");
+    grid[0][3] = MakeBinReg("cfgi", 0x2F, "mmmmmmmmmsssssss");
 
     // Main loop
     while (aptMainLoop())
