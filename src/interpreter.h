@@ -21,7 +21,17 @@ public:
                 expand_value = mem.PRead(regs.pc++);
             }
 
-            // TODO: bkrep and rep check
+            // TODO: and rep check
+
+            if (regs.lp && regs.bkrep_stack[regs.bcn - 1].end + 1 == regs.pc) {
+                if (regs.bkrep_stack[regs.bcn - 1].lc == 0) {
+                    --regs.bcn;
+                    regs.lp = regs.bcn != 0;
+                } else {
+                    --regs.bkrep_stack[regs.bcn - 1].lc;
+                    regs.pc = regs.bkrep_stack[regs.bcn - 1].start;
+                }
+            }
 
             decoder->call(*this, opcode, expand_value);
         }
@@ -466,26 +476,49 @@ public:
         Moda(op.GetName(), a.GetName(), cond);
     }
 
+    void BlockRepeat(u16 lc, u32 address) {
+        if (regs.bcn > 3)
+            throw "stack overflow";
+        regs.bkrep_stack[regs.bcn].start = regs.pc;
+        regs.bkrep_stack[regs.bcn].end = address;
+        regs.bkrep_stack[regs.bcn].lc = lc;
+        regs.lp = 1;
+        ++regs.bcn;
+    }
+
     void bkrep(Imm8 a, Address16 addr) {
-        throw "unimplemented";
+        u16 lc = a.storage;
+        u32 address = addr.storage | (regs.pc & 0x30000); // ?
+        BlockRepeat(lc, address);
     }
     void bkrep(Register a, Address18_16 addr_low, Address18_2 addr_high) {
-        throw "unimplemented";
+        u16 lc = RegToBus16(a.GetName());
+        u32 address = addr_low.storage | ((u32)addr_high.storage << 16);
+        BlockRepeat(lc, address);
     }
     void bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
+        u16 lc = regs.r[6];
+        u32 address = addr_low.storage | ((u32)addr_high.storage << 16);
+        BlockRepeat(lc, address);
+    }
+
+    void RestoreBkrep(u16& address_reg) {
+        throw "unimplemented";
+    }
+    void StoreBkrep(u16& address_reg) {
         throw "unimplemented";
     }
     void bkreprst(ArRn2 a) {
-        throw "unimplemented";
+        RestoreBkrep(regs.r[GetArRnUnit(a.storage)]);
     }
     void bkreprst_memsp(Dummy) {
-        throw "unimplemented";
+        RestoreBkrep(regs.sp);
     }
     void bkrepsto(ArRn2 a) {
-        throw "unimplemented";
+        StoreBkrep(regs.r[GetArRnUnit(a.storage)]);
     }
     void bkrepsto_memsp(Dummy) {
-        throw "unimplemented";
+        StoreBkrep(regs.sp);
     }
 
     void banke(BankFlags flags) {
@@ -540,7 +573,12 @@ public:
     }
 
     void break_(Dummy) {
-        throw "unimplemented";
+        if (!regs.lp) {
+            throw "not in a loop";
+        }
+        --regs.bcn;
+        regs.lp = regs.bcn != 0;
+        // Note: unlike one would expect, the "break" instruction doesn't jump out of the block
     }
 
     void call(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
@@ -1525,7 +1563,7 @@ private:
         case RegName::pc: throw "?";
         case RegName::sp: return regs.sp;
         case RegName::sv: return regs.sv;
-        case RegName::lc: return regs.lc;
+        case RegName::lc: return regs.Lc();
 
         case RegName::ar0: return regs.ar0.Get();
         case RegName::ar1: return regs.ar1.Get();
@@ -1627,7 +1665,7 @@ private:
         case RegName::pc: throw "?";
         case RegName::sp: regs.sp = value; break;
         case RegName::sv: regs.sv = value; break;
-        case RegName::lc: regs.lc = value; break;
+        case RegName::lc: regs.Lc() = value; break;
 
         case RegName::ar0: regs.ar0.Set(value); break;
         case RegName::ar1: regs.ar1.Set(value); break;

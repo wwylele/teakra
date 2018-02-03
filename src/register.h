@@ -28,7 +28,6 @@ struct RegisterState {
 
     u16 dvm;
     u16 repc;
-    u16 lc;
     u16 mixp;
     u16 sv;
     u16 sp;
@@ -173,6 +172,19 @@ struct RegisterState {
     // m=1, ms=1: use stepi/j  (no modulo)??
     std::array<u16, 8> m{};
     std::array<u16, 8> ms{};
+
+    struct BlockRepeatFrame {
+        u32 start = 0;
+        u32 end = 0;
+        u16 lc = 0;
+    };
+
+    std::array<BlockRepeatFrame, 4> bkrep_stack;
+    u16& Lc() {
+        if (lp)
+            return bkrep_stack[bcn - 1].lc;
+        return bkrep_stack[0].lc;
+    }
 
     PseudoRegister stt0 {{
         {std::make_shared<Redirector>(fls), 0, 1},
