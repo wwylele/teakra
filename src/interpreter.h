@@ -502,23 +502,54 @@ public:
         BlockRepeat(lc, address);
     }
 
-    void RestoreBkrep(u16& address_reg) {
-        throw "unimplemented";
+    void RestoreBlockRepeat(u16& address_reg) {
+        if (regs.lp) {
+            if (regs.bcn > 3)
+                throw "stack overflow";
+            std::copy_backward(regs.bkrep_stack.begin(), regs.bkrep_stack.begin() + regs.bcn,
+                regs.bkrep_stack.begin() + 1);
+            ++regs.bcn;
+        }
+        u32 flag = mem.DRead(++address_reg);
+        u16 valid = flag >> 15;
+        if (regs.lp) {
+            if (!valid)
+                throw "pop invalid loop below valid loop";
+        } else {
+            if (valid)
+                regs.lp = regs.bcn = 1;
+        }
+        regs.bkrep_stack[0].end = mem.DRead(++address_reg) | (((flag >> 8) & 3) << 16);
+        regs.bkrep_stack[0].start = mem.DRead(++address_reg) | ((flag & 3) << 16);
+        regs.bkrep_stack[0].lc = mem.DRead(++address_reg);
     }
-    void StoreBkrep(u16& address_reg) {
-        throw "unimplemented";
+    void StoreBlockRepeat(u16& address_reg) {
+        mem.DWrite(address_reg--, regs.bkrep_stack[0].lc);
+        mem.DWrite(address_reg--, regs.bkrep_stack[0].start & 0xFFFF);
+        mem.DWrite(address_reg--, regs.bkrep_stack[0].end & 0xFFFF);
+        u16 flag = regs.lp << 15;
+        flag |= regs.bkrep_stack[0].start >> 16;
+        flag |= (regs.bkrep_stack[0].start >> 16) << 8;
+        mem.DWrite(address_reg--, flag);
+        if (regs.lp) {
+            std::copy(regs.bkrep_stack.begin() + 1, regs.bkrep_stack.begin() + regs.bcn,
+                regs.bkrep_stack.begin());
+            --regs.bcn;
+            if (regs.bcn == 0)
+                regs.lp = 0;
+        }
     }
     void bkreprst(ArRn2 a) {
-        RestoreBkrep(regs.r[GetArRnUnit(a.storage)]);
+        RestoreBlockRepeat(regs.r[GetArRnUnit(a.storage)]);
     }
     void bkreprst_memsp(Dummy) {
-        RestoreBkrep(regs.sp);
+        RestoreBlockRepeat(regs.sp);
     }
     void bkrepsto(ArRn2 a) {
-        StoreBkrep(regs.r[GetArRnUnit(a.storage)]);
+        StoreBlockRepeat(regs.r[GetArRnUnit(a.storage)]);
     }
     void bkrepsto_memsp(Dummy) {
-        StoreBkrep(regs.sp);
+        StoreBlockRepeat(regs.sp);
     }
 
     void banke(BankFlags flags) {
