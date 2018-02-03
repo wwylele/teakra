@@ -4,6 +4,7 @@
 #include "register.h"
 #include "memory.h"
 #include <unordered_set>
+#include <tuple>
 
 class Interpreter {
 public:
@@ -988,6 +989,69 @@ public:
         MulGeneric(op.GetName(), a);
     }
 
+    void modr(Rn a, StepZIDS as) {
+        u32 unit = GetRnUnit(a.GetName());
+        RnAddressAndModify(unit, as.GetName());
+        regs.fr = regs.r[unit] == 0;
+    }
+    void modr_dmod(Rn a, StepZIDS as) {
+        u32 unit = GetRnUnit(a.GetName());
+        RnAddressAndModify(unit, as.GetName(), true);
+        regs.fr = regs.r[unit] == 0;
+    }
+    void modr_i2(Rn a) {
+        u32 unit = GetRnUnit(a.GetName());
+        RnAddressAndModify(unit, StepValue::Increase2);
+        regs.fr = regs.r[unit] == 0;
+    }
+    void modr_i2_dmod(Rn a)  {
+        u32 unit = GetRnUnit(a.GetName());
+        RnAddressAndModify(unit, StepValue::Increase2, true);
+        regs.fr = regs.r[unit] == 0;
+    }
+    void modr_d2(Rn a)  {
+        u32 unit = GetRnUnit(a.GetName());
+        RnAddressAndModify(unit, StepValue::Decrease2);
+        regs.fr = regs.r[unit] == 0;
+    }
+    void modr_d2_dmod(Rn a)  {
+        u32 unit = GetRnUnit(a.GetName());
+        RnAddressAndModify(unit, StepValue::Decrease2, true);
+        regs.fr = regs.r[unit] == 0;
+    }
+    void modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        u32 uniti, unitj;
+        StepValue stepi, stepj;
+        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
+        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        RnAddressAndModify(uniti, stepi);
+        RnAddressAndModify(unitj, stepj);
+    }
+    void modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        u32 uniti, unitj;
+        StepValue stepi, stepj;
+        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
+        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        RnAddressAndModify(uniti, stepi);
+        RnAddressAndModify(unitj, stepj, true);
+    }
+    void modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        u32 uniti, unitj;
+        StepValue stepi, stepj;
+        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
+        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        RnAddressAndModify(uniti, stepi, true);
+        RnAddressAndModify(unitj, stepj);
+    }
+    void modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        u32 uniti, unitj;
+        StepValue stepi, stepj;
+        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
+        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        RnAddressAndModify(uniti, stepi, true);
+        RnAddressAndModify(unitj, stepj, true);
+    }
+
     void movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
         u16 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u32 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
@@ -1742,7 +1806,7 @@ private:
         }
     }
 
-    static u32 GetRnUnit(RegName reg) {
+    static u16 GetRnUnit(RegName reg) {
         switch(reg) {
         case RegName::r0: return 0; break;
         case RegName::r1: return 1; break;
@@ -1756,12 +1820,16 @@ private:
         }
     }
 
-    u32 GetArRnUnit(u16 arrn) const {
+    u16 GetArRnUnit(u16 arrn) const {
         return regs.arrn[arrn];
     }
 
-    StepValue GetArStep(u16 arstep) const {
-        switch(regs.arstep[arstep]) {
+    std::tuple<u16, u16> GetArpRnUnit(u16 arprn) const {
+        return std::make_tuple(regs.arprni[arprn], regs.arprnj[arprn] + 4);
+    }
+
+    static StepValue ConvertArStep(u16 arvalue) {
+        switch(arvalue) {
         case 0: return StepValue::Zero;
         case 1: return StepValue::Increase;
         case 2: return StepValue::Decrease;
@@ -1770,6 +1838,15 @@ private:
         case 5: case 7: return StepValue::Decrease2;
         default: throw "???";
         }
+    }
+
+    StepValue GetArStep(u16 arstep) const {
+        return ConvertArStep(regs.arstep[arstep]);
+    }
+
+    std::tuple<StepValue, StepValue> GetArpStep(u16 arpstepi, u16 arpstepj) const {
+        return std::make_tuple(ConvertArStep(regs.arpstepi[arpstepi]),
+            ConvertArStep(regs.arpstepj[arpstepj]));
     }
 
     u16 GetArOffset(u16 arstep) const {
@@ -1781,7 +1858,7 @@ private:
         }
     }
 
-    u16 RnAddressAndModify(unsigned unit, StepValue step) {
+    u16 RnAddressAndModify(unsigned unit, StepValue step, bool dmod = false) {
         u16 ret = regs.r[unit];
 
         u16 s;
@@ -1805,7 +1882,7 @@ private:
         if (s == 0)
             return ret;
 
-        if (!regs.ms[unit] && regs.m[unit]) {
+        if (!dmod && !regs.ms[unit] && regs.m[unit]) {
             // Do modular arithmatic
             // this part is tested but really weird
             u16 mod = unit < 4 ? regs.modi : regs.modj;

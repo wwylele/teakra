@@ -355,48 +355,47 @@ struct RegisterState {
         {std::make_shared<Redirector>(arrn[2]), 13, 3},
     }};
 
-    // TODO: i or j at higher bits?
     PseudoRegister arp0 {{
-        {std::make_shared<Redirector>(arpstepj[0]), 0, 3},
-        {std::make_shared<Redirector>(arpoffsetj[0]), 3, 2},
-        {std::make_shared<Redirector>(arpstepi[0]), 5, 3},
-        {std::make_shared<Redirector>(arpoffseti[0]), 8, 2},
-        {std::make_shared<Redirector>(arprnj[0]), 10, 2},
+        {std::make_shared<Redirector>(arpstepi[0]), 0, 3},
+        {std::make_shared<Redirector>(arpoffseti[0]), 3, 2},
+        {std::make_shared<Redirector>(arpstepj[0]), 5, 3},
+        {std::make_shared<Redirector>(arpoffsetj[0]), 8, 2},
+        {std::make_shared<Redirector>(arprni[0]), 10, 2},
         // bit 12 reserved
-        {std::make_shared<Redirector>(arprni[0]), 13, 2},
+        {std::make_shared<Redirector>(arprnj[0]), 13, 2},
         // bit 15 reserved
     }};
 
     PseudoRegister arp1 {{
-        {std::make_shared<Redirector>(arpstepj[1]), 0, 3},
-        {std::make_shared<Redirector>(arpoffsetj[1]), 3, 2},
-        {std::make_shared<Redirector>(arpstepi[1]), 5, 3},
-        {std::make_shared<Redirector>(arpoffseti[1]), 8, 2},
-        {std::make_shared<Redirector>(arprnj[1]), 10, 2},
+        {std::make_shared<Redirector>(arpstepi[1]), 0, 3},
+        {std::make_shared<Redirector>(arpoffseti[1]), 3, 2},
+        {std::make_shared<Redirector>(arpstepj[1]), 5, 3},
+        {std::make_shared<Redirector>(arpoffsetj[1]), 8, 2},
+        {std::make_shared<Redirector>(arprni[1]), 10, 2},
         // bit 12 reserved
-        {std::make_shared<Redirector>(arprni[1]), 13, 2},
+        {std::make_shared<Redirector>(arprnj[1]), 13, 2},
         // bit 15 reserved
     }};
 
     PseudoRegister arp2 {{
-        {std::make_shared<Redirector>(arpstepj[2]), 0, 3},
-        {std::make_shared<Redirector>(arpoffsetj[2]), 3, 2},
-        {std::make_shared<Redirector>(arpstepi[2]), 5, 3},
-        {std::make_shared<Redirector>(arpoffseti[2]), 8, 2},
-        {std::make_shared<Redirector>(arprnj[2]), 10, 2},
+        {std::make_shared<Redirector>(arpstepi[2]), 0, 3},
+        {std::make_shared<Redirector>(arpoffseti[2]), 3, 2},
+        {std::make_shared<Redirector>(arpstepj[2]), 5, 3},
+        {std::make_shared<Redirector>(arpoffsetj[2]), 8, 2},
+        {std::make_shared<Redirector>(arprni[2]), 10, 2},
         // bit 12 reserved
-        {std::make_shared<Redirector>(arprni[2]), 13, 2},
+        {std::make_shared<Redirector>(arprnj[2]), 13, 2},
         // bit 15 reserved
     }};
 
     PseudoRegister arp3 {{
-        {std::make_shared<Redirector>(arpstepj[3]), 0, 3},
-        {std::make_shared<Redirector>(arpoffsetj[3]), 3, 2},
-        {std::make_shared<Redirector>(arpstepi[3]), 5, 3},
-        {std::make_shared<Redirector>(arpoffseti[3]), 8, 2},
-        {std::make_shared<Redirector>(arprnj[3]), 10, 2},
+        {std::make_shared<Redirector>(arpstepi[3]), 0, 3},
+        {std::make_shared<Redirector>(arpoffseti[3]), 3, 2},
+        {std::make_shared<Redirector>(arpstepj[3]), 5, 3},
+        {std::make_shared<Redirector>(arpoffsetj[3]), 8, 2},
+        {std::make_shared<Redirector>(arprni[3]), 10, 2},
         // bit 12 reserved
-        {std::make_shared<Redirector>(arprni[3]), 13, 2},
+        {std::make_shared<Redirector>(arprnj[3]), 13, 2},
         // bit 15 reserved
     }};
 

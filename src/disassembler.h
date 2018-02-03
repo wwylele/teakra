@@ -604,6 +604,37 @@ public:
         return "";
     }
 
+    std::string modr(Rn a, StepZIDS as) {
+        return "";
+    }
+    std::string modr_dmod(Rn a, StepZIDS as) {
+        return "";
+    }
+    std::string modr_i2(Rn a) {
+        return "";
+    }
+    std::string modr_i2_dmod(Rn a)  {
+        return "";
+    }
+    std::string modr_d2(Rn a)  {
+        return "";
+    }
+    std::string modr_d2_dmod(Rn a)  {
+        return "";
+    }
+    std::string modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        return "";
+    }
+    std::string modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        return "";
+    }
+    std::string modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        return "";
+    }
+    std::string modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+        return "";
+    }
+
     std::string movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
         return "movd [" + DsmReg(a) + Dsm(as) + "] [Prog:" + DsmReg(b) + Dsm(bs) + "]";
     }

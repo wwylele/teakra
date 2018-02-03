@@ -240,6 +240,18 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(dint, 0x43C0, DummyMatch),
     INST(eint, 0x4380, DummyMatch),
 
+    // <<< MODR >>>
+    INST(modr, 0x0080, At<Rn, 0>, At<StepZIDS, 3>),
+    INST(modr_dmod, 0x00A0, At<Rn, 0>, At<StepZIDS, 3>),
+    INST(modr_i2, 0x4990, At<Rn, 0>),
+    INST(modr_i2_dmod, 0x4998, At<Rn, 0>),
+    INST(modr_d2, 0x5DA0, At<Rn, 0>),
+    INST(modr_d2_dmod, 0x5DA8, At<Rn, 0>),
+    INST(modr_eemod, 0xD294, At<ArpRn2, 10>, At<ArpStep2, 0>, At<ArpStep2, 5>),
+    INST(modr_edmod, 0x0D80, At<ArpRn2, 5>, At<ArpStep2, 1>, At<ArpStep2, 3>),
+    INST(modr_demod, 0x8464, At<ArpRn2, 8>, At<ArpStep2, 0>, At<ArpStep2, 3>),
+    INST(modr_ddmod, 0x0D81, At<ArpRn2, 5>, At<ArpStep2, 1>, At<ArpStep2, 3>),
+
     // <<< MOV >>>
     INST(mov, 0xD290, At<Ab, 10>, At<Ab, 5>),
     INST(mov_dvm, 0xD298, At<Abl, 10>),
