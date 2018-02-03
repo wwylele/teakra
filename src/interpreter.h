@@ -1625,9 +1625,9 @@ private:
         case RegName::stt1: return regs.stt1.Get();
         case RegName::stt2: return regs.stt2.Get();
 
-        case RegName::st0:
-        case RegName::st1:
-        case RegName::st2: throw "?";
+        case RegName::st0: return regs.st0.Get();
+        case RegName::st1: return regs.st1.Get();
+        case RegName::st2: return regs.st2.Get();
 
         case RegName::cfgi: return regs.cfgi.Get();
         case RegName::cfgj: return regs.cfgj.Get();
