@@ -247,13 +247,16 @@ public:
     }
 
     void or_(Ab a, Ax b, Ax c) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName()) | GetAcc(b.GetName());
+        SetAcc_NoSaturation(c.GetName(), value);
     }
     void or_(Ax a, Bx b, Ax c) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName()) | GetAcc(b.GetName());
+        SetAcc_NoSaturation(c.GetName(), value);
     }
     void or_(Bx a, Bx b, Ax c) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName()) | GetAcc(b.GetName());
+        SetAcc_NoSaturation(c.GetName(), value);
     }
 
     u16 GenericAlb(Alb op, u16 a, u16 b) {

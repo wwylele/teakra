@@ -1,4 +1,4 @@
-#include "memory.h"
+#include "citra.h"
 
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -20,11 +20,19 @@ u16 DspMemorySharedWithCitra::PRead(u32 addr) const {
 void DspMemorySharedWithCitra::PWrite(u32 addr, u16 value) {
     program[addr] = value;
 }
-u16 DspMemorySharedWithCitra::DRead(u16 addr) const {
-    printf("DRead @ %04X (%04X)\n", addr, data[addr]);
-    return data[addr];
+u16 DspMemorySharedWithCitra::DRead(u16 addr) {
+    printf("DRead @ %04X\n", addr);
+    if (miu.InMMIO(addr)) {
+        return mmio.Read(miu.ToMMIO(addr));
+    }
+
+    return data[miu.ConvertAddressByBank(addr)];
 }
 void DspMemorySharedWithCitra::DWrite(u16 addr, u16 value) {
     printf("DWrite @ %04X = %04X\n", addr, value);
-    data[addr] = value;
+    if (miu.InMMIO(addr)) {
+        mmio.Write(miu.ToMMIO(addr), value);
+        return;
+    }
+    data[miu.ConvertAddressByBank(addr)] = value;
 }

@@ -8,6 +8,7 @@
 #include "interpreter.h"
 #include "oprand.h"
 #include "register.h"
+#include "citra.h"
 
 int main() {
     FILE* file = fopen("/media/wwylele/学习_娱乐/3DS/PokemonY.romfs/sound/dspaudio.cdc", "rb");
