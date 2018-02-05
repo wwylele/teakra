@@ -316,6 +316,62 @@ public:
         return Dsm(op) + " " + DsmImm(a) + " " + DsmReg(b);
     }
 
+    std::string add(Ab a, Bx b) {
+        return "";
+    }
+    std::string add(Bx a, Ax b) {
+        return "";
+    }
+    std::string add_p1(Ax b) {
+        return "";
+    }
+    std::string add(Px a, Bx b) {
+        return "";
+    }
+    std::string add_p0_p1(Ab c) {
+        return "";
+    }
+    std::string add_p0_p1a(Ab c) {
+        return "";
+    }
+    std::string add3_p0_p1(Ab c) {
+        return "";
+    }
+    std::string add3_p0_p1a(Ab c) {
+        return "";
+    }
+    std::string add3_p0a_p1a(Ab c) {
+        return "";
+    }
+
+    std::string sub(Ab a, Bx b) {
+        return "";
+    }
+    std::string sub(Bx a, Ax b) {
+        return "";
+    }
+    std::string sub_p1(Ax b) {
+        return "";
+    }
+    std::string sub(Px a, Bx b) {
+        return "";
+    }
+    std::string sub_p0_p1(Ab c) {
+        return "";
+    }
+    std::string sub_p0_p1a(Ab c) {
+        return "";
+    }
+    std::string sub3_p0_p1(Ab c) {
+        return "";
+    }
+    std::string sub3_p0_p1a(Ab c) {
+        return "";
+    }
+    std::string sub3_p0a_p1a(Ab c) {
+        return "";
+    }
+
     std::string moda4(Moda4 op, Ax a, Cond cond) {
         return Dsm(op) + " " + DsmReg(a) + " " + Dsm(cond);
     }

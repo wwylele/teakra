@@ -4,13 +4,7 @@
 #include <string>
 #include <vector>
 #include <malloc.h>
-
-#include <fcntl.h>
-
-#include <sys/types.h>
-
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include "cdc_bin.h"
@@ -28,10 +22,10 @@ enum Color {
     Blue = 34,
     Magnenta = 35,
     Cyan = 36,
-    white = 37,
+    White = 37,
 };
-void SetColor(Color color) {
-    printf("\x1b[%dm", (int)color);
+void SetColor(Color color, Color background) {
+    printf("\x1b[%dm\x1b[%dm", (int)color, (int)background + 10);
 }
 
 class IReg {
@@ -44,7 +38,7 @@ public:
     virtual void SetSrcDigit(unsigned pos, unsigned value) = 0;
     virtual unsigned GetDigitRange() = 0;
     void Print(unsigned row, unsigned col, unsigned selected) {
-        SetColor(Cyan);
+        SetColor(Cyan, Black);
         MoveCursor(row, col - name.size());
         printf("%s", name.c_str());
         unsigned len = GetLength();
@@ -52,13 +46,16 @@ public:
             unsigned src = GetSrcDigit(len - i - 1);
             unsigned dst = GetDstDigit(len - i - 1);
             MoveCursor(row, col + i);
-            SetColor(len - i - 1 == selected ? Yellow : Reset);
+            if (len - i - 1 == selected)
+                SetColor(Black, White);
+            else
+                SetColor(White, Black);
             if (flags.empty())
                 printf("%X", src);
             else
                 printf("%c", src ? flags[i] : '-');
             MoveCursor(row + 1, col + i);
-            SetColor(src == dst ? Blue : Green);
+            SetColor(src == dst ? Magnenta : Green, Black);
             if (flags.empty())
                 printf("%X", dst);
             else
@@ -257,8 +254,6 @@ int main() {
     printf("Hello!\n");
 
     UdpInit();
-    //LightLock_Init(&udp_lock);
-    //udp_thread = threadCreate(UdpThreadEntry, 0, (4 * 1024), 24, -2, false);
 
     printf("dspInit: %08lX\n", dspInit());
     bool loaded = false;
@@ -320,16 +315,20 @@ int main() {
     grid[1][3] = MakeBinReg("cfgj", 0x2E, "mmmmmmmmmsssssss");
     grid[0][3] = MakeBinReg("cfgi", 0x2F, "mmmmmmmmmsssssss");
 
+    MoveCursor(28, 0);
+    char hostname[100];
+    gethostname(hostname, 100);
+    printf("IP: %s port: 8888\n", hostname);
+    printf("X: use sample program    Y: Fill memory");
+
     // Main loop
     while (aptMainLoop())
     {
-        //Scan all the inputs. This should be done once for each frame
         hidScanInput();
 
-        //hidKeysDown returns information about which buttons have been just pressed (and they weren't in the previous frame)
         u32 kDown = hidKeysDown();
 
-        if (kDown & KEY_START) break; // break in order to return to hbmenu
+        if (kDown & KEY_START) break;
 
         if (kDown & KEY_DOWN) {
             for (int next = (int)c_row + 1; next < (int)t_row; ++next) {

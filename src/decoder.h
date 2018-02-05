@@ -115,6 +115,28 @@ std::vector<Matcher<V>> GetDecodeTable() {
     //INST(alb, 0x????, Const<Alb, 6>, At<Imm,16, 16>, At<SttMod, 0>),
     //INST(alb, 0x????, Const<Alb, 7>, At<Imm,16, 16>, At<SttMod, 0>),
 
+    // <<< Add extra >>>
+    INST(add, 0xD2DA, At<Ab, 10>, At<Bx, 0>),
+    INST(add, 0x5DF0, At<Bx, 1>, At<Ax, 0>),
+    INST(add_p1, 0xD782, At<Ax, 0>),
+    INST(add, 0x5DF8, At<Px, 1>, At<Bx, 0>),
+    INST(add_p0_p1, 0x5DC0, At<Ab, 2>),
+    INST(add_p0_p1a, 0x5DC1, At<Ab, 2>),
+    INST(add3_p0_p1, 0x4590, At<Ab, 2>),
+    INST(add3_p0_p1a, 0x4592, At<Ab, 2>),
+    INST(add3_p0a_p1a, 0x4593, At<Ab, 2>),
+
+    // <<< Sub extra >>>
+    INST(sub, 0x8A61, At<Ab, 3>, At<Bx, 8>),
+    INST(sub, 0x8861, At<Bx, 4>, At<Ax, 3>),
+    INST(sub_p1, 0xD4B9, At<Ax, 8>),
+    INST(sub, 0x8FD0, At<Px, 1>, At<Bx, 0>),
+    INST(sub_p0_p1, 0x5DC2, At<Ab, 2>),
+    INST(sub_p0_p1a, 0x5DC3, At<Ab, 2>),
+    INST(sub3_p0_p1, 0x80C6, At<Ab, 10>),
+    INST(sub3_p0_p1a, 0x82C6, At<Ab, 10>),
+    INST(sub3_p0a_p1a, 0x83C6, At<Ab, 10>),
+
     // <<< Mul >>>
     INST(mul, 0x8000, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Imm16, 16>, At<Ax, 11>),
     INST(mul_y0, 0x8020, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 11>),

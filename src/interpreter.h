@@ -75,9 +75,9 @@ public:
             y = SignExtend<16>(y);
         regs.p[unit].value = x * y;
         if (x_sign || y_sign)
-            regs.psm[unit] = regs.p[unit].value >> 31;
+            regs.psign[unit] = regs.p[unit].value >> 31;
         else
-            regs.psm[unit] = 0;
+            regs.psign[unit] = 0;
     }
 
     u64 AddSub(u64 a, u64 b, bool sub) {
@@ -85,6 +85,8 @@ public:
         b &= 0xFF'FFFF'FFFF;
         u64 result = sub ? a - b : a + b;
         regs.fc = (result >> 40) & 1;
+        if (sub)
+            b = ~b;
         regs.fv = ((~(a ^ b) & (a ^ result)) >> 39) & 1;
         if (regs.fv) {
             regs.flv = 1;
@@ -382,6 +384,162 @@ public:
         u16 result = GenericAlb(op, a.storage, bv);
         if (IsAlbModifying(op))
             RegFromBus16(b.GetName(), result);
+    }
+
+    void add(Ab a, Bx b) {
+        u64 value_a = GetAcc(a.GetName());
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, false);
+        SetAcc(b.GetName(), result);
+    }
+    void add(Bx a, Ax b) {
+        u64 value_a = GetAcc(a.GetName());
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, false);
+        SetAcc(b.GetName(), result);
+    }
+    void add_p1(Ax b) {
+        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, false);
+        SetAcc(b.GetName(), result);
+    }
+    void add(Px a, Bx b) {
+        u64 value_a = ProductToBus40(a.GetName());
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, false);
+        SetAcc(b.GetName(), result);
+    }
+    void add_p0_p1(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 result = AddSub(value_a, value_b, false);
+        SetAcc(c.GetName(), result);
+    }
+    void add_p0_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 result = AddSub(value_a, value_b, false);
+        SetAcc(c.GetName(), result);
+    }
+    void add3_p0_p1(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        // is this flag handling correct?
+        u16 temp_c = regs.fc;
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, false);
+        regs.fc |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void add3_p0_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        u16 temp_c = regs.fc;
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, false);
+        regs.fc |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void add3_p0a_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        value_a = SignExtend<24>(value_a >> 16);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        u16 temp_c = regs.fc;
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, false);
+        regs.fc |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+
+    void sub(Ab a, Bx b) {
+        u64 value_a = GetAcc(a.GetName());
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, true);
+        SetAcc(b.GetName(), result);
+    }
+    void sub(Bx a, Ax b) {
+        u64 value_a = GetAcc(a.GetName());
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, true);
+        SetAcc(b.GetName(), result);
+    }
+    void sub_p1(Ax b) {
+        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, true);
+        SetAcc(b.GetName(), result);
+    }
+    void sub(Px a, Bx b) {
+        u64 value_a = ProductToBus40(a.GetName());
+        u64 value_b = GetAcc(b.GetName());
+        u64 result = AddSub(value_b, value_a, true);
+        SetAcc(b.GetName(), result);
+    }
+    void sub_p0_p1(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 result = AddSub(value_a, value_b, true);
+        SetAcc(c.GetName(), result);
+    }
+    void sub_p0_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 result = AddSub(value_a, value_b, true);
+        SetAcc(c.GetName(), result);
+    }
+    void sub3_p0_p1(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, true);
+        // is this flag handling correct?
+        u16 temp_c = regs.fc;
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void sub3_p0_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, true);
+        u16 temp_c = regs.fc;
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void sub3_p0a_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        value_a = SignExtend<24>(value_a >> 16);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, true);
+        u16 temp_c = regs.fc;
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c.GetName(), result);
     }
 
     void Moda(ModaOp op, RegName a, Cond cond) {
@@ -1786,7 +1944,7 @@ private:
         case RegName::p0:
         case RegName::p1: throw "?";
         case RegName::p: // p0h
-            regs.psm[0] = value > 0x7FFF; // ?
+            regs.psign[0] = value > 0x7FFF; // ?
             regs.p[0].value = (regs.p[0].value & 0xFFFF) | (value << 16);
             break;
 
@@ -1958,26 +2116,22 @@ private:
         default:
             throw "???";
         }
-        u64 value = regs.p[unit].value;
+        u64 value = regs.p[unit].value | ((u64)regs.psign[unit] << 32);
         switch (regs.ps[unit]) {
         case 0:
-            if (regs.psm[unit])
-                value = SignExtend<32>(value);
+            value = SignExtend<33>(value);
             break;
         case 1:
             value >>= 1;
-            if (regs.psm[unit])
-                value = SignExtend<31>(value);
+            value = SignExtend<32>(value);
             break;
         case 2:
             value <<= 1;
-            if (regs.psm[unit])
-                value = SignExtend<33>(value);
+            value = SignExtend<34>(value);
             break;
         case 3:
             value <<= 2;
-            if (regs.psm[unit])
-                value = SignExtend<34>(value);
+            value = SignExtend<35>(value);
             break;
         }
         return value;
@@ -1994,6 +2148,6 @@ private:
             throw "???";
         }
         regs.p[unit].value = value;
-        regs.psm[unit] = value >> 31;
+        regs.psign[unit] = value >> 31;
     }
 };

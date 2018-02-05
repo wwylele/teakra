@@ -173,7 +173,9 @@ struct RegisterState {
     u16 ym = 0; // 2-bit, modify y on multiplication
     u16 mod0_unk_const = 1; // 3-bit
     std::array<u16, 2> ps{}; // 2-bit
-    std::array<u16, 2> psm{}; // product shift mode. 0: logic; 1: arithmatic?
+    // sign bit (bit 32) of p0/1. For signed multiplication and mov, this is set to equal bit 31
+    // product shift and extension is signed according to this.
+    std::array<u16, 2> psign{};
     u16 s = 0; // 1 bit. 0 - arithmetic, 1 - logic
     std::array<u16, 2> ou{};
     std::array<u16, 2> iu{};
@@ -215,8 +217,8 @@ struct RegisterState {
     PseudoRegister stt1 {{
         {std::make_shared<Redirector>(fr), 4, 1},
 
-        {std::make_shared<Redirector>(psm[0]), 14, 1},
-        {std::make_shared<Redirector>(psm[1]), 15, 1},
+        {std::make_shared<Redirector>(psign[0]), 14, 1},
+        {std::make_shared<Redirector>(psign[1]), 15, 1},
     }};
     PseudoRegister stt2 {{
         {std::make_shared<RORedirector>(ip[0]), 0, 1},
