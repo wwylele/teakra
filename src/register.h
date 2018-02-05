@@ -35,6 +35,9 @@ struct RegisterState {
 
     std::array<u16, 8> r{};
 
+    // shadows for bank exchange;
+    u16 r0b = 0, r1b = 0, r4b = 0, r7b = 0;
+
     struct Accumulator {
         // 40-bit 2's comp on real TeakLite.
         // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
@@ -50,7 +53,6 @@ struct RegisterState {
     std::array<u16, 2> y{};
     std::array<Product, 2> p;
 
-    u16 stepi0 = 0, stepj0 = 0; // alternative step
     std::array<u16, 2> vtr{}; // fc/fc1 latching
 
     class RegisterProxy {
@@ -143,6 +145,12 @@ struct RegisterState {
 
     u16 stepi = 0, stepj = 0; // 7 bit 2's comp
     u16 modi = 0, modj = 0; // 9 bit
+    u16 stepi0 = 0, stepj0 = 0; // alternative step
+
+    // Shadows for bank exchange
+    u16 stepib = 0, stepjb = 0;
+    u16 modib = 0, modjb = 0;
+    u16 stepi0b = 0, stepj0b = 0;
 
     PseudoRegister cfgi {{
         {std::make_shared<Redirector>(stepi), 0, 7},

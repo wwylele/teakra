@@ -636,6 +636,7 @@ public:
                 // note: bX doesn't support
                 u64 value = GetAcc(a == RegName::a0 ? RegName::a1 : RegName::a0);
                 SetAcc(a, value);
+                break;
             }
             default:
                 throw "??";
@@ -728,7 +729,30 @@ public:
     }
 
     void banke(BankFlags flags) {
-        throw "unimplemented";
+        if (flags.storage & 1) {
+            std::swap(regs.stepi, regs.stepib);
+            std::swap(regs.modi, regs.modib);
+            if (regs.bankstep)
+                std::swap(regs.stepi0, regs.stepi0b);
+        }
+        if (flags.storage & 2) {
+            std::swap(regs.r[4], regs.r4b);
+        }
+        if (flags.storage & 4) {
+            std::swap(regs.r[1], regs.r1b);
+        }
+        if (flags.storage & 8) {
+            std::swap(regs.r[0], regs.r0b);
+        }
+        if (flags.storage & 16) {
+            std::swap(regs.r[7], regs.r7b);
+        }
+        if (flags.storage & 32) {
+            std::swap(regs.stepj, regs.stepjb);
+            std::swap(regs.modj, regs.modjb);
+            if (regs.bankstep)
+                std::swap(regs.stepj0, regs.stepj0b);
+        }
     }
     void bankr(Dummy) {
         throw "unimplemented";
@@ -774,7 +798,7 @@ public:
 
     void brr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            regs.pc += addr.storage; // note: pc is the address of the NEXT instruction
+            regs.pc += SignExtend<7, u32>(addr.storage); // note: pc is the address of the NEXT instruction
         }
     }
 
@@ -816,7 +840,7 @@ public:
             u16 h = regs.GetPcH();
             mem.DWrite(--regs.sp, l);
             mem.DWrite(--regs.sp, h);
-            regs.pc += addr.storage;
+            regs.pc += SignExtend<7, u32>(addr.storage);
         }
     }
 
