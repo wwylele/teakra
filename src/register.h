@@ -73,6 +73,18 @@ struct RegisterState {
         u16& target;
     };
 
+    class UnkRedirector : public Redirector {
+    public:
+        UnkRedirector(u16& target, const char* name) : Redirector(target), name(name) {}
+        void Set(u16 value) override {
+            if (value != 0)
+                printf("warning: Setting %s = 0x%X\n", name, value);
+            Redirector::Set(value);
+        }
+    private:
+        const char* name;
+    };
+
     class DoubleRedirector : public RegisterProxy {
     public:
         DoubleRedirector(u16& target0, u16& target1) : target0(target0), target1(target1) {}
@@ -158,14 +170,16 @@ struct RegisterState {
     u16 bcn = 0;
     u16 lp = 0;
     std::array<u16, 2> sar{}; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
-    u16 mod0_unk = 0; // 2-bit
+    u16 ym = 0; // 2-bit, modify y on multiplication
+    u16 mod0_unk_const = 1; // 3-bit
     std::array<u16, 2> ps{}; // 2-bit
     std::array<u16, 2> psm{}; // product shift mode. 0: logic; 1: arithmatic?
     u16 s = 0; // 1 bit. 0 - arithmetic, 1 - logic
     std::array<u16, 2> ou{};
     std::array<u16, 2> iu{};
     u16 page = 0; // 8-bit
-    u16 mod1_unk = 0; // 4-bit
+    u16 bankstep = 0; // 1 bit. If set, stepi/j0 will be exchanged along with cfgi/j in banke
+    u16 mod1_unk = 0; // 3-bit
 
     // m=0, ms=0: use stepi/j (no modulo)
     // m=1, ms=0: use stepi/j with modulo
@@ -218,8 +232,8 @@ struct RegisterState {
     PseudoRegister mod0 {{
         {std::make_shared<Redirector>(sar[0]), 0, 1},
         {std::make_shared<Redirector>(sar[1]), 1, 1},
-        //{std::make_shared<RORedirector>(??), 2, 3},
-        {std::make_shared<Redirector>(mod0_unk), 5, 2},
+        {std::make_shared<RORedirector>(mod0_unk_const), 2, 3},
+        {std::make_shared<Redirector>(ym), 5, 2},
         {std::make_shared<Redirector>(s), 7, 1},
         {std::make_shared<Redirector>(ou[0]), 8, 1},
         {std::make_shared<Redirector>(ou[1]), 9, 1},
@@ -230,7 +244,8 @@ struct RegisterState {
     PseudoRegister mod1 {{
         {std::make_shared<Redirector>(page), 0, 8},
 
-        {std::make_shared<Redirector>(mod1_unk), 12, 4},
+        {std::make_shared<Redirector>(bankstep), 12, 1},
+        {std::make_shared<UnkRedirector>(mod1_unk, "mod1.13"), 13, 3},
     }};
     PseudoRegister mod2 {{
         {std::make_shared<Redirector>(m[0]), 0, 1},
@@ -441,7 +456,7 @@ struct RegisterState {
         ShadowSwapRegister(movpd),
         ShadowSwapRegister(sar[0]),
         ShadowSwapRegister(sar[1]),
-        ShadowSwapRegister(mod0_unk),
+        ShadowSwapRegister(ym),
         ShadowSwapRegister(s),
         ShadowSwapRegister(ps[0]),
         ShadowSwapRegister(ps[1]),

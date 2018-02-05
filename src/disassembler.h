@@ -604,6 +604,10 @@ public:
         return "";
     }
 
+    std::string mpyi(Imm8s x) {
+        return "";
+    }
+
     std::string modr(Rn a, StepZIDS as) {
         return "";
     }

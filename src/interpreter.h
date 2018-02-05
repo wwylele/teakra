@@ -63,6 +63,12 @@ public:
         // Am I doing it right?
         u32 x = regs.x[unit];
         u32 y = regs.y[unit];
+        // does y modification also apply to y1?
+        if (regs.ym == 1 || regs.ym == 3) {
+            y >>= 8; // no sign extension?
+        } else if (regs.ym == 2) {
+            y &= 0xFF;
+        }
         if (x_sign)
             x = SignExtend<16>(x);
         if (y_sign)
@@ -905,19 +911,26 @@ public:
         throw "unimplemented";
     }
     void tstb(MemImm8 a, Imm4 b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        regs.fz = (value >> b.storage) & 1;
     }
     void tstb(Rn a, StepZIDS as, Imm4 b) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 value = mem.DRead(address);
+        regs.fz = (value >> b.storage) & 1;
     }
     void tstb(Register a, Imm4 b) {
-        throw "unimplemented";
+        // a0, a1, p?
+        u16 value = RegToBus16(a.GetName());
+        regs.fz = (value >> b.storage) & 1;
     }
     void tstb_r6(Imm4 b) {
-        throw "unimplemented";
+        u16 value = regs.r[6];
+        regs.fz = (value >> b.storage) & 1;
     }
     void tstb(SttMod a, Imm16 b) {
-        throw "unimplemented";
+        u16 value = RegToBus16(a.GetName());
+        regs.fz = (value >> b.storage) & 1;
     }
 
     void and_(Ab a, Ab b, Ax c) {
@@ -990,6 +1003,11 @@ public:
     void mul_y0(Mul2 op, MemImm8 x, Ax a) {
         regs.x[0] = LoadFromMemory(x);
         MulGeneric(op.GetName(), a);
+    }
+
+    void mpyi(Imm8s x) {
+        regs.x[0] = SignExtend<8, u16>(x.storage);
+        DoMultiplication(0, true, true);
     }
 
     void modr(Rn a, StepZIDS as) {

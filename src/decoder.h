@@ -123,6 +123,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mul_y0_r6, 0x5EA0, At<Mul3, 1>, At<Ax, 0>),
     INST(mul_y0, 0xE000, At<Mul2, 9>, At<MemImm8, 0>, At<Ax, 11>),
 
+    // <<< Mul Extra >>>
+    INST(mpyi, 0x0800, At<Imm8s, 0>),
+    // TODO: more
+
     // <<< MODA >>>
     INST(moda4, 0x6700, At<Moda4, 4>, At<Ax, 12>, At<Cond, 0>)
         .EXCEPT(AtConst<Moda4, 4, 7>),
