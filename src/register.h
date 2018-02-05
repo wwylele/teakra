@@ -461,6 +461,7 @@ struct RegisterState {
         ShadowSwapRegister(ps[0]),
         ShadowSwapRegister(ps[1]),
         ShadowSwapRegister(page),
+        ShadowSwapRegister(bankstep),
         ShadowSwapRegister(mod1_unk),
         ShadowSwapRegister(m[0]),
         ShadowSwapRegister(m[1]),
