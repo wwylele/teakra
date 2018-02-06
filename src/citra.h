@@ -3,11 +3,14 @@
 #include "mmio.h"
 
 class DspMemorySharedWithCitra : public MemoryInterface {
+public:
+    ICU icu; // TODO: refactor this to somewhere else
+private:
     u16* program;
     u16* data;
 
     MIU miu;
-    MMIORegion mmio{miu};
+    MMIORegion mmio{miu, icu};
 public:
     DspMemorySharedWithCitra();
     u16 PRead(u32 addr) const override;

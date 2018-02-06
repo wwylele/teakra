@@ -1,6 +1,9 @@
 #include "mmio.h"
 #include <functional>
 
+auto NoSet = [](u16) {printf("Warning: NoSet\n");};
+auto NoGet = []()->u16 {printf("Warning: NoGet\n"); return 0;};
+
 struct Cell {
     std::function<void(u16)> set;
     std::function<u16(void)> get;
@@ -10,7 +13,7 @@ struct Cell {
         get = [storage]() ->u16 {return *storage;};
     }
     Cell(u16 constant) {
-        set = [](u16 value){};
+        set = NoSet;
         get = [constant]()->u16 {return constant;};
     }
     Cell(Cell* mirror) {
@@ -24,7 +27,7 @@ public:
     std::array<Cell, 0x800> cells{};
 };
 
-MMIORegion::MMIORegion(MIU& miu) : impl(new Impl), miu(miu) {
+MMIORegion::MMIORegion(MIU& miu, ICU& icu) : impl(new Impl), miu(miu), icu(icu) {
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell(0xC902); // chip detect
@@ -39,6 +42,27 @@ MMIORegion::MMIORegion(MIU& miu) : impl(new Impl), miu(miu) {
     impl->cells[0x11E].set = std::bind(&MIU::SetMMIOLocation, &miu, _1);
     impl->cells[0x11E].get = std::bind(&MIU::GetMMIOLocation, &miu);
 
+    impl->cells[0x200].set = NoSet;
+    impl->cells[0x200].get = std::bind(&ICU::GetRequest, &icu);
+    impl->cells[0x202].set = std::bind(&ICU::Acknowledge, &icu, _1);
+    impl->cells[0x202].get = NoGet;
+    impl->cells[0x204].set = std::bind(&ICU::Trigger, &icu, _1);
+    impl->cells[0x204].get = NoGet;
+    impl->cells[0x206].set = std::bind(&ICU::SetEnable, &icu, 0, _1);
+    impl->cells[0x206].get = std::bind(&ICU::GetEnable, &icu, 0);
+    impl->cells[0x208].set = std::bind(&ICU::SetEnable, &icu, 1, _1);
+    impl->cells[0x208].get = std::bind(&ICU::GetEnable, &icu, 1);
+    impl->cells[0x20A].set = std::bind(&ICU::SetEnable, &icu, 2, _1);
+    impl->cells[0x20A].get = std::bind(&ICU::GetEnable, &icu, 2);
+    impl->cells[0x20C].set = std::bind(&ICU::SetEnableVectored, &icu, _1);
+    impl->cells[0x20C].get = std::bind(&ICU::GetEnableVectored, &icu);
+    // 20E: some type bit for each
+    // 210: some type bit for each
+    for (unsigned i = 0; i < 16; ++i) {
+        // 0x212 + i * 4 : ?
+        impl->cells[0x214 + i * 4].set = std::bind(&ICU::SetVector, &icu, i, _1);
+        impl->cells[0x214 + i * 4].get = std::bind(&ICU::GetVector, &icu, i);
+    }
 }
 
 MMIORegion::~MMIORegion() = default;

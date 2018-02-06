@@ -21,7 +21,7 @@ void DspMemorySharedWithCitra::PWrite(u32 addr, u16 value) {
     program[addr] = value;
 }
 u16 DspMemorySharedWithCitra::DRead(u16 addr) {
-    printf("DRead @ %04X\n", addr);
+    //printf("DRead @ %04X\n", addr);
     if (miu.InMMIO(addr)) {
         return mmio.Read(miu.ToMMIO(addr));
     }
@@ -29,7 +29,7 @@ u16 DspMemorySharedWithCitra::DRead(u16 addr) {
     return data[miu.ConvertAddressByBank(addr)];
 }
 void DspMemorySharedWithCitra::DWrite(u16 addr, u16 value) {
-    printf("DWrite @ %04X = %04X\n", addr, value);
+    //printf("DWrite @ %04X = %04X\n", addr, value);
     if (miu.InMMIO(addr)) {
         mmio.Write(miu.ToMMIO(addr), value);
         return;

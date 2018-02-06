@@ -14,7 +14,7 @@ struct RegisterState {
 
     }
 
-    u32 pc = 0; // 18-bit
+    u32 pc = 0; // 18-bit, program counter
 
     u16 GetPcL() const {
         return pc & 0xFFFF;
@@ -26,18 +26,19 @@ struct RegisterState {
         pc = (u32)low | ((u32)high << 16);
     }
 
-    u16 dvm = 0;
-    u16 repc = 0;
+    u16 dvm = 0; // data value match for breakpoints and trap
+    u16 repc = 0; // rep loop counter
     bool rep = false; // true when in rep loop
     u16 mixp = 0;
-    u16 sv = 0;
-    u16 sp = 0;
+    u16 sv = 0; // 16-bit two's complement shift value
+    u16 sp = 0; // stack pointer
 
-    std::array<u16, 8> r{};
+    std::array<u16, 8> r{}; // general registers
 
     // shadows for bank exchange;
     u16 r0b = 0, r1b = 0, r4b = 0, r7b = 0;
 
+    // accumulators
     struct Accumulator {
         // 40-bit 2's comp on real TeakLite.
         // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
@@ -46,14 +47,13 @@ struct RegisterState {
     std::array<Accumulator, 2> a;
     std::array<Accumulator, 2> b;
 
+    // multiplication unit
     struct Product {
         u32 value = 0;
     };
-    std::array<u16, 2> x{};
-    std::array<u16, 2> y{};
-    std::array<Product, 2> p;
-
-    std::array<u16, 2> vtr{}; // fc/fc1 latching
+    std::array<u16, 2> x{}; // factor
+    std::array<u16, 2> y{}; // factor
+    std::array<Product, 2> p; // product
 
     class RegisterProxy {
     public:
@@ -79,7 +79,7 @@ struct RegisterState {
     public:
         UnkRedirector(u16& target, const char* name) : Redirector(target), name(name) {}
         void Set(u16 value) override {
-            if (value != 0)
+            if (value != Get())
                 printf("warning: Setting %s = 0x%X\n", name, value);
             Redirector::Set(value);
         }
@@ -143,6 +143,7 @@ struct RegisterState {
         }
     };
 
+    // step/modulo
     u16 stepi = 0, stepj = 0; // 7 bit 2's comp
     u16 modi = 0, modj = 0; // 9 bit
     u16 stepi0 = 0, stepj0 = 0; // alternative step
@@ -161,33 +162,47 @@ struct RegisterState {
         {std::make_shared<Redirector>(modj), 7, 9},
     }};
 
+    // 1-bit flags
     u16 fz = 0, fm = 0, fn = 0, fv = 0, fc = 0, fe = 0;
     u16 fls = 0; // set on saturation
     u16 flv = 0; // latching fv
     u16 fr = 0;
     u16 fc1 = 0; // used by max||max||vtrshr?
-    u16 nimc = 0;
+    std::array<u16, 2> vtr{}; // fc/fc1 latching
+
+    // interrupt pending bit
     std::array<u16, 3> ip{};
     u16 vip = 0;
+
+    // interrupt enable bit
     std::array<u16, 3> im{};
     u16 vim = 0;
+
+    // interrupt context switching bit
     std::array<u16, 3> ic{};
     u16 vic = 0;
+    u16 nimc = 0;
+
+    // interrupt enable master bit
     u16 ie = 0;
-    u16 movpd = 0; // 2-bit
-    u16 bcn = 0;
-    u16 lp = 0;
+
+    // vectored(?) interrupt handler address;
+    u32 viaddr = 0;
+
+    u16 movpd = 0; // 2-bit, higher part of program address for movp/movd
+    u16 bcn = 0; // 3-bit, nest loop counter
+    u16 lp = 0; // 1-bit, set when in a loop
     std::array<u16, 2> sar{}; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
     u16 ym = 0; // 2-bit, modify y on multiplication
     u16 mod0_unk_const = 1; // 3-bit
-    std::array<u16, 2> ps{}; // 2-bit
-    // sign bit (bit 32) of p0/1. For signed multiplication and mov, this is set to equal bit 31
+    std::array<u16, 2> ps{}; // 2-bit, product shift mode
+    // sign bit of p0/1. For signed multiplication and mov, this is set to equal bit 31
     // product shift and extension is signed according to this.
     std::array<u16, 2> psign{};
-    u16 s = 0; // 1 bit. 0 - arithmetic, 1 - logic
-    std::array<u16, 2> ou{};
-    std::array<u16, 2> iu{};
-    u16 page = 0; // 8-bit
+    u16 s = 0; // 1-bit, shift mode. 0 - arithmetic, 1 - logic
+    std::array<u16, 2> ou{}; // user output pins
+    std::array<u16, 2> iu{}; // user input pins
+    u16 page = 0; // 8-bit, Higher part of MemImm8 address
     u16 bankstep = 0; // 1 bit. If set, stepi/j0 will be exchanged along with cfgi/j in banke
     u16 mod1_unk = 0; // 3-bit
 

@@ -2,6 +2,7 @@
 #include "common_types.h"
 #include <memory>
 #include <array>
+#include "icu.h"
 
 class MIU {
 public:
@@ -33,7 +34,7 @@ private:
 
 class MMIORegion {
 public:
-    MMIORegion(MIU& miu);
+    MMIORegion(MIU& miu, ICU& icu);
     ~MMIORegion();
     u16 Read(u16 addr); // not const because it can be a FIFO register
     void Write(u16 addr, u16 value);
@@ -42,4 +43,5 @@ private:
     std::unique_ptr<Impl> impl;
 
     MIU& miu;
+    ICU& icu;
 };

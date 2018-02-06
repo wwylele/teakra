@@ -42,7 +42,50 @@ public:
             }
 
             decoder->call(*this, opcode, expand_value);
+
+            // I am not sure if a single-instruction loop is interruptable and how it is handled,
+            // so just disable interrupt for it for now.
+            if (regs.ie && !regs.rep) {
+                bool interrupt_handled = false;
+                for (u32 i = 0; i < regs.im.size(); ++i) {
+                    if (regs.im[i] && regs.ip[i]) {
+                        regs.ip[i] = 0;
+                        regs.ie = 0;
+                        u16 l = regs.GetPcL();
+                        u16 h = regs.GetPcH();
+                        mem.DWrite(--regs.sp, l);
+                        mem.DWrite(--regs.sp, h);
+                        regs.pc = 0x0006 + i * 8;
+                        interrupt_handled = true;
+                        if (regs.ic[i]) {
+                            ContextStore();
+                        }
+                        break;
+                    }
+                }
+                if (!interrupt_handled && regs.vim && regs.vip) {
+                    regs.vip = 0;
+                    regs.ie = 0;
+                    u16 l = regs.GetPcL();
+                    u16 h = regs.GetPcH();
+                    mem.DWrite(--regs.sp, l);
+                    mem.DWrite(--regs.sp, h);
+                    regs.pc = regs.viaddr;
+                    if (regs.vic) {
+                        ContextStore();
+                    }
+                }
+            }
         }
+    }
+
+
+    void SignalInterrupt(u32 i) {
+        regs.ip[i] = 1;
+    }
+    void SignalVectoredInterrupt(u32 address) {
+        regs.viaddr = address;
+        regs.vip = 1;
     }
 
     using instruction_return_type = void;
@@ -1470,6 +1513,12 @@ public:
             RegName b_name = (b.storage & 1) ? RegName::a0 : RegName::a1;
             u64 value = ProductToBus40(RegName::p0);
             SetAcc(b_name, value);
+        } if (a.GetName() == RegName::pc) {
+            if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
+                SetAcc(b.GetName(), regs.pc);
+            } else {
+                RegFromBus16(b.GetName(), regs.pc & 0xFFFF);
+            }
         } else {
             u16 value = RegToBus16(a.GetName());
             RegFromBus16(b.GetName(), value);
@@ -1624,10 +1673,12 @@ public:
     }
 
     void mov_pc(Ax a) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName());
+        regs.pc = value & 0xFFFFFFFF;
     }
     void mov_pc(Bx a) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName());
+        regs.pc = value & 0xFFFFFFFF;
     }
 
     void mov_mixp_to(Bx b) {
@@ -1840,7 +1891,8 @@ private:
             // get aXl, but unlike using RegName::aXl, this does never saturate.
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
-            return GetAcc(reg) & 0xFFFF;
+            // return GetAcc(reg) & 0xFFFF;
+            throw "uncomment above after developing";
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
             return SaturateAcc(GetAcc(reg), false) & 0xFFFF;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
@@ -1868,7 +1920,8 @@ private:
         case RegName::p:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
-            return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+            // return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+            throw "uncomment above after developing";
 
         case RegName::pc: throw "?";
         case RegName::sp: return regs.sp;

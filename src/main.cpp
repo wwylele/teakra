@@ -69,6 +69,9 @@ int main() {
     RegisterState r;
     DspMemorySharedWithCitra m;
     Interpreter interpreter(r, m);
+    m.icu.OnInterrupt = std::bind(&Interpreter::SignalInterrupt, &interpreter, std::placeholders::_1);
+    m.icu.OnVectoredInterrupt = std::bind(&Interpreter::SignalVectoredInterrupt, &interpreter, std::placeholders::_1);
+
     r.Reset();
     while(1) {
         interpreter.Run(1);
