@@ -1,4 +1,4 @@
-#include <cstdio>
+/*#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -8,20 +8,26 @@
 #include "interpreter.h"
 #include "oprand.h"
 #include "register.h"
-#include "citra.h"
+#include "citra.h"*/
+#include "teakra/teakra.h"
+#include "decoder.h"
+#include "disassembler.h"
 
 int main() {
+    Teakra::Teakra teakra;
+
+    for (u32 opcode = 0; opcode < 0x10000; ++opcode) {
+        Decode<Disassembler>((u16)opcode);
+    }
+
+    /*
     FILE* file = fopen("/media/wwylele/学习_娱乐/3DS/PokemonY.romfs/sound/dspaudio.cdc", "rb");
     std::vector<u8> raw(217976);
     fread(raw.data(), raw.size(), 1, file);
     fclose(file);
     Dsp1 dsp(raw);
 
-    Disassembler dsm;
 
-    for (u32 opcode = 0; opcode < 0x10000; ++opcode) {
-        Decode<Disassembler>((u16)opcode);
-    }
 
     file = fopen("/home/wwylele/teakra/teakra.out", "wt");
 
@@ -75,5 +81,5 @@ int main() {
     r.Reset();
     while(1) {
         interpreter.Run(1);
-    }
+    }*/
 }

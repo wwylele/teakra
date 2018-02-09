@@ -1,5 +1,8 @@
 #include "mmio.h"
+#include "memory_interface.h"
 #include <functional>
+
+namespace Teakra {
 
 auto NoSet = [](u16) {printf("Warning: NoSet\n");};
 auto NoGet = []()->u16 {printf("Warning: NoGet\n"); return 0;};
@@ -27,20 +30,20 @@ public:
     std::array<Cell, 0x800> cells{};
 };
 
-MMIORegion::MMIORegion(MIU& miu, ICU& icu) : impl(new Impl), miu(miu), icu(icu) {
+MMIORegion::MMIORegion(DataMemoryController& miu, ICU& icu) : impl(new Impl), miu(miu), icu(icu) {
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell(0xC902); // chip detect
 
     // memory bank setter has a delay of about 1 cycle. Game usually has a nop after the write instruction
-    impl->cells[0x10E].set = std::bind(&MIU::SetMemoryBank, &miu, 0, _1);
-    impl->cells[0x10E].get = std::bind(&MIU::GetMemoryBank, &miu, 0);
-    impl->cells[0x110].set = std::bind(&MIU::SetMemoryBank, &miu, 1, _1);
-    impl->cells[0x110].get = std::bind(&MIU::GetMemoryBank, &miu, 1);
+    impl->cells[0x10E].set = std::bind(&DataMemoryController::SetMemoryBank, &miu, 0, _1);
+    impl->cells[0x10E].get = std::bind(&DataMemoryController::GetMemoryBank, &miu, 0);
+    impl->cells[0x110].set = std::bind(&DataMemoryController::SetMemoryBank, &miu, 1, _1);
+    impl->cells[0x110].get = std::bind(&DataMemoryController::GetMemoryBank, &miu, 1);
     impl->cells[0x114].set(0x1E20); // low = X space size, high = Y space size (both in 0x400)
     impl->cells[0x11A].set(0x0014); // bit 6 enables memory bank exchanging?
-    impl->cells[0x11E].set = std::bind(&MIU::SetMMIOLocation, &miu, _1);
-    impl->cells[0x11E].get = std::bind(&MIU::GetMMIOLocation, &miu);
+    impl->cells[0x11E].set = std::bind(&DataMemoryController::SetMMIOLocation, &miu, _1);
+    impl->cells[0x11E].get = std::bind(&DataMemoryController::GetMMIOLocation, &miu);
 
     impl->cells[0x200].set = NoSet;
     impl->cells[0x200].get = std::bind(&ICU::GetRequest, &icu);
@@ -77,3 +80,4 @@ void MMIORegion::Write(u16 addr, u16 value) {
     printf(">>>>>>>>> MMIO Write @%04X <- %04X\n", addr, value);
     impl->cells[addr].set(value);
 }
+} // namespace Teakra

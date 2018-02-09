@@ -102,7 +102,7 @@ struct RegisterState {
 
     class RORedirector : public Redirector {
         using Redirector::Redirector;
-        void Set(u16 value) override {}
+        void Set(u16) override {}
     };
 
     class AccEProxy : public RegisterProxy {

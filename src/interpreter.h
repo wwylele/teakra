@@ -2,24 +2,25 @@
 #include "decoder.h"
 #include "oprand.h"
 #include "register.h"
-#include "memory.h"
+#include "memory_interface.h"
 #include <unordered_set>
 #include <tuple>
 
+namespace Teakra {
 class Interpreter {
 public:
 
-    Interpreter (RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
+    Interpreter(RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
 
     void Run(unsigned cycles) {
         for (unsigned i  = 0; i < cycles; ++i) {
-            u16 opcode = mem.PRead(regs.pc++);
+            u16 opcode = mem.ProgramRead(regs.pc++);
             auto decoder = Decode<Interpreter>(opcode);
             if (!decoder)
                 throw "unknown code!";
             u16 expand_value = 0;
             if (decoder->NeedExpansion()) {
-                expand_value = mem.PRead(regs.pc++);
+                expand_value = mem.ProgramRead(regs.pc++);
             }
 
             if (regs.rep) {
@@ -53,8 +54,8 @@ public:
                         regs.ie = 0;
                         u16 l = regs.GetPcL();
                         u16 h = regs.GetPcH();
-                        mem.DWrite(--regs.sp, l);
-                        mem.DWrite(--regs.sp, h);
+                        mem.DataWrite(--regs.sp, l);
+                        mem.DataWrite(--regs.sp, h);
                         regs.pc = 0x0006 + i * 8;
                         interrupt_handled = true;
                         if (regs.ic[i]) {
@@ -68,8 +69,8 @@ public:
                     regs.ie = 0;
                     u16 l = regs.GetPcL();
                     u16 h = regs.GetPcH();
-                    mem.DWrite(--regs.sp, l);
-                    mem.DWrite(--regs.sp, h);
+                    mem.DataWrite(--regs.sp, l);
+                    mem.DataWrite(--regs.sp, h);
                     regs.pc = regs.viaddr;
                     if (regs.vic) {
                         ContextStore();
@@ -235,7 +236,7 @@ public:
     }
     void alm(Alm op, Rn a, StepZIDS as, Ax b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alm(Alm op, Register a, Ax b) {
@@ -377,10 +378,10 @@ public:
     }
     void alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
         u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
-        u16 bv = mem.DRead(address);
+        u16 bv = mem.DataRead(address);
         u16 result = GenericAlb(op, a.storage, bv);
         if (IsAlbModifying(op))
-            mem.DWrite(address, result);
+            mem.DataWrite(address, result);
     }
     void alb(Alb op, Imm16 a, Register b) {
         u16 bv;
@@ -729,7 +730,7 @@ public:
                 regs.bkrep_stack.begin() + 1);
             ++regs.bcn;
         }
-        u32 flag = mem.DRead(++address_reg);
+        u32 flag = mem.DataRead(++address_reg);
         u16 valid = flag >> 15;
         if (regs.lp) {
             if (!valid)
@@ -738,18 +739,18 @@ public:
             if (valid)
                 regs.lp = regs.bcn = 1;
         }
-        regs.bkrep_stack[0].end = mem.DRead(++address_reg) | (((flag >> 8) & 3) << 16);
-        regs.bkrep_stack[0].start = mem.DRead(++address_reg) | ((flag & 3) << 16);
-        regs.bkrep_stack[0].lc = mem.DRead(++address_reg);
+        regs.bkrep_stack[0].end = mem.DataRead(++address_reg) | (((flag >> 8) & 3) << 16);
+        regs.bkrep_stack[0].start = mem.DataRead(++address_reg) | ((flag & 3) << 16);
+        regs.bkrep_stack[0].lc = mem.DataRead(++address_reg);
     }
     void StoreBlockRepeat(u16& address_reg) {
-        mem.DWrite(address_reg--, regs.bkrep_stack[0].lc);
-        mem.DWrite(address_reg--, regs.bkrep_stack[0].start & 0xFFFF);
-        mem.DWrite(address_reg--, regs.bkrep_stack[0].end & 0xFFFF);
+        mem.DataWrite(address_reg--, regs.bkrep_stack[0].lc);
+        mem.DataWrite(address_reg--, regs.bkrep_stack[0].start & 0xFFFF);
+        mem.DataWrite(address_reg--, regs.bkrep_stack[0].end & 0xFFFF);
         u16 flag = regs.lp << 15;
         flag |= regs.bkrep_stack[0].start >> 16;
         flag |= (regs.bkrep_stack[0].start >> 16) << 8;
-        mem.DWrite(address_reg--, flag);
+        mem.DataWrite(address_reg--, flag);
         if (regs.lp) {
             std::copy(regs.bkrep_stack.begin() + 1, regs.bkrep_stack.begin() + regs.bcn,
                 regs.bkrep_stack.begin());
@@ -858,31 +859,31 @@ public:
         if (regs.ConditionPass(cond)) {
             u16 l = regs.GetPcL();
             u16 h = regs.GetPcH();
-            mem.DWrite(--regs.sp, l);
-            mem.DWrite(--regs.sp, h);
+            mem.DataWrite(--regs.sp, l);
+            mem.DataWrite(--regs.sp, h);
             regs.SetPC(addr_low.storage, addr_high.storage);
         }
     }
     void calla(Axl a) {
         u16 l = regs.GetPcL();
         u16 h = regs.GetPcH();
-        mem.DWrite(--regs.sp, l);
-        mem.DWrite(--regs.sp, h);
+        mem.DataWrite(--regs.sp, l);
+        mem.DataWrite(--regs.sp, h);
         regs.pc = RegToBus16(a.GetName()); // use movpd?
     }
     void calla(Ax a) {
         u16 l = regs.GetPcL();
         u16 h = regs.GetPcH();
-        mem.DWrite(--regs.sp, l);
-        mem.DWrite(--regs.sp, h);
+        mem.DataWrite(--regs.sp, l);
+        mem.DataWrite(--regs.sp, h);
         regs.pc = GetAcc(a.GetName()) & 0x3FFFF; // no saturation ?
     }
     void callr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
             u16 l = regs.GetPcL();
             u16 h = regs.GetPcH();
-            mem.DWrite(--regs.sp, l);
-            mem.DWrite(--regs.sp, h);
+            mem.DataWrite(--regs.sp, l);
+            mem.DataWrite(--regs.sp, h);
             regs.pc += SignExtend<7, u32>(addr.storage);
         }
     }
@@ -915,8 +916,8 @@ public:
 
     void ret(Cond c) {
         if (regs.ConditionPass(c)) {
-            u16 h = mem.DRead(regs.sp++);
-            u16 l = mem.DRead(regs.sp++);
+            u16 h = mem.DataRead(regs.sp++);
+            u16 l = mem.DataRead(regs.sp++);
             regs.SetPC(l, h);
         }
     }
@@ -925,16 +926,16 @@ public:
     }
     void reti(Cond c) {
         if (regs.ConditionPass(c)) {
-            u16 h = mem.DRead(regs.sp++);
-            u16 l = mem.DRead(regs.sp++);
+            u16 h = mem.DataRead(regs.sp++);
+            u16 l = mem.DataRead(regs.sp++);
             regs.SetPC(l, h);
             regs.ie = 1;
         }
     }
     void retic(Cond c) {
         if (regs.ConditionPass(c)) {
-            u16 h = mem.DRead(regs.sp++);
-            u16 l = mem.DRead(regs.sp++);
+            u16 h = mem.DataRead(regs.sp++);
+            u16 l = mem.DataRead(regs.sp++);
             regs.SetPC(l, h);
             regs.ie = 1;
             ContextRestore();
@@ -947,8 +948,8 @@ public:
         throw "unimplemented";
     }
     void rets(Imm8 a) {
-        u16 h = mem.DRead(regs.sp++);
-        u16 l = mem.DRead(regs.sp++);
+        u16 h = mem.DataRead(regs.sp++);
+        u16 l = mem.DataRead(regs.sp++);
         regs.SetPC(l, h);
         regs.sp += a.storage;
     }
@@ -980,20 +981,20 @@ public:
     }
 
     void push(Imm16 a) {
-        mem.DWrite(--regs.sp, a.storage);
+        mem.DataWrite(--regs.sp, a.storage);
     }
     void push(Register a) {
         // need test: p0, aX
         u16 value = RegToBus16(a.GetName());
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push(Abe a) {
         u16 value = (SaturateAcc(GetAcc(a.GetName()), false) >> 32) & 0xFFFF;
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push(ArArpSttMod a) {
         u16 value = RegToBus16(a.GetName());
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push_prpage(Dummy) {
         throw "unimplemented";
@@ -1002,51 +1003,51 @@ public:
         u32 value = (u32)ProductToBus40(a.GetName());
         u16 h = value >> 16;
         u16 l = value & 0xFFFF;
-        mem.DWrite(--regs.sp, l);
-        mem.DWrite(--regs.sp, h);
+        mem.DataWrite(--regs.sp, l);
+        mem.DataWrite(--regs.sp, h);
     }
     void push_r6(Dummy) {
         u16 value = regs.r[6];
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push_repc(Dummy) {
         u16 value = regs.repc;
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push_x0(Dummy) {
         u16 value = regs.x[0];
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push_x1(Dummy) {
         u16 value = regs.x[1];
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void push_y1(Dummy) {
         u16 value = regs.y[1];
-        mem.DWrite(--regs.sp, value);
+        mem.DataWrite(--regs.sp, value);
     }
     void pusha(Ax a) {
         u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFF'FFFF;
         u16 h = value >> 16;
         u16 l = value & 0xFFFF;
-        mem.DWrite(--regs.sp, l);
-        mem.DWrite(--regs.sp, h);
+        mem.DataWrite(--regs.sp, l);
+        mem.DataWrite(--regs.sp, h);
     }
     void pusha(Bx a) {
         u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFF'FFFF;
         u16 h = value >> 16;
         u16 l = value & 0xFFFF;
-        mem.DWrite(--regs.sp, l);
-        mem.DWrite(--regs.sp, h);
+        mem.DataWrite(--regs.sp, l);
+        mem.DataWrite(--regs.sp, h);
     }
 
     void pop(Register a) {
         // need test: p0
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         RegFromBus16(a.GetName(), value);
     }
     void pop(Abe a) {
-        u32 value32 = SignExtend<8, u32>(mem.DRead(regs.sp++) & 0xFF);
+        u32 value32 = SignExtend<8, u32>(mem.DataRead(regs.sp++) & 0xFF);
         RegisterState::Accumulator* target;
         switch(a.GetName()) {
         case RegName::a0e: target = &regs.a[0]; break;
@@ -1058,45 +1059,45 @@ public:
         SetAcc(a.GetName(), (target->value & 0xFFFFFFFF) | (u64)value32 << 32);
     }
     void pop(ArArpSttMod a) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         RegFromBus16(a.GetName(), value);
     }
     void pop(Bx a) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         RegFromBus16(a.GetName(), value);
     }
     void pop_prpage(Dummy) {
         throw "unimplemented";
     }
     void pop(Px a) {
-        u16 h = mem.DRead(regs.sp++);
-        u16 l = mem.DRead(regs.sp++);
+        u16 h = mem.DataRead(regs.sp++);
+        u16 l = mem.DataRead(regs.sp++);
         u32 value = ((u32)h << 16) | l;
         ProductFromBus32(a.GetName(), value);
     }
     void pop_r6(Dummy) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         regs.r[6] = value;
     }
     void pop_repc(Dummy) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         regs.repc = value;
     }
     void pop_x0(Dummy) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         regs.x[0] = value;
     }
     void pop_x1(Dummy) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         regs.x[1] = value;
     }
     void pop_y1(Dummy) {
-        u16 value = mem.DRead(regs.sp++);
+        u16 value = mem.DataRead(regs.sp++);
         regs.y[1] = value;
     }
     void popa(Ab a) {
-        u16 h = mem.DRead(regs.sp++);
-        u16 l = mem.DRead(regs.sp++);
+        u16 h = mem.DataRead(regs.sp++);
+        u16 l = mem.DataRead(regs.sp++);
         u64 value = SignExtend<32, u64>((h << 16) | l);
         SetAcc(a.GetName(), value);
     }
@@ -1141,7 +1142,7 @@ public:
     }
     void tstb(Rn a, StepZIDS as, Imm4 b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         regs.fz = (value >> b.storage) & 1;
     }
     void tstb(Register a, Imm4 b) {
@@ -1200,13 +1201,13 @@ public:
 
     void mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
         u16 address = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
-        regs.y[0] = mem.DRead(address);
+        regs.y[0] = mem.DataRead(address);
         regs.x[0] = x.storage;
         MulGeneric(op.GetName(), a);
     }
     void mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
         u16 address = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
-        regs.x[0] = mem.DRead(address);
+        regs.x[0] = mem.DataRead(address);
         MulGeneric(op.GetName(), a);
     }
     void mul_y0(Mul3 op, Register x, Ax a) {
@@ -1217,8 +1218,8 @@ public:
     void mul(Mul3 op, R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
         u16 address_y = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
         u16 address_x = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
-        regs.y[0] = mem.DRead(address_y);
-        regs.x[0] = mem.DRead(address_x);
+        regs.y[0] = mem.DataRead(address_y);
+        regs.x[0] = mem.DataRead(address_x);
         MulGeneric(op.GetName(), a);
     }
     void mul_y0_r6(Mul3 op, Ax a) {
@@ -1302,29 +1303,29 @@ public:
         u16 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u32 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         address_d |= (u32)regs.movpd << 16;
-        mem.PWrite(address_d, mem.DRead(address_s));
+        mem.ProgramWrite(address_d, mem.DataRead(address_s));
     }
     void movp(Axl a, Register b) {
         u32 address = RegToBus16(a.GetName());
         address |= (u32)regs.movpd << 16;
-        u16 value = mem.PRead(address);
+        u16 value = mem.ProgramRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void movp(Ax a, Register b) {
         u32 address = GetAcc(a.GetName()) & 0x3FFFF; // no saturation
-        u16 value = mem.PRead(address);
+        u16 value = mem.ProgramRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void movp(Rn a, StepZIDS as, R0123 b, StepZIDS bs) {
         u32 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u16 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         address_s |= (u32)regs.movpd << 16;
-        mem.DWrite(address_d, mem.PRead(address_s));
+        mem.DataWrite(address_d, mem.ProgramRead(address_s));
     }
     void movpdw(Ax a) {
         u32 address = GetAcc(a.GetName()) & 0x3FFFF; // no saturation
-        u16 h = mem.PRead(address);
-        u16 l = mem.PRead(address);
+        u16 h = mem.ProgramRead(address);
+        u16 l = mem.ProgramRead(address);
         regs.SetPC(l, h);
     }
 
@@ -1349,16 +1350,16 @@ public:
     }
 
     void StoreToMemory(MemImm8 addr, u16 value) {
-        mem.DWrite(addr.storage + (regs.page << 8), value);
+        mem.DataWrite(addr.storage + (regs.page << 8), value);
     }
     void StoreToMemory(MemImm16 addr, u16 value) {
-        mem.DWrite(addr.storage, value);
+        mem.DataWrite(addr.storage, value);
     }
     void StoreToMemory(MemR7Imm16 addr, u16 value) {
-        mem.DWrite(addr.storage + regs.r[7], value);
+        mem.DataWrite(addr.storage + regs.r[7], value);
     }
     void StoreToMemory(MemR7Imm7s addr, u16 value) {
-        mem.DWrite(addr.storage + regs.r[7], value);
+        mem.DataWrite(addr.storage + regs.r[7], value);
     }
 
     void mov(Ablh a, MemImm8 b) {
@@ -1379,16 +1380,16 @@ public:
     }
 
     u16 LoadFromMemory(MemImm8 addr) {
-        return mem.DRead(addr.storage + (regs.page << 8));
+        return mem.DataRead(addr.storage + (regs.page << 8));
     }
     u16 LoadFromMemory(MemImm16 addr) {
-        return mem.DRead(addr.storage);
+        return mem.DataRead(addr.storage);
     }
     u16 LoadFromMemory(MemR7Imm16 addr) {
-        return mem.DRead(addr.storage + regs.r[7]);
+        return mem.DataRead(addr.storage + regs.r[7]);
     }
     u16 LoadFromMemory(MemR7Imm7s addr) {
-        return mem.DRead(addr.storage + regs.r[7]);
+        return mem.DataRead(addr.storage + regs.r[7]);
     }
 
     void mov(MemImm16 a, Ax b) {
@@ -1458,16 +1459,16 @@ public:
     }
     void mov(Rn a, StepZIDS as, Bx b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Register b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void mov_memsp_to(Register b) {
-        u16 value = mem.DRead(regs.sp);
+        u16 value = mem.DataRead(regs.sp);
         RegFromBus16(b.GetName(), value);
     }
     void mov_mixp_to(Register b) {
@@ -1491,7 +1492,7 @@ public:
         // a = p0 untested
         u16 value = RegToBus16(a.GetName());
         u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
-        mem.DWrite(address, value);
+        mem.DataWrite(address, value);
     }
     void mov(Register a, Bx b) {
         if (a.GetName() == RegName::p) {
@@ -1624,33 +1625,33 @@ public:
     void mov_repc_to(ArRn1 b, ArStep1 bs) {
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 value = regs.repc;
-        mem.DWrite(address, value);
+        mem.DataWrite(address, value);
     }
     void mov(ArArp a, ArRn1 b, ArStep1 bs) {
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 value = RegToBus16(a.GetName());
-        mem.DWrite(address, value);
+        mem.DataWrite(address, value);
     }
     void mov(SttMod a, ArRn1 b, ArStep1 bs) {
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 value = RegToBus16(a.GetName());
-        mem.DWrite(address, value);
+        mem.DataWrite(address, value);
     }
 
     void mov_repc(ArRn1 a, ArStep1 as) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         regs.repc = value;
     }
     void mov(ArRn1 a, ArStep1 as, ArArp b) {
         // are you sure it is ok to both use and modify ar registers?
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void mov(ArRn1 a, ArStep1 as, SttMod b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
 
@@ -1716,8 +1717,8 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        mem.DWrite(address, l);
-        mem.DWrite(address2, h);
+        mem.DataWrite(address, l);
+        mem.DataWrite(address2, h);
     }
     void mov2s(Px a, ArRn2 b, ArStep2 bs) {
         u64 value = ProductToBus40(a.GetName());
@@ -1725,14 +1726,14 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        mem.DWrite(address, l);
-        mem.DWrite(address2, h);
+        mem.DataWrite(address, l);
+        mem.DataWrite(address2, h);
     }
     void mov2(ArRn2 a, ArStep2 as, Px b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
-        u16 l = mem.DRead(address);
-        u16 h = mem.DRead(address2);
+        u16 l = mem.DataRead(address);
+        u16 h = mem.DataRead(address2);
         u64 value = SignExtend<32, u64>((h << 16) | l);
         ProductFromBus32(b.GetName(), value);
     }
@@ -1742,14 +1743,14 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        mem.DWrite(address, l);
-        mem.DWrite(address2, h);
+        mem.DataWrite(address, l);
+        mem.DataWrite(address2, h);
     }
     void mova(ArRn2 a, ArStep2 as, Ab b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
-        u16 l = mem.DRead(address);
-        u16 h = mem.DRead(address2);
+        u16 l = mem.DataRead(address);
+        u16 h = mem.DataRead(address2);
         u64 value = SignExtend<32, u64>((h << 16) | l);
         SetAcc(b.GetName(), value);
     }
@@ -1771,17 +1772,17 @@ public:
         regs.r[6] = value;
     }
     void mov_memsp_r6(Dummy) {
-        u16 value = mem.DRead(regs.sp);
+        u16 value = mem.DataRead(regs.sp);
         regs.r[6] = value;
     }
     void mov_r6_to(Rn b, StepZIDS bs) {
         u16 value = regs.r[6];
         u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
-        mem.DWrite(address, value);
+        mem.DataWrite(address, value);
     }
     void mov_r6(Rn a, StepZIDS as) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         regs.r[6] = value;
     }
 
@@ -1838,7 +1839,7 @@ public:
     }
     void movs(Rn a, StepZIDS as, Ab b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DRead(address);
+        u16 value = mem.DataRead(address);
         u16 sv = regs.sv;
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
@@ -2228,3 +2229,5 @@ private:
         regs.psign[unit] = value >> 31;
     }
 };
+
+} // namespace Teakra

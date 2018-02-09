@@ -1,30 +1,16 @@
 #pragma once
 #include "matcher.h"
 #include "oprand.h"
-#include <boost/mp11.hpp>
-#include <boost/optional.hpp>
+#include <optional>
 #include <type_traits>
 #include <vector>
-
-template <typename OprandAtTA, typename OprandAtTB>
-struct OprandAtNoOverlap {
-    static constexpr bool value =
-        (OprandAtTA::Mask & OprandAtTB::Mask) == 0
-        || std::is_same<OprandAtTA, OprandAtTB>::value;
-};
 
 template <typename V, typename F, u16 expected, typename ... OprandAtT>
 struct MatcherCreator {
 
     static Matcher<V> Create(const char* name, F func) {
-
-        // Oprands shouldn't overlap each other
-        using L = boost::mp11::mp_list<OprandAtT...>;
-        static_assert(boost::mp11::mp_apply<boost::mp11::mp_all,
-            boost::mp11::mp_product<OprandAtNoOverlap, L, L>>::value, "Error");
-
-        // Expected code should be zero on oprands position
-        static_assert(((OprandAtT::Mask | ...) & expected) == 0, "Error");
+        // Oprands shouldn't overlap each other, nor overlap with the expected ones
+        static_assert((OprandAtT::Mask + ... + expected) == (OprandAtT::Mask | ... | expected), "Error");
 
         auto proxy = [func](V& visitor, u16 opcode, u16 expansion) {
             return (visitor.*func)(OprandAtT::Filter(opcode, expansion) ...);
@@ -409,14 +395,14 @@ std::vector<Matcher<V>> GetDecodeTable() {
 }
 
 template<typename V>
-boost::optional<const Matcher<V>&> Decode(u16 instruction) {
+std::optional<Matcher<V>> Decode(u16 instruction) {
     static const auto table = GetDecodeTable<V>();
 
     const auto matches_instruction = [instruction](const auto& matcher) { return matcher.Matches(instruction); };
 
     auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
     if (iter == table.end()) {
-        return boost::none;
+        return std::nullopt;
     } else {
         auto other = std::find_if(iter + 1, table.end(), matches_instruction);
         if (other != table.end()) {

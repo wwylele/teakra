@@ -32,7 +32,7 @@ struct Const {
     using OprandType = OprandT;
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
-    static OprandT Filter(u16 opcode, u16 expansion) {
+    static OprandT Filter(u16, u16) {
         OprandT oprand;
         oprand.storage = value;
         return oprand;
