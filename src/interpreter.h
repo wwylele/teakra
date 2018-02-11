@@ -1419,7 +1419,7 @@ public:
         throw "unimplemented";
     }
     void mov_icr_to(Ab b) {
-        u16 value = regs.icr.Get();
+        u16 value = regs.Get<icr>();
         RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, Bx b) {
@@ -1481,7 +1481,7 @@ public:
     }
     void mov_icr(Register a) {
         u16 value = RegToBus16(a.GetName());
-        regs.icr.Set(value);
+        regs.Set<icr>(value);
     }
     void mov_mixp(Register a) {
         u16 value = RegToBus16(a.GetName());
@@ -1929,34 +1929,34 @@ private:
         case RegName::sv: return regs.sv;
         case RegName::lc: return regs.Lc();
 
-        case RegName::ar0: return regs.ar0.Get();
-        case RegName::ar1: return regs.ar1.Get();
+        case RegName::ar0: return regs.Get<ar0>();
+        case RegName::ar1: return regs.Get<ar1>();
 
-        case RegName::arp0: return regs.arp0.Get();
-        case RegName::arp1: return regs.arp1.Get();
-        case RegName::arp2: return regs.arp2.Get();
-        case RegName::arp3: return regs.arp3.Get();
+        case RegName::arp0: return regs.Get<arp0>();
+        case RegName::arp1: return regs.Get<arp1>();
+        case RegName::arp2: return regs.Get<arp2>();
+        case RegName::arp3: return regs.Get<arp3>();
 
         case RegName::ext0:
         case RegName::ext1:
         case RegName::ext2:
         case RegName::ext3: throw "?";
 
-        case RegName::stt0: return regs.stt0.Get();
-        case RegName::stt1: return regs.stt1.Get();
-        case RegName::stt2: return regs.stt2.Get();
+        case RegName::stt0: return regs.Get<stt0>();
+        case RegName::stt1: return regs.Get<stt1>();
+        case RegName::stt2: return regs.Get<stt2>();
 
-        case RegName::st0: return regs.st0.Get();
-        case RegName::st1: return regs.st1.Get();
-        case RegName::st2: return regs.st2.Get();
+        case RegName::st0: return regs.Get<st0>();
+        case RegName::st1: return regs.Get<st1>();
+        case RegName::st2: return regs.Get<st2>();
 
-        case RegName::cfgi: return regs.cfgi.Get();
-        case RegName::cfgj: return regs.cfgj.Get();
+        case RegName::cfgi: return regs.Get<cfgi>();
+        case RegName::cfgj: return regs.Get<cfgj>();
 
-        case RegName::mod0: return regs.mod0.Get();
-        case RegName::mod1: return regs.mod1.Get();
-        case RegName::mod2: return regs.mod2.Get();
-        case RegName::mod3: return regs.mod3.Get();
+        case RegName::mod0: return regs.Get<mod0>();
+        case RegName::mod1: return regs.Get<mod1>();
+        case RegName::mod2: return regs.Get<mod2>();
+        case RegName::mod3: return regs.Get<mod3>();
         default: throw "?";
         }
     }
@@ -2031,34 +2031,34 @@ private:
         case RegName::sv: regs.sv = value; break;
         case RegName::lc: regs.Lc() = value; break;
 
-        case RegName::ar0: regs.ar0.Set(value); break;
-        case RegName::ar1: regs.ar1.Set(value); break;
+        case RegName::ar0: regs.Set<ar0>(value); break;
+        case RegName::ar1: regs.Set<ar1>(value); break;
 
-        case RegName::arp0: regs.arp0.Set(value); break;
-        case RegName::arp1: regs.arp1.Set(value); break;
-        case RegName::arp2: regs.arp2.Set(value); break;
-        case RegName::arp3: regs.arp3.Set(value); break;
+        case RegName::arp0: regs.Set<arp0>(value); break;
+        case RegName::arp1: regs.Set<arp1>(value); break;
+        case RegName::arp2: regs.Set<arp2>(value); break;
+        case RegName::arp3: regs.Set<arp3>(value); break;
 
         case RegName::ext0:
         case RegName::ext1:
         case RegName::ext2:
         case RegName::ext3: throw "?";
 
-        case RegName::stt0: regs.stt0.Set(value); break;
-        case RegName::stt1: regs.stt1.Set(value); break;
-        case RegName::stt2: regs.stt2.Set(value); break;
+        case RegName::stt0: regs.Set<stt0>(value); break;
+        case RegName::stt1: regs.Set<stt1>(value); break;
+        case RegName::stt2: regs.Set<stt2>(value); break;
 
-        case RegName::st0: regs.st0.Set(value); break;
-        case RegName::st1: regs.st1.Set(value); break;
-        case RegName::st2: regs.st2.Set(value); break;
+        case RegName::st0: regs.Set<st0>(value); break;
+        case RegName::st1: regs.Set<st1>(value); break;
+        case RegName::st2: regs.Set<st2>(value); break;
 
-        case RegName::cfgi: regs.cfgi.Set(value); break;
-        case RegName::cfgj: regs.cfgj.Set(value); break;
+        case RegName::cfgi: regs.Set<cfgi>(value); break;
+        case RegName::cfgj: regs.Set<cfgj>(value); break;
 
-        case RegName::mod0: regs.mod0.Set(value); break;
-        case RegName::mod1: regs.mod1.Set(value); break;
-        case RegName::mod2: regs.mod2.Set(value); break;
-        case RegName::mod3: regs.mod3.Set(value); break;
+        case RegName::mod0: regs.Set<mod0>(value); break;
+        case RegName::mod1: regs.Set<mod1>(value); break;
+        case RegName::mod2: regs.Set<mod2>(value); break;
+        case RegName::mod3: regs.Set<mod3>(value); break;
         default: throw "?";
         }
     }

@@ -55,94 +55,6 @@ struct RegisterState {
     std::array<u16, 2> y{}; // factor
     std::array<Product, 2> p; // product
 
-    class RegisterProxy {
-    public:
-        virtual ~RegisterProxy() = default;
-        virtual u16 Get() const = 0;
-        virtual void Set(u16 value) = 0;
-    };
-
-    class Redirector : public RegisterProxy {
-    public:
-        explicit Redirector(u16& target) : target(target) {}
-        u16 Get() const override {
-            return target;
-        }
-        void Set(u16 value) override {
-            target = value;
-        }
-    private:
-        u16& target;
-    };
-
-    class UnkRedirector : public Redirector {
-    public:
-        UnkRedirector(u16& target, const char* name) : Redirector(target), name(name) {}
-        void Set(u16 value) override {
-            if (value != Get())
-                printf("warning: Setting %s = 0x%X\n", name, value);
-            Redirector::Set(value);
-        }
-    private:
-        const char* name;
-    };
-
-    class DoubleRedirector : public RegisterProxy {
-    public:
-        DoubleRedirector(u16& target0, u16& target1) : target0(target0), target1(target1) {}
-        u16 Get() const override {
-            return target0 | target1;
-        }
-        void Set(u16 value) override {
-            target0 = target1 = value;
-        }
-    private:
-        u16& target0, target1;
-    };
-
-    class RORedirector : public Redirector {
-        using Redirector::Redirector;
-        void Set(u16) override {}
-    };
-
-    class AccEProxy : public RegisterProxy {
-    public:
-        explicit AccEProxy(Accumulator& target) : target(target) {}
-        u16 Get() const override {
-            return (u16)((target.value >> 32) & 0xF);
-        }
-        void Set(u16 value) override {
-            u32 value32 = SignExtend<4>((u32)value);
-            target.value &= 0xFFFFFFFF;
-            target.value |= (u64)value32 << 32;
-        }
-    private:
-        Accumulator& target;
-    };
-
-    struct ProxySlot {
-        std::shared_ptr<RegisterProxy> proxy;
-        unsigned position;
-        unsigned length;
-    };
-
-    struct PseudoRegister {
-        std::vector<ProxySlot> slots;
-
-        u16 Get() const {
-            u16 result = 0;
-            for (const auto& slot : slots) {
-                result |= slot.proxy->Get() << slot.position;
-            }
-            return result;
-        }
-        void Set(u16 value) {
-            for (const auto& slot : slots) {
-                slot.proxy->Set((value >> slot.position) & ((1 << slot.length) - 1));
-            }
-        }
-    };
-
     // step/modulo
     u16 stepi = 0, stepj = 0; // 7 bit 2's comp
     u16 modi = 0, modj = 0; // 9 bit
@@ -152,15 +64,6 @@ struct RegisterState {
     u16 stepib = 0, stepjb = 0;
     u16 modib = 0, modjb = 0;
     u16 stepi0b = 0, stepj0b = 0;
-
-    PseudoRegister cfgi {{
-        {std::make_shared<Redirector>(stepi), 0, 7},
-        {std::make_shared<Redirector>(modi), 7, 9},
-    }};
-    PseudoRegister cfgj {{
-        {std::make_shared<Redirector>(stepj), 0, 7},
-        {std::make_shared<Redirector>(modj), 7, 9},
-    }};
 
     // 1-bit flags
     u16 fz = 0, fm = 0, fn = 0, fv = 0, fc = 0, fe = 0;
@@ -226,133 +129,6 @@ struct RegisterState {
         return bkrep_stack[0].lc;
     }
 
-    PseudoRegister stt0 {{
-        {std::make_shared<Redirector>(fls), 0, 1},
-        {std::make_shared<Redirector>(flv), 1, 1},
-        {std::make_shared<Redirector>(fe), 2, 1},
-        {std::make_shared<Redirector>(fc), 3, 1},
-        {std::make_shared<Redirector>(fv), 4, 1},
-        {std::make_shared<Redirector>(fn), 5, 1},
-        {std::make_shared<Redirector>(fm), 6, 1},
-        {std::make_shared<Redirector>(fz), 7, 1},
-        {std::make_shared<Redirector>(fc1), 11, 1},
-    }};
-    PseudoRegister stt1 {{
-        {std::make_shared<Redirector>(fr), 4, 1},
-
-        {std::make_shared<Redirector>(psign[0]), 14, 1},
-        {std::make_shared<Redirector>(psign[1]), 15, 1},
-    }};
-    PseudoRegister stt2 {{
-        {std::make_shared<RORedirector>(ip[0]), 0, 1},
-        {std::make_shared<RORedirector>(ip[1]), 1, 1},
-        {std::make_shared<RORedirector>(ip[2]), 2, 1},
-        {std::make_shared<RORedirector>(vip), 3, 1},
-
-        {std::make_shared<Redirector>(movpd), 6, 2},
-
-        {std::make_shared<RORedirector>(bcn), 12, 3},
-        {std::make_shared<RORedirector>(lp), 15, 1},
-    }};
-    PseudoRegister mod0 {{
-        {std::make_shared<Redirector>(sar[0]), 0, 1},
-        {std::make_shared<Redirector>(sar[1]), 1, 1},
-        {std::make_shared<RORedirector>(mod0_unk_const), 2, 3},
-        {std::make_shared<Redirector>(ym), 5, 2},
-        {std::make_shared<Redirector>(s), 7, 1},
-        {std::make_shared<Redirector>(ou[0]), 8, 1},
-        {std::make_shared<Redirector>(ou[1]), 9, 1},
-        {std::make_shared<Redirector>(ps[0]), 10, 2},
-
-        {std::make_shared<Redirector>(ps[1]), 13, 2},
-    }};
-    PseudoRegister mod1 {{
-        {std::make_shared<Redirector>(page), 0, 8},
-
-        {std::make_shared<Redirector>(bankstep), 12, 1},
-        {std::make_shared<UnkRedirector>(mod1_unk, "mod1.13"), 13, 3},
-    }};
-    PseudoRegister mod2 {{
-        {std::make_shared<Redirector>(m[0]), 0, 1},
-        {std::make_shared<Redirector>(m[1]), 1, 1},
-        {std::make_shared<Redirector>(m[2]), 2, 1},
-        {std::make_shared<Redirector>(m[3]), 3, 1},
-        {std::make_shared<Redirector>(m[4]), 4, 1},
-        {std::make_shared<Redirector>(m[5]), 5, 1},
-        {std::make_shared<Redirector>(m[6]), 6, 1},
-        {std::make_shared<Redirector>(m[7]), 7, 1},
-        {std::make_shared<Redirector>(ms[0]), 8, 1},
-        {std::make_shared<Redirector>(ms[1]), 9, 1},
-        {std::make_shared<Redirector>(ms[2]), 10, 1},
-        {std::make_shared<Redirector>(ms[3]), 11, 1},
-        {std::make_shared<Redirector>(ms[4]), 12, 1},
-        {std::make_shared<Redirector>(ms[5]), 13, 1},
-        {std::make_shared<Redirector>(ms[6]), 14, 1},
-        {std::make_shared<Redirector>(ms[7]), 15, 1},
-    }};
-    PseudoRegister mod3 {{
-        {std::make_shared<Redirector>(nimc), 0, 1},
-        {std::make_shared<Redirector>(ic[0]), 1, 1},
-        {std::make_shared<Redirector>(ic[1]), 2, 1},
-        {std::make_shared<Redirector>(ic[2]), 3, 1},
-        {std::make_shared<Redirector>(vic), 4, 1}, // ?
-
-        {std::make_shared<Redirector>(ie), 7, 1},
-        {std::make_shared<Redirector>(im[0]), 8, 1},
-        {std::make_shared<Redirector>(im[1]), 9, 1},
-        {std::make_shared<Redirector>(im[2]), 10, 1},
-        {std::make_shared<Redirector>(vim), 11, 1}, // ?
-    }};
-
-    PseudoRegister st0 {{
-        {std::make_shared<Redirector>(sar[0]), 0, 1},
-        {std::make_shared<Redirector>(ie), 1, 1},
-        {std::make_shared<Redirector>(im[0]), 2, 1},
-        {std::make_shared<Redirector>(im[1]), 3, 1},
-        {std::make_shared<Redirector>(fr), 4, 1},
-        {std::make_shared<DoubleRedirector>(fls, flv), 5, 1},
-        {std::make_shared<Redirector>(fe), 6, 1},
-        {std::make_shared<Redirector>(fc), 7, 1},
-        {std::make_shared<Redirector>(fv), 8, 1},
-        {std::make_shared<Redirector>(fn), 9, 1},
-        {std::make_shared<Redirector>(fm), 10, 1},
-        {std::make_shared<Redirector>(fz), 11, 1},
-        {std::make_shared<AccEProxy>(a[01]), 12, 4},
-    }};
-    PseudoRegister st1 {{
-        {std::make_shared<Redirector>(page), 0, 8},
-        // 8, 9: reserved
-        {std::make_shared<Redirector>(ps[0]), 10, 2},
-        {std::make_shared<AccEProxy>(a[1]), 12, 4},
-    }};
-    PseudoRegister st2 {{
-        {std::make_shared<Redirector>(m[0]), 0, 1},
-        {std::make_shared<Redirector>(m[1]), 1, 1},
-        {std::make_shared<Redirector>(m[2]), 2, 1},
-        {std::make_shared<Redirector>(m[3]), 3, 1},
-        {std::make_shared<Redirector>(m[4]), 4, 1},
-        {std::make_shared<Redirector>(m[5]), 5, 1},
-        {std::make_shared<Redirector>(im[2]), 6, 1},
-        {std::make_shared<Redirector>(s), 7, 1},
-        {std::make_shared<Redirector>(ou[0]), 8, 1},
-        {std::make_shared<Redirector>(ou[1]), 9, 1},
-        {std::make_shared<RORedirector>(iu[0]), 10, 1},
-        {std::make_shared<RORedirector>(iu[1]), 11, 1},
-        // 12: reserved
-        {std::make_shared<RORedirector>(ip[2]), 13, 1},
-        {std::make_shared<RORedirector>(ip[0]), 14, 1},
-        {std::make_shared<RORedirector>(ip[1]), 15, 1},
-    }};
-    PseudoRegister icr {{
-        {std::make_shared<Redirector>(nimc), 0, 1},
-        {std::make_shared<Redirector>(ic[0]), 1, 1},
-        {std::make_shared<Redirector>(ic[1]), 2, 1},
-        {std::make_shared<Redirector>(ic[2]), 3, 1},
-        {std::make_shared<RORedirector>(lp), 4, 1},
-        {std::make_shared<RORedirector>(bcn), 5, 3},
-        // reserved
-    }};
-
     // 3 bits each
     // 0: +0
     // 1: +1
@@ -376,68 +152,6 @@ struct RegisterState {
 
     // 2 bits each. for i represent r0~r4, for j represents r5~r7
     std::array<u16, 4> arprni{}, arprnj{};
-
-    PseudoRegister ar0 {{
-        {std::make_shared<Redirector>(arstep[1]), 0, 3},
-        {std::make_shared<Redirector>(aroffset[1]), 3, 2},
-        {std::make_shared<Redirector>(arstep[0]), 5, 3},
-        {std::make_shared<Redirector>(aroffset[0]), 8, 2},
-        {std::make_shared<Redirector>(arrn[1]), 10, 3},
-        {std::make_shared<Redirector>(arrn[0]), 13, 3},
-    }};
-
-    PseudoRegister ar1 {{
-        {std::make_shared<Redirector>(arstep[3]), 0, 3},
-        {std::make_shared<Redirector>(aroffset[3]), 3, 2},
-        {std::make_shared<Redirector>(arstep[2]), 5, 3},
-        {std::make_shared<Redirector>(aroffset[2]), 8, 2},
-        {std::make_shared<Redirector>(arrn[3]), 10, 3},
-        {std::make_shared<Redirector>(arrn[2]), 13, 3},
-    }};
-
-    PseudoRegister arp0 {{
-        {std::make_shared<Redirector>(arpstepi[0]), 0, 3},
-        {std::make_shared<Redirector>(arpoffseti[0]), 3, 2},
-        {std::make_shared<Redirector>(arpstepj[0]), 5, 3},
-        {std::make_shared<Redirector>(arpoffsetj[0]), 8, 2},
-        {std::make_shared<Redirector>(arprni[0]), 10, 2},
-        // bit 12 reserved
-        {std::make_shared<Redirector>(arprnj[0]), 13, 2},
-        // bit 15 reserved
-    }};
-
-    PseudoRegister arp1 {{
-        {std::make_shared<Redirector>(arpstepi[1]), 0, 3},
-        {std::make_shared<Redirector>(arpoffseti[1]), 3, 2},
-        {std::make_shared<Redirector>(arpstepj[1]), 5, 3},
-        {std::make_shared<Redirector>(arpoffsetj[1]), 8, 2},
-        {std::make_shared<Redirector>(arprni[1]), 10, 2},
-        // bit 12 reserved
-        {std::make_shared<Redirector>(arprnj[1]), 13, 2},
-        // bit 15 reserved
-    }};
-
-    PseudoRegister arp2 {{
-        {std::make_shared<Redirector>(arpstepi[2]), 0, 3},
-        {std::make_shared<Redirector>(arpoffseti[2]), 3, 2},
-        {std::make_shared<Redirector>(arpstepj[2]), 5, 3},
-        {std::make_shared<Redirector>(arpoffsetj[2]), 8, 2},
-        {std::make_shared<Redirector>(arprni[2]), 10, 2},
-        // bit 12 reserved
-        {std::make_shared<Redirector>(arprnj[2]), 13, 2},
-        // bit 15 reserved
-    }};
-
-    PseudoRegister arp3 {{
-        {std::make_shared<Redirector>(arpstepi[3]), 0, 3},
-        {std::make_shared<Redirector>(arpoffseti[3]), 3, 2},
-        {std::make_shared<Redirector>(arpstepj[3]), 5, 3},
-        {std::make_shared<Redirector>(arpoffsetj[3]), 8, 2},
-        {std::make_shared<Redirector>(arprni[3]), 10, 2},
-        // bit 12 reserved
-        {std::make_shared<Redirector>(arprnj[3]), 13, 2},
-        // bit 15 reserved
-    }};
 
     class ShadowRegister {
     public:
@@ -568,4 +282,276 @@ struct RegisterState {
         }
     }
 
+    template<typename PseudoRegisterT>
+    u16 Get() const {
+        return PseudoRegisterT::Get(this);
+    }
+
+    template<typename PseudoRegisterT>
+    void Set(u16 value) {
+        PseudoRegisterT::Set(this, value);
+    }
+
 };
+
+template<u16 RegisterState::* target>
+struct Redirector {
+    static u16 Get(const RegisterState* self) {
+        return self->*target;
+    }
+    static void Set(RegisterState* self, u16 value) {
+        self->*target = value;
+    }
+};
+
+template<std::size_t size, std::array<u16, size> RegisterState::* target, std::size_t index>
+struct ArrayRedirector {
+    static u16 Get(const RegisterState* self) {
+        return (self->*target)[index];
+    }
+    static void Set(RegisterState* self, u16 value) {
+        (self->*target)[index] = value;
+    }
+};
+
+template<u16 RegisterState::* target>
+struct UnkRedirector {
+    static u16 Get(const RegisterState* self) {
+        return self->*target;
+    }
+    static void Set(RegisterState* self, u16 value) {
+        if (value != Get(self))
+            printf("warning: Setting = 0x%X\n", value);
+        self->*target = value;
+    }
+};
+
+template<u16 RegisterState::* target0, u16 RegisterState::* target1>
+struct DoubleRedirector {
+    static u16 Get(const RegisterState* self) {
+        return self->*target0 | self->*target1;
+    }
+    static void Set(RegisterState* self, u16 value){
+        self->*target0 = self->*target1 = value;
+    }
+};
+
+template<u16 RegisterState::* target>
+struct RORedirector {
+    static u16 Get(const RegisterState* self) {
+        return self->*target;
+    }
+    static void Set(RegisterState*, u16) {
+        // no
+    }
+};
+
+template<std::size_t size, std::array<u16, size> RegisterState::* target, std::size_t index>
+struct ArrayRORedirector {
+    static u16 Get(const RegisterState* self) {
+        return (self->*target)[index];
+    }
+    static void Set(RegisterState*, u16) {
+        // no
+    }
+};
+
+template<unsigned index>
+struct AccEProxy {
+    static u16 Get(const RegisterState* self) {
+        return (u16)((self->a[index].value >> 32) & 0xF);
+    }
+    static void Set(RegisterState* self, u16 value) {
+        u32 value32 = SignExtend<4>((u32)value);
+        self->a[index].value &= 0xFFFFFFFF;
+        self->a[index].value |= (u64)value32 << 32;
+    }
+};
+
+template<typename Proxy, unsigned position, unsigned length>
+struct ProxySlot {
+    using proxy = Proxy;
+    static constexpr unsigned pos = position;
+    static constexpr unsigned len = length;
+    static_assert(length < 16, "Error");
+    static_assert(position + length <= 16, "Error");
+    static constexpr u16 mask = ((1 << length) - 1) << position;
+};
+
+template<typename... ProxySlots>
+struct PseudoRegister {
+    static_assert((ProxySlots::mask | ...) == (ProxySlots::mask + ...), "Error");
+    static u16 Get(const RegisterState* self) {
+        return ((ProxySlots::proxy::Get(self) << ProxySlots::pos) | ...);
+    }
+    static void Set(RegisterState* self, u16 value) {
+        (ProxySlots::proxy::Set(self,
+            (value >> ProxySlots::pos) & ((1 << ProxySlots::len) - 1)) , ...);
+    }
+};
+
+using cfgi = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::stepi>, 0, 7>,
+    ProxySlot<Redirector<&RegisterState::modi>, 7, 9>
+>;
+
+using cfgj = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::stepj>, 0, 7>,
+    ProxySlot<Redirector<&RegisterState::modj>, 7, 9>
+>;
+
+using stt0 = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::fls>, 0, 1>,
+    ProxySlot<Redirector<&RegisterState::flv>, 1, 1>,
+    ProxySlot<Redirector<&RegisterState::fe>, 2, 1>,
+    ProxySlot<Redirector<&RegisterState::fc>, 3, 1>,
+    ProxySlot<Redirector<&RegisterState::fv>, 4, 1>,
+    ProxySlot<Redirector<&RegisterState::fn>, 5, 1>,
+    ProxySlot<Redirector<&RegisterState::fm>, 6, 1>,
+    ProxySlot<Redirector<&RegisterState::fz>, 7, 1>,
+    ProxySlot<Redirector<&RegisterState::fc1>, 11, 1>
+>;
+using stt1 = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
+
+    ProxySlot<ArrayRedirector<2, &RegisterState::psign, 0>, 14, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::psign, 1>, 15, 1>
+>;
+using stt2 = PseudoRegister<
+    ProxySlot<ArrayRORedirector<3, &RegisterState::ip, 0>, 0, 1>,
+    ProxySlot<ArrayRORedirector<3, &RegisterState::ip, 1>, 1, 1>,
+    ProxySlot<ArrayRORedirector<3, &RegisterState::ip, 2>, 2, 1>,
+    ProxySlot<RORedirector<&RegisterState::vip>, 3, 1>,
+
+    ProxySlot<Redirector<&RegisterState::movpd>, 6, 2>,
+
+    ProxySlot<RORedirector<&RegisterState::bcn>, 12, 3>,
+    ProxySlot<RORedirector<&RegisterState::lp>, 15, 1>
+>;
+using mod0 = PseudoRegister<
+    ProxySlot<ArrayRedirector<2, &RegisterState::sar, 0>, 0, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::sar, 1>, 1, 1>,
+    ProxySlot<RORedirector<&RegisterState::mod0_unk_const>, 2, 3>,
+    ProxySlot<Redirector<&RegisterState::ym>, 5, 2>,
+    ProxySlot<Redirector<&RegisterState::s>, 7, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::ou, 0>, 8, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::ou, 1>, 9, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::ps, 0>, 10, 2>,
+
+    ProxySlot<ArrayRedirector<2, &RegisterState::ps, 1>, 13, 2>
+>;
+using mod1 = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::page>, 0, 8>,
+
+    ProxySlot<Redirector<&RegisterState::bankstep>, 12, 1>,
+    ProxySlot<UnkRedirector<&RegisterState::mod1_unk>, 13, 3>
+>;
+using mod2 = PseudoRegister<
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 0>, 0, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 1>, 1, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 2>, 2, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 3>, 3, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 4>, 4, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 5>, 5, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 6>, 6, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 7>, 7, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 0>, 8, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 1>, 9, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 2>, 10, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 3>, 11, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 4>, 12, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 5>, 13, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 6>, 14, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 7>, 15, 1>
+>;
+using mod3 = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::nimc>, 0, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::ic, 0>, 1, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::ic, 1>, 2, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::ic, 2>, 3, 1>,
+    ProxySlot<Redirector<&RegisterState::vic>, 4, 1>, // ?
+
+    ProxySlot<Redirector<&RegisterState::ie>, 7, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::im, 0>, 8, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::im, 1>, 9, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::im, 2>, 10, 1>,
+    ProxySlot<Redirector<&RegisterState::vim>, 11, 1> // ?
+>;
+
+using st0 = PseudoRegister<
+    ProxySlot<ArrayRedirector<2, &RegisterState::sar, 0>, 0, 1>,
+    ProxySlot<Redirector<&RegisterState::ie>, 1, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::im, 0>, 2, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::im, 1>, 3, 1>,
+    ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
+    ProxySlot<DoubleRedirector<&RegisterState::fls, &RegisterState::flv>, 5, 1>,
+    ProxySlot<Redirector<&RegisterState::fe>, 6, 1>,
+    ProxySlot<Redirector<&RegisterState::fc>, 7, 1>,
+    ProxySlot<Redirector<&RegisterState::fv>, 8, 1>,
+    ProxySlot<Redirector<&RegisterState::fn>, 9, 1>,
+    ProxySlot<Redirector<&RegisterState::fm>, 10, 1>,
+    ProxySlot<Redirector<&RegisterState::fz>, 11, 1>,
+    ProxySlot<AccEProxy<0>, 12, 4>
+>;
+using st1 = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::page>, 0, 8>,
+    // 8, 9: reserved
+    ProxySlot<ArrayRedirector<2, &RegisterState::ps, 0>, 10, 2>,
+    ProxySlot<AccEProxy<1>, 12, 4>
+>;
+using st2 = PseudoRegister<
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 0>, 0, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 1>, 1, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 2>, 2, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 3>, 3, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 4>, 4, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::m, 5>, 5, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::im, 2>, 6, 1>,
+    ProxySlot<Redirector<&RegisterState::s>, 7, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::ou, 0>, 8, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::ou, 1>, 9, 1>,
+    ProxySlot<ArrayRORedirector<2, &RegisterState::iu, 0>, 10, 1>,
+    ProxySlot<ArrayRORedirector<2, &RegisterState::iu, 1>, 11, 1>,
+    // 12: reserved
+    ProxySlot<ArrayRORedirector<3, &RegisterState::ip, 2>, 13, 1>, // Note the index order!
+    ProxySlot<ArrayRORedirector<3, &RegisterState::ip, 0>, 14, 1>,
+    ProxySlot<ArrayRORedirector<3, &RegisterState::ip, 1>, 15, 1>
+>;
+using icr = PseudoRegister<
+    ProxySlot<Redirector<&RegisterState::nimc>, 0, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::ic, 0>, 1, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::ic, 1>, 2, 1>,
+    ProxySlot<ArrayRedirector<3, &RegisterState::ic, 2>, 3, 1>,
+    ProxySlot<RORedirector<&RegisterState::lp>, 4, 1>,
+    ProxySlot<RORedirector<&RegisterState::bcn>, 5, 3>
+>;
+
+template<unsigned index>
+using ar = PseudoRegister<
+    ProxySlot<ArrayRedirector<4, &RegisterState::arstep, index * 2 + 1>, 0, 3>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::aroffset, index * 2 + 1>, 3, 2>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arstep, index * 2>, 5, 3>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::aroffset, index * 2>, 8, 2>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arrn, index * 2 + 1>, 10, 3>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arrn, index * 2>, 13, 3>
+>;
+
+using ar0 = ar<0>;
+using ar1 = ar<1>;
+
+template<unsigned index>
+using arp = PseudoRegister<
+    ProxySlot<ArrayRedirector<4, &RegisterState::arpstepi, index>, 0, 3>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arpoffseti, index>, 3, 2>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arpstepj, index>, 5, 3>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arpoffsetj, index>, 8, 2>,
+    ProxySlot<ArrayRedirector<4, &RegisterState::arprni, index>, 10, 2>,
+    // bit 12 reserved
+    ProxySlot<ArrayRedirector<4, &RegisterState::arprnj, index>, 13, 2>
+    // bit 15 reserved
+>;
+
+using arp0 = arp<0>;
+using arp1 = arp<1>;
+using arp2 = arp<2>;
+using arp3 = arp<3>;
