@@ -153,112 +153,143 @@ struct RegisterState {
     // 2 bits each. for i represent r0~r4, for j represents r5~r7
     std::array<u16, 4> arprni{}, arprnj{};
 
+    //// Shadow registers for context switch
+
+    template<u16 RegisterState::* origin>
     class ShadowRegister {
     public:
-        ShadowRegister(u16& origin): origin(origin) {}
-        void Store() {
-            shadow = origin;
+        void Store(RegisterState* self) {
+            shadow = self->*origin;
         }
-        void Restore() {
-            origin = shadow;
+        void Restore(RegisterState* self) {
+            self->*origin = shadow;
         }
     private:
-        u16& origin;
         u16 shadow = 0;
     };
 
+    template<typename... ShadowRegisters>
+    class ShadowRegisterList : private ShadowRegisters ...{
+    public:
+        void Store(RegisterState* self) {
+            (ShadowRegisters::Store(self), ...);
+        }
+        void Restore(RegisterState* self) {
+            (ShadowRegisters::Restore(self), ...);
+        }
+    };
+
+    template<u16 RegisterState::* origin>
     class ShadowSwapRegister {
     public:
-        ShadowSwapRegister(u16& origin): origin(origin) {}
-        void Swap() {
-            std::swap(origin, shadow);
+        void Swap(RegisterState* self) {
+            std::swap(self->*origin, shadow);
         }
     private:
-        u16& origin;
         u16 shadow = 0;
     };
 
-    std::vector<ShadowRegister> shadow_registers {
-        ShadowRegister(fls),
-        ShadowRegister(flv),
-        ShadowRegister(fe),
-        ShadowRegister(fc),
-        ShadowRegister(fv),
-        ShadowRegister(fn),
-        ShadowRegister(fm),
-        ShadowRegister(fz),
-        ShadowRegister(fc1),
-        ShadowRegister(fr),
+    template<std::size_t size, std::array<u16, size> RegisterState::* origin>
+    class ShadowSwapArrayRegister {
+    public:
+        void Swap(RegisterState* self) {
+            std::swap(self->*origin, shadow);
+        }
+    private:
+        std::array<u16, size> shadow{};
     };
 
-    std::vector<ShadowSwapRegister> shadow_swap_registers {
-        ShadowSwapRegister(movpd),
-        ShadowSwapRegister(sar[0]),
-        ShadowSwapRegister(sar[1]),
-        ShadowSwapRegister(ym),
-        ShadowSwapRegister(s),
-        ShadowSwapRegister(ps[0]),
-        ShadowSwapRegister(ps[1]),
-        ShadowSwapRegister(page),
-        ShadowSwapRegister(bankstep),
-        ShadowSwapRegister(mod1_unk),
-        ShadowSwapRegister(m[0]),
-        ShadowSwapRegister(m[1]),
-        ShadowSwapRegister(m[2]),
-        ShadowSwapRegister(m[3]),
-        ShadowSwapRegister(m[4]),
-        ShadowSwapRegister(m[5]),
-        ShadowSwapRegister(m[6]),
-        ShadowSwapRegister(m[7]),
-        ShadowSwapRegister(ms[0]),
-        ShadowSwapRegister(ms[1]),
-        ShadowSwapRegister(ms[2]),
-        ShadowSwapRegister(ms[3]),
-        ShadowSwapRegister(ms[4]),
-        ShadowSwapRegister(ms[5]),
-        ShadowSwapRegister(ms[6]),
-        ShadowSwapRegister(ms[7]),
-        ShadowSwapRegister(im[0]), // ?
-        ShadowSwapRegister(im[1]), // ?
-        ShadowSwapRegister(im[2]), // ?
-        ShadowSwapRegister(vim), // ?
-        ShadowSwapRegister(arstep[0]),
-        ShadowSwapRegister(arstep[1]),
-        ShadowSwapRegister(arstep[2]),
-        ShadowSwapRegister(arstep[3]),
-        ShadowSwapRegister(arpstepi[0]),
-        ShadowSwapRegister(arpstepi[1]),
-        ShadowSwapRegister(arpstepi[2]),
-        ShadowSwapRegister(arpstepi[3]),
-        ShadowSwapRegister(arpstepj[0]),
-        ShadowSwapRegister(arpstepj[1]),
-        ShadowSwapRegister(arpstepj[2]),
-        ShadowSwapRegister(arpstepj[3]),
-        ShadowSwapRegister(aroffset[0]),
-        ShadowSwapRegister(aroffset[1]),
-        ShadowSwapRegister(aroffset[2]),
-        ShadowSwapRegister(aroffset[3]),
-        ShadowSwapRegister(arpoffseti[0]),
-        ShadowSwapRegister(arpoffseti[1]),
-        ShadowSwapRegister(arpoffseti[2]),
-        ShadowSwapRegister(arpoffseti[3]),
-        ShadowSwapRegister(arpoffsetj[0]),
-        ShadowSwapRegister(arpoffsetj[1]),
-        ShadowSwapRegister(arpoffsetj[2]),
-        ShadowSwapRegister(arpoffsetj[3]),
-        ShadowSwapRegister(arrn[0]),
-        ShadowSwapRegister(arrn[1]),
-        ShadowSwapRegister(arrn[2]),
-        ShadowSwapRegister(arrn[3]),
-        ShadowSwapRegister(arprni[0]),
-        ShadowSwapRegister(arprni[1]),
-        ShadowSwapRegister(arprni[2]),
-        ShadowSwapRegister(arprni[3]),
-        ShadowSwapRegister(arprnj[0]),
-        ShadowSwapRegister(arprnj[1]),
-        ShadowSwapRegister(arprnj[2]),
-        ShadowSwapRegister(arprnj[3]),
+    template<typename... ShadowSwapRegisters>
+    class ShadowSwapRegisterList : private ShadowSwapRegisters ...{
+    public:
+        void Swap(RegisterState* self) {
+            (ShadowSwapRegisters::Swap(self), ...);
+        }
     };
+
+    ShadowRegisterList<
+        ShadowRegister<&RegisterState::fls>,
+        ShadowRegister<&RegisterState::flv>,
+        ShadowRegister<&RegisterState::fe>,
+        ShadowRegister<&RegisterState::fc>,
+        ShadowRegister<&RegisterState::fv>,
+        ShadowRegister<&RegisterState::fn>,
+        ShadowRegister<&RegisterState::fm>,
+        ShadowRegister<&RegisterState::fz>,
+        ShadowRegister<&RegisterState::fc1>,
+        ShadowRegister<&RegisterState::fr>
+    > shadow_registers;
+
+    ShadowSwapRegisterList<
+        ShadowSwapRegister<&RegisterState::movpd>,
+        ShadowSwapArrayRegister<2, &RegisterState::sar>,
+        ShadowSwapRegister<&RegisterState::ym>,
+        ShadowSwapRegister<&RegisterState::s>,
+        ShadowSwapArrayRegister<2, &RegisterState::ps>,
+        ShadowSwapRegister<&RegisterState::page>,
+        ShadowSwapRegister<&RegisterState::bankstep>,
+        ShadowSwapRegister<&RegisterState::mod1_unk>,
+        ShadowSwapArrayRegister<8, &RegisterState::m>,
+        ShadowSwapArrayRegister<8, &RegisterState::ms>,
+        ShadowSwapArrayRegister<3, &RegisterState::im>, // ?
+        ShadowSwapRegister<&RegisterState::vim> // ?
+    > shadow_swap_registers;
+
+    template <unsigned index>
+    class ShadowSwapAr {
+    public:
+        void Swap(RegisterState* self) {
+            std::swap(self->arrn[index * 2], rni);
+            std::swap(self->arrn[index * 2 + 1], rnj);
+            std::swap(self->arstep[index * 2], stepi);
+            std::swap(self->arstep[index * 2 + 1], stepj);
+            std::swap(self->aroffset[index * 2], offseti);
+            std::swap(self->aroffset[index * 2 + 1], offsetj);
+        }
+    private:
+        u16 rni, rnj, stepi, stepj, offseti, offsetj;
+    };
+
+    template <unsigned index>
+    class ShadowSwapArp {
+    public:
+        void Swap(RegisterState* self) {
+            std::swap(self->arprni[index], rni);
+            std::swap(self->arprnj[index], rnj);
+            std::swap(self->arpstepi[index], stepi);
+            std::swap(self->arpstepj[index], stepj);
+            std::swap(self->arpstepi[index], offseti);
+            std::swap(self->arpstepj[index], offsetj);
+        }
+    private:
+        u16 rni, rnj, stepi, stepj, offseti, offsetj;
+    };
+
+    // ar/arp's shadow registers are moved out from shodow_swap_registers because bankr instruction needs them
+    ShadowSwapAr<0> shadow_swap_ar0;
+    ShadowSwapAr<1> shadow_swap_ar1;
+    ShadowSwapArp<0> shadow_swap_arp0;
+    ShadowSwapArp<1> shadow_swap_arp1;
+    ShadowSwapArp<2> shadow_swap_arp2;
+    ShadowSwapArp<3> shadow_swap_arp3;
+
+    void ShadowStore() {
+        shadow_registers.Store(this);
+    }
+
+    void ShadowRestore() {
+        shadow_registers.Restore(this);
+    }
+
+    void ShadowSwap() {
+        shadow_swap_registers.Swap(this);
+        shadow_swap_ar0.Swap(this);
+        shadow_swap_ar1.Swap(this);
+        shadow_swap_arp0.Swap(this);
+        shadow_swap_arp1.Swap(this);
+        shadow_swap_arp2.Swap(this);
+        shadow_swap_arp3.Swap(this);
+    }
 
     bool ConditionPass(Cond cond) const {
         switch(cond.GetName()) {

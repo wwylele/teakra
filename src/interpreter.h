@@ -889,10 +889,8 @@ public:
     }
 
     void ContextStore() {
-        for (auto& reg : regs.shadow_registers)
-            reg.Store();
-        for (auto& reg : regs.shadow_swap_registers)
-            reg.Swap();
+        regs.ShadowStore();
+        regs.ShadowSwap();
         u64 a = regs.a[1].value;
         u64 b = regs.b[1].value;
         regs.b[1].value = a;
@@ -900,10 +898,8 @@ public:
     }
 
     void ContextRestore() {
-        for (auto& reg : regs.shadow_registers)
-            reg.Restore();
-        for (auto& reg : regs.shadow_swap_registers)
-            reg.Swap();
+        regs.ShadowRestore();
+        regs.ShadowSwap();
         std::swap(regs.a[1].value, regs.b[1].value);
     }
 
