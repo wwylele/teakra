@@ -29,7 +29,6 @@ struct Teakra::Impl {
     void CoreThread() {
         core.Reset();
         while(running_flag.test_and_set()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             core.Run(1);
         }
         running_flag.clear();
