@@ -68,7 +68,9 @@ private:
 
 class HexReg : public IReg{
 public:
-    HexReg(const std::string& name, u16& src, u16& dst) : IReg(name, ""), src(src), dst(dst) {}
+    HexReg(const std::string& name, u16& src, u16& dst) : IReg(name, ""), src(src), dst(dst) {
+        src = dst;
+    }
     unsigned GetLength() override {
         return 4;
     }
@@ -92,7 +94,9 @@ private:
 
 class BinReg : public IReg{
 public:
-    BinReg(const std::string& name, u16& src, u16& dst, const std::string flags) : IReg(name, flags), src(src), dst(dst) {}
+    BinReg(const std::string& name, u16& src, u16& dst, const std::string flags) : IReg(name, flags), src(src), dst(dst) {
+        src = dst;
+    }
     unsigned GetLength() override {
         return 16;
     }
@@ -260,6 +264,8 @@ int main() {
     printf("DSP_LoadComponent: %08lX\n", DSP_LoadComponent(cdc_bin, cdc_bin_size, 0xFF, 0xFF, &loaded));
     printf("loaded = %d\n", loaded);
     consoleSelect(&topScreen);
+
+    svcSleepThread(1000000000);
 
     grid[7][0] = MakeHexReg("r7", 0);
     grid[6][0] = MakeHexReg("r6", 1);

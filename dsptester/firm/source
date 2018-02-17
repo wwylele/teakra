@@ -28,8 +28,8 @@
      0480 load 0x80, page
      6F60 clr  Implied ConstZero, b0, always
      30C8 mov  b0l, [page+0xC8]   T_REPLY2
-     4180 br 1000
-     1000
+     4180 br 1800   jump to epilogue first to dump the initial register value
+     1800
 
 .p1000  signal handler & prologue
      0400 load 0x00, page
@@ -57,6 +57,9 @@
      0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
      0003
      
+     0037   mov 0000, mod3  clear mod3 from E000 to 0000. Game does this at the beginning so let it be the default env
+     0000
+
      5E66         pop r7
      0024         pop r6
      5E65         pop r5
