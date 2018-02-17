@@ -997,7 +997,7 @@ public:
     }
 
     std::string movs(MemImm8 a, Ab b) {
-        return "movs " + DsmImm(a) + " " + DsmReg(b);
+        return "movs " + Dsm(a) + " " + DsmReg(b);
     }
     std::string movs(Rn a, StepZIDS as, Ab b) {
         return "movs [" + DsmReg(a) + Dsm(as) + "] " + DsmReg(b);

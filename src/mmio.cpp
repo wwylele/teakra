@@ -1,11 +1,17 @@
 #include "mmio.h"
+#include "apbp.h"
 #include "memory_interface.h"
 #include <functional>
+#include <string>
 
 namespace Teakra {
 
-auto NoSet = [](u16) {printf("Warning: NoSet\n");};
-auto NoGet = []()->u16 {printf("Warning: NoGet\n"); return 0;};
+auto NoSet(const std::string& debug_string) {
+    return [debug_string](u16) {printf("Warning: NoSet on %s\n", debug_string.data());};
+}
+auto NoGet(const std::string& debug_string) {
+    return [debug_string]()->u16 {printf("Warning: NoGet on %s\n", debug_string.data()); return 0;};
+}
 
 struct Cell {
     std::function<void(u16)> set;
@@ -16,7 +22,7 @@ struct Cell {
         get = [storage]() ->u16 {return *storage;};
     }
     Cell(u16 constant) {
-        set = NoSet;
+        set = NoSet("");
         get = [constant]()->u16 {return constant;};
     }
     Cell(Cell* mirror) {
@@ -30,10 +36,38 @@ public:
     std::array<Cell, 0x800> cells{};
 };
 
-MMIORegion::MMIORegion(DataMemoryController& miu, ICU& icu) : impl(new Impl), miu(miu), icu(icu) {
+MMIORegion::MMIORegion(
+    DataMemoryController& miu,
+    ICU& icu,
+    Apbp& apbp_from_cpu,
+    Apbp& apbp_from_dsp
+):
+    impl(new Impl),
+    miu(miu),
+    icu(icu),
+    apbp_from_cpu(apbp_from_cpu),
+    apbp_from_dsp(apbp_from_dsp)
+{
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell(0xC902); // chip detect
+
+    for (unsigned i = 0; i < 3; ++i) {
+        impl->cells[0x0C0 + i * 4].set = std::bind(&Apbp::SendData, &apbp_from_dsp, i, _1);
+        impl->cells[0x0C0 + i * 4].get = NoGet("Apbp::SendData" + std::to_string(i));
+        impl->cells[0x0C2 + i * 4].set = NoSet("Apbp::RecvData" + std::to_string(i));
+        impl->cells[0x0C2 + i * 4].get = std::bind(&Apbp::RecvData, &apbp_from_cpu, i);
+    }
+    impl->cells[0x0CC].set = std::bind(&Apbp::SetSemaphore, &apbp_from_dsp, _1);
+    impl->cells[0x0CC].get = NoGet("Apbp::SetSemaphore");
+    impl->cells[0x0CE].set = NoSet("Apbp::MaskSemaphore?");
+    impl->cells[0x0CE].get = NoGet("Apbp::MaskSemaphore?");
+    impl->cells[0x0D0].set = std::bind(&Apbp::ClearSemaphore, &apbp_from_cpu, _1);
+    impl->cells[0x0D0].get = NoGet("Apbp::ClearSemaphore");
+    impl->cells[0x0D2].set = NoSet("Apbp::GetSemaphore?");
+    impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
+    impl->cells[0x0D6].set = [this](u16 value){ apbp_flags = value; };
+    impl->cells[0x0D6].get = [this](){return apbp_flags;};
 
     // memory bank setter has a delay of about 1 cycle. Game usually has a nop after the write instruction
     impl->cells[0x10E].set = std::bind(&DataMemoryController::SetMemoryBank, &miu, 0, _1);
@@ -45,12 +79,12 @@ MMIORegion::MMIORegion(DataMemoryController& miu, ICU& icu) : impl(new Impl), mi
     impl->cells[0x11E].set = std::bind(&DataMemoryController::SetMMIOLocation, &miu, _1);
     impl->cells[0x11E].get = std::bind(&DataMemoryController::GetMMIOLocation, &miu);
 
-    impl->cells[0x200].set = NoSet;
+    impl->cells[0x200].set = NoSet("ICU::GetRequest");
     impl->cells[0x200].get = std::bind(&ICU::GetRequest, &icu);
     impl->cells[0x202].set = std::bind(&ICU::Acknowledge, &icu, _1);
-    impl->cells[0x202].get = NoGet;
+    impl->cells[0x202].get = NoGet("ICU::Acknowledge");
     impl->cells[0x204].set = std::bind(&ICU::Trigger, &icu, _1);
-    impl->cells[0x204].get = NoGet;
+    impl->cells[0x204].get = NoGet("ICU::Trigger");
     impl->cells[0x206].set = std::bind(&ICU::SetEnable, &icu, 0, _1);
     impl->cells[0x206].get = std::bind(&ICU::GetEnable, &icu, 0);
     impl->cells[0x208].set = std::bind(&ICU::SetEnable, &icu, 1, _1);
@@ -73,7 +107,8 @@ MMIORegion::~MMIORegion() = default;
 
 u16 MMIORegion::Read(u16 addr) {
     u16 value = impl->cells[addr].get();
-    printf(">>>>>>>>> MMIO Read  @%04X -> %04X\n", addr, value);
+    if (addr != 0x02CA)
+        printf(">>>>>>>>> MMIO Read  @%04X -> %04X\n", addr, value);
     return value;
 }
 void MMIORegion::Write(u16 addr, u16 value) {

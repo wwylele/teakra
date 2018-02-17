@@ -12,6 +12,36 @@ public:
 
     Interpreter(RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
 
+    void PushPC() {
+        u16 l = regs.GetPcL();
+        u16 h = regs.GetPcH();
+        if (regs.pc_endian == 1) {
+            mem.DataWrite(--regs.sp, h);
+            mem.DataWrite(--regs.sp, l);
+        } else {
+            mem.DataWrite(--regs.sp, l);
+            mem.DataWrite(--regs.sp, h);
+        }
+    }
+
+    void PopPC() {
+        u16 h, l;
+        if (regs.pc_endian == 1) {
+            l = mem.DataRead(regs.sp++);
+            h = mem.DataRead(regs.sp++);
+        } else {
+            h = mem.DataRead(regs.sp++);
+            l = mem.DataRead(regs.sp++);
+        }
+        regs.SetPC(l, h);
+    }
+
+    void SetPC_Save(u32 new_pc) {
+        if (new_pc >= 0x40000)
+            throw "pc flies";
+        regs.pc = new_pc;
+    }
+
     void Run(unsigned cycles) {
         for (unsigned i  = 0; i < cycles; ++i) {
             u16 opcode = mem.ProgramRead(regs.pc++);
@@ -52,10 +82,7 @@ public:
                     if (regs.im[i] && regs.ip[i]) {
                         regs.ip[i] = 0;
                         regs.ie = 0;
-                        u16 l = regs.GetPcL();
-                        u16 h = regs.GetPcH();
-                        mem.DataWrite(--regs.sp, l);
-                        mem.DataWrite(--regs.sp, h);
+                        PushPC();
                         regs.pc = 0x0006 + i * 8;
                         interrupt_handled = true;
                         if (regs.ic[i]) {
@@ -67,10 +94,7 @@ public:
                 if (!interrupt_handled && regs.vim && regs.vip) {
                     regs.vip = 0;
                     regs.ie = 0;
-                    u16 l = regs.GetPcL();
-                    u16 h = regs.GetPcH();
-                    mem.DataWrite(--regs.sp, l);
-                    mem.DataWrite(--regs.sp, h);
+                    PushPC();
                     regs.pc = regs.viaddr;
                     if (regs.vic) {
                         ContextStore();
@@ -857,33 +881,21 @@ public:
 
     void call(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            u16 l = regs.GetPcL();
-            u16 h = regs.GetPcH();
-            mem.DataWrite(--regs.sp, l);
-            mem.DataWrite(--regs.sp, h);
+            PushPC();
             regs.SetPC(addr_low.storage, addr_high.storage);
         }
     }
     void calla(Axl a) {
-        u16 l = regs.GetPcL();
-        u16 h = regs.GetPcH();
-        mem.DataWrite(--regs.sp, l);
-        mem.DataWrite(--regs.sp, h);
-        regs.pc = RegToBus16(a.GetName()); // use movpd?
+        PushPC();
+        SetPC_Save(RegToBus16(a.GetName())); // use movpd?
     }
     void calla(Ax a) {
-        u16 l = regs.GetPcL();
-        u16 h = regs.GetPcH();
-        mem.DataWrite(--regs.sp, l);
-        mem.DataWrite(--regs.sp, h);
-        regs.pc = GetAcc(a.GetName()) & 0x3FFFF; // no saturation ?
+        PushPC();
+        SetPC_Save(GetAcc(a.GetName()) & 0x3FFFF); // no saturation ?
     }
     void callr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            u16 l = regs.GetPcL();
-            u16 h = regs.GetPcH();
-            mem.DataWrite(--regs.sp, l);
-            mem.DataWrite(--regs.sp, h);
+            PushPC();
             regs.pc += SignExtend<7, u32>(addr.storage);
         }
     }
@@ -912,9 +924,7 @@ public:
 
     void ret(Cond c) {
         if (regs.ConditionPass(c)) {
-            u16 h = mem.DataRead(regs.sp++);
-            u16 l = mem.DataRead(regs.sp++);
-            regs.SetPC(l, h);
+            PopPC();
         }
     }
     void retd(Dummy) {
@@ -922,17 +932,13 @@ public:
     }
     void reti(Cond c) {
         if (regs.ConditionPass(c)) {
-            u16 h = mem.DataRead(regs.sp++);
-            u16 l = mem.DataRead(regs.sp++);
-            regs.SetPC(l, h);
+            PopPC();
             regs.ie = 1;
         }
     }
     void retic(Cond c) {
         if (regs.ConditionPass(c)) {
-            u16 h = mem.DataRead(regs.sp++);
-            u16 l = mem.DataRead(regs.sp++);
-            regs.SetPC(l, h);
+            PopPC();
             regs.ie = 1;
             ContextRestore();
         }
@@ -944,9 +950,7 @@ public:
         throw "unimplemented";
     }
     void rets(Imm8 a) {
-        u16 h = mem.DataRead(regs.sp++);
-        u16 l = mem.DataRead(regs.sp++);
-        regs.SetPC(l, h);
+        PopPC();
         regs.sp += a.storage;
     }
 
@@ -1320,8 +1324,9 @@ public:
     }
     void movpdw(Ax a) {
         u32 address = GetAcc(a.GetName()) & 0x3FFFF; // no saturation
+        // the endianess doesn't seem to be affected by regs.pc_endian
         u16 h = mem.ProgramRead(address);
-        u16 l = mem.ProgramRead(address);
+        u16 l = mem.ProgramRead(address + 1);
         regs.SetPC(l, h);
     }
 
@@ -1510,7 +1515,7 @@ public:
             RegName b_name = (b.storage & 1) ? RegName::a0 : RegName::a1;
             u64 value = ProductToBus40(RegName::p0);
             SetAcc(b_name, value);
-        } if (a.GetName() == RegName::pc) {
+        } else if (a.GetName() == RegName::pc) {
             if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
                 SetAcc(b.GetName(), regs.pc);
             } else {
@@ -1671,11 +1676,11 @@ public:
 
     void mov_pc(Ax a) {
         u64 value = GetAcc(a.GetName());
-        regs.pc = value & 0xFFFFFFFF;
+        SetPC_Save(value & 0xFFFFFFFF);
     }
     void mov_pc(Bx a) {
         u64 value = GetAcc(a.GetName());
-        regs.pc = value & 0xFFFFFFFF;
+        SetPC_Save(value & 0xFFFFFFFF);
     }
 
     void mov_mixp_to(Bx b) {
@@ -1713,8 +1718,9 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        mem.DataWrite(address, l);
-        mem.DataWrite(address2, h);
+        // NOTE: keep the write order exactly like this.
+        mem.DataWrite(address2, l);
+        mem.DataWrite(address, h);
     }
     void mov2s(Px a, ArRn2 b, ArStep2 bs) {
         u64 value = ProductToBus40(a.GetName());
@@ -1722,15 +1728,17 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        mem.DataWrite(address, l);
-        mem.DataWrite(address2, h);
+        // NOTE: keep the write order exactly like this.
+        mem.DataWrite(address2, l);
+        mem.DataWrite(address, h);
     }
     void mov2(ArRn2 a, ArStep2 as, Px b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
-        u16 l = mem.DataRead(address);
-        u16 h = mem.DataRead(address2);
-        u64 value = SignExtend<32, u64>((h << 16) | l);
+        // NOTE: the read order is reversed from the write order
+        u16 h = mem.DataRead(address);
+        u16 l = mem.DataRead(address2);
+        u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
         ProductFromBus32(b.GetName(), value);
     }
     void mova(Ab a, ArRn2 b, ArStep2 bs) {
@@ -1739,15 +1747,18 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        mem.DataWrite(address, l);
-        mem.DataWrite(address2, h);
+        // NOTE: keep the write order exactly like this. The second one override the first one if
+        // the offset is zero.
+        mem.DataWrite(address2, l);
+        mem.DataWrite(address, h);
     }
     void mova(ArRn2 a, ArStep2 as, Ab b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
-        u16 l = mem.DataRead(address);
-        u16 h = mem.DataRead(address2);
-        u64 value = SignExtend<32, u64>((h << 16) | l);
+        // NOTE: the read order is reversed from the write order
+        u16 h = mem.DataRead(address);
+        u16 l = mem.DataRead(address2);
+        u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
         SetAcc(b.GetName(), value);
     }
 
@@ -2116,6 +2127,7 @@ private:
 
         u16 s;
         switch(step) {
+            // TODO: weird effect when using ArStep with ms = true and m = false
         case StepValue::Zero: s = 0; break;
         case StepValue::Increase: s = 1; break;
         case StepValue::Decrease: s = 0xFFFF; break;

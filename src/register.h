@@ -23,6 +23,8 @@ struct RegisterState {
         return (pc >> 16) & 0xFFFF;
     }
     void SetPC(u16 low, u16 high) {
+        if (((u32)low | ((u32)high << 16)) >= 0x40000)
+            throw "pc flies";
         pc = (u32)low | ((u32)high << 16);
     }
 
@@ -95,7 +97,7 @@ struct RegisterState {
     u16 movpd = 0; // 2-bit, higher part of program address for movp/movd
     u16 bcn = 0; // 3-bit, nest loop counter
     u16 lp = 0; // 1-bit, set when in a loop
-    std::array<u16, 2> sar{}; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
+    std::array<u16, 2> sar{{0, 1}}; // sar[0]=1 disable saturation when read from acc; sar[1]=1 disable saturation when write to acc?
     u16 ym = 0; // 2-bit, modify y on multiplication
     u16 mod0_unk_const = 1; // 3-bit
     std::array<u16, 2> ps{}; // 2-bit, product shift mode
@@ -107,7 +109,11 @@ struct RegisterState {
     std::array<u16, 2> iu{}; // user input pins
     u16 page = 0; // 8-bit, Higher part of MemImm8 address
     u16 bankstep = 0; // 1 bit. If set, stepi/j0 will be exchanged along with cfgi/j in banke
-    u16 mod1_unk = 0; // 3-bit
+    u16 mod1_unk = 1; // 3-bit
+    u16 mod3_56 = 0;
+    u16 mod3_D = 1;
+    u16 pc_endian = 1;
+    u16 mod3_F = 1;
 
     // m=0, ms=0: use stepi/j (no modulo)
     // m=1, ms=0: use stepi/j with modulo
@@ -138,20 +144,20 @@ struct RegisterState {
     // 5: -2
     // 6: +2 ?
     // 7: -2 ?
-    std::array<u16, 4> arstep{}, arpstepi{}, arpstepj{};
+    std::array<u16, 4> arstep{{1, 4, 5, 3}}, arpstepi{{1, 4, 5, 3}}, arpstepj{{1, 4, 5, 3}};
 
     // 2 bits each
     // 0: +0
     // 1: +1
     // 2: -1
     // 3: -1 ?
-    std::array<u16, 4> aroffset{}, arpoffseti{}, arpoffsetj{};
+    std::array<u16, 4> aroffset{{0, 1, 2, 0}}, arpoffseti{{0, 1, 2, 0}}, arpoffsetj{{0, 1, 2, 0}};
 
     // 3 bits each, represent r0~r7
-    std::array<u16, 4> arrn{};
+    std::array<u16, 4> arrn{{0, 4, 2, 6}};
 
     // 2 bits each. for i represent r0~r4, for j represents r5~r7
-    std::array<u16, 4> arprni{}, arprnj{};
+    std::array<u16, 4> arprni{{0, 1, 2, 3}}, arprnj{{0, 1, 2, 3}};
 
     //// Shadow registers for context switch
 
@@ -345,14 +351,14 @@ struct ArrayRedirector {
     }
 };
 
-template<u16 RegisterState::* target>
+template<u16 RegisterState::* target, const char *str>
 struct UnkRedirector {
     static u16 Get(const RegisterState* self) {
         return self->*target;
     }
     static void Set(RegisterState* self, u16 value) {
         if (value != Get(self))
-            printf("warning: Setting = 0x%X\n", value);
+            printf("warning: Setting %s = 0x%X\n", str, value);
         self->*target = value;
     }
 };
@@ -471,11 +477,12 @@ using mod0 = PseudoRegister<
 
     ProxySlot<ArrayRedirector<2, &RegisterState::ps, 1>, 13, 2>
 >;
+inline const char mod1_unk_name[] = "mod1.unk";
 using mod1 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::page>, 0, 8>,
 
     ProxySlot<Redirector<&RegisterState::bankstep>, 12, 1>,
-    ProxySlot<UnkRedirector<&RegisterState::mod1_unk>, 13, 3>
+    ProxySlot<UnkRedirector<&RegisterState::mod1_unk, mod1_unk_name>, 13, 3>
 >;
 using mod2 = PseudoRegister<
     ProxySlot<ArrayRedirector<8, &RegisterState::m, 0>, 0, 1>,
@@ -495,18 +502,27 @@ using mod2 = PseudoRegister<
     ProxySlot<ArrayRedirector<8, &RegisterState::ms, 6>, 14, 1>,
     ProxySlot<ArrayRedirector<8, &RegisterState::ms, 7>, 15, 1>
 >;
+inline const char mod3_vic_name[] = "mod3.vic";
+inline const char mod3_vim_name[] = "mod3.vim";
+inline const char mod3_56_name[] = "mod3.56";
+inline const char mod3_D_name[] = "mod3.D";
+inline const char mod3_F_name[] = "mod3.F";
 using mod3 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::nimc>, 0, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::ic, 0>, 1, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::ic, 1>, 2, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::ic, 2>, 3, 1>,
-    ProxySlot<Redirector<&RegisterState::vic>, 4, 1>, // ?
-
+    ProxySlot<UnkRedirector<&RegisterState::vic, mod3_vic_name>, 4, 1>, // ?
+    ProxySlot<UnkRedirector<&RegisterState::mod3_56, mod3_56_name>, 5, 2>,
     ProxySlot<Redirector<&RegisterState::ie>, 7, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::im, 0>, 8, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::im, 1>, 9, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::im, 2>, 10, 1>,
-    ProxySlot<Redirector<&RegisterState::vim>, 11, 1> // ?
+    ProxySlot<UnkRedirector<&RegisterState::vim, mod3_vim_name>, 11, 1>, // ?
+
+    ProxySlot<UnkRedirector<&RegisterState::mod3_D, mod3_D_name>, 13, 1>,
+    ProxySlot<Redirector<&RegisterState::pc_endian>, 14, 1>,
+    ProxySlot<UnkRedirector<&RegisterState::mod3_F, mod3_F_name>, 15, 1>
 >;
 
 using st0 = PseudoRegister<

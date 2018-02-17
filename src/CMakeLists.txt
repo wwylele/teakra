@@ -2,6 +2,8 @@ include(CreateDirectoryGroups)
 
 add_library(teakra
     ../include/teakra/teakra.h
+    apbp.cpp
+    apbp.h
     common_types.h
     core.cpp
     core.h
