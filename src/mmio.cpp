@@ -52,6 +52,7 @@ MMIORegion::MMIORegion(
 
     impl->cells[0x01A] = Cell(0xC902); // chip detect
 
+    // APBP
     for (unsigned i = 0; i < 3; ++i) {
         impl->cells[0x0C0 + i * 4].set = std::bind(&Apbp::SendData, &apbp_from_dsp, i, _1);
         impl->cells[0x0C0 + i * 4].get = NoGet("Apbp::SendData" + std::to_string(i));
@@ -67,8 +68,18 @@ MMIORegion::MMIORegion(
     impl->cells[0x0D2].set = NoSet("Apbp::GetSemaphore?");
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
     impl->cells[0x0D6].set = [this](u16 value){ apbp_flags = value; };
-    impl->cells[0x0D6].get = [this](){return apbp_flags;};
+    impl->cells[0x0D6].get = [this](){
+        u16 value = apbp_flags;
+        if (this->apbp_from_cpu.IsDataReady(0))
+            value |= 1 << 8;
+        if (this->apbp_from_cpu.IsDataReady(1))
+            value |= 1 << 12;
+        if (this->apbp_from_cpu.IsDataReady(2))
+            value |= 1 << 13;
+        return value;
+    };
 
+    // MIU
     // memory bank setter has a delay of about 1 cycle. Game usually has a nop after the write instruction
     impl->cells[0x10E].set = std::bind(&DataMemoryController::SetMemoryBank, &miu, 0, _1);
     impl->cells[0x10E].get = std::bind(&DataMemoryController::GetMemoryBank, &miu, 0);
@@ -79,6 +90,7 @@ MMIORegion::MMIORegion(
     impl->cells[0x11E].set = std::bind(&DataMemoryController::SetMMIOLocation, &miu, _1);
     impl->cells[0x11E].get = std::bind(&DataMemoryController::GetMMIOLocation, &miu);
 
+    // ICU
     impl->cells[0x200].set = NoSet("ICU::GetRequest");
     impl->cells[0x200].get = std::bind(&ICU::GetRequest, &icu);
     impl->cells[0x202].set = std::bind(&ICU::Acknowledge, &icu, _1);
@@ -100,6 +112,11 @@ MMIORegion::MMIORegion(
         impl->cells[0x214 + i * 4].set = std::bind(&ICU::SetVector, &icu, i, _1);
         impl->cells[0x214 + i * 4].get = std::bind(&ICU::GetVector, &icu, i);
     }
+
+    // Audio
+    for (unsigned i = 0; i < 2; ++i) {
+        impl->cells[0x2CA + i * 0x80].get = []()->u16{return 0x0002;}; // hack
+    }
 }
 
 MMIORegion::~MMIORegion() = default;
@@ -107,7 +124,7 @@ MMIORegion::~MMIORegion() = default;
 
 u16 MMIORegion::Read(u16 addr) {
     u16 value = impl->cells[addr].get();
-    if (addr != 0x02CA)
+    //if (addr != 0x02CA)
         printf(">>>>>>>>> MMIO Read  @%04X -> %04X\n", addr, value);
     return value;
 }

@@ -1160,7 +1160,8 @@ public:
     }
 
     void and_(Ab a, Ab b, Ax c) {
-        throw "unimplemented";
+        u64 value = GetAcc(a.GetName()) & GetAcc(b.GetName());
+        SetAcc_NoSaturation(c.GetName(), value);
     }
 
     void dint(Dummy) {
@@ -1735,9 +1736,8 @@ public:
     void mov2(ArRn2 a, ArStep2 as, Px b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
-        // NOTE: the read order is reversed from the write order
-        u16 h = mem.DataRead(address);
         u16 l = mem.DataRead(address2);
+        u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
         ProductFromBus32(b.GetName(), value);
     }
@@ -1747,7 +1747,7 @@ public:
         u16 h = (value >> 16) & 0xFFFF;
         u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
         u16 address2 = address + GetArOffset(bs.storage);
-        // NOTE: keep the write order exactly like this. The second one override the first one if
+        // NOTE: keep the write order exactly like this. The second one overrides the first one if
         // the offset is zero.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
@@ -1755,9 +1755,8 @@ public:
     void mova(ArRn2 a, ArStep2 as, Ab b) {
         u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
         u16 address2 = address + GetArOffset(as.storage);
-        // NOTE: the read order is reversed from the write order
-        u16 h = mem.DataRead(address);
         u16 l = mem.DataRead(address2);
+        u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
         SetAcc(b.GetName(), value);
     }
