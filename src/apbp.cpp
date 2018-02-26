@@ -1,7 +1,8 @@
 #include "apbp.h"
-#include <mutex>
-#include <atomic>
 #include <array>
+#include <atomic>
+#include <mutex>
+#include <utility>
 
 namespace Teakra{
 class DataChannel {
@@ -73,7 +74,7 @@ bool Apbp::IsDataReady(unsigned channel) const {
 }
 
 void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {
-    impl->data_channels[channel].handler = handler;
+    impl->data_channels[channel].handler = std::move(handler);
 }
 
 void Apbp::SetSemaphore(u16 bits) {
@@ -103,6 +104,6 @@ u16 Apbp::GetSemaphore() const {
 }
 
 void Apbp::SetSemaphoreHandler(unsigned channel, std::function<void()> handler) {
-    impl->semaphore_channels[channel].handler = handler;
+    impl->semaphore_channels[channel].handler = std::move(handler);
 }
 } // namespace Teakra
