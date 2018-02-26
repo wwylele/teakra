@@ -11,14 +11,10 @@
 #include "citra.h"*/
 #include "teakra/teakra.h"
 #include "decoder.h"
-#include "disassembler.h"
 
 int main() {
     Teakra::Teakra teakra;
 
-    for (u32 opcode = 0; opcode < 0x10000; ++opcode) {
-        Decode<Disassembler>((u16)opcode);
-    }
 
     /*
     FILE* file = fopen("/media/wwylele/学习_娱乐/3DS/PokemonY.romfs/sound/dspaudio.cdc", "rb");

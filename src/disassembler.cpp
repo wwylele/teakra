@@ -1,11 +1,12 @@
-#pragma once
-
 #include <iomanip>
 #include <sstream>
-#include <string>
 
 #include "common_types.h"
 #include "oprand.h"
+#include "decoder.h"
+#include "teakra/disassembler.h"
+
+namespace Teakra::Disassembler {
 
 template<typename T>
 std::string ToHex(T i)
@@ -1012,3 +1013,20 @@ public:
         return "movs " + DsmReg(a) + " " + DsmReg(b) + " " + DsmImm(s);
     }
 };
+
+bool NeedExpansion(std::uint16_t opcode) {
+    auto decoder = Decode<Disassembler>(opcode);
+    if (!decoder)
+        return false;
+    return decoder->NeedExpansion();
+}
+
+std::string Do(std::uint16_t opcode, std::uint16_t expansion) {
+    Disassembler dsm;
+    auto decoder = Decode<Disassembler>(opcode);
+    if (!decoder)
+        return "[unknown]";
+    return decoder->call(dsm, opcode, expansion);
+}
+
+} // namespace Teakra::dissasembler

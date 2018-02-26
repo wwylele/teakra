@@ -1,6 +1,7 @@
 include(CreateDirectoryGroups)
 
 add_library(teakra
+    ../include/teakra/disassembler.h
     ../include/teakra/teakra.h
     apbp.cpp
     apbp.h
@@ -8,7 +9,7 @@ add_library(teakra
     core.cpp
     core.h
     decoder.h
-    disassembler.h
+    disassembler.cpp
     icu.h
     interpreter.h
     matcher.h
@@ -38,3 +39,5 @@ create_target_directory_groups(teakra_tests)
 target_link_libraries(teakra_tests PRIVATE teakra)
 target_include_directories(teakra_tests PRIVATE .)
 target_compile_options(teakra_tests PRIVATE ${TEAKRA_CXX_FLAGS})
+
+add_subdirectory(coff_reader)
