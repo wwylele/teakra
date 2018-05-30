@@ -11,51 +11,52 @@ namespace Teakra::Disassembler {
 template<typename T>
 std::string ToHex(T i)
 {
-  bool neg;
-  u64 v;
-  if (i < 0) {
-      v = -i;
-      neg = true;
-  } else {
-      v = i;
-      neg = false;
-  }
+  u64 v = i;
   std::stringstream stream;
-  if (neg) stream << "-";
   stream << "0x"
          << std::setfill ('0') << std::setw(sizeof(T) * 2)
          << std::hex << v;
   return stream.str();
 }
 
+template <unsigned bits>
+std::string DsmImm(Imm<bits> a) {
+    return ToHex(a.storage);
+}
+
+template <unsigned bits>
+std::string DsmImm(Imms<bits> a) {
+    u16 value = SignExtend<bits, u16>(a.storage);
+    bool negative = (value >> 15) != 0;
+    if (negative) {
+        value = (~value) + 1;
+    }
+    return (negative? '-' : ' ') + ToHex(value);
+}
+
 std::string Dsm(MemImm8 a) {
-    return "[page:" + ToHex((u8)a.storage) + "]";
+    return "[page:" + DsmImm((Imm8)a) + "]";
 }
 
 std::string Dsm(MemImm16 a) {
-    return "[" + ToHex(a.storage) + "]";
+    return "[" + DsmImm((Imm16)a) + "]";
 }
 
 std::string Dsm(MemR7Imm16 a) {
-    return "[r7+" + ToHex(a.storage) + "]";
+    return "[r7+" + DsmImm((Imm16)a) + "]";
 }
 std::string Dsm(MemR7Imm7s a) {
-    return "[r7+" + ToHex(a.storage) + "]";
-}
-
-template <typename ImmT>
-std::string DsmImm(ImmT a) {
-    return ToHex(a.storage);
+    return "[r7+" + DsmImm((Imm7s)a) + "]";
 }
 
 template <typename ArRn>
 std::string DsmArRn(ArRn a) {
-    return "arrn" + ToHex(a.storage);
+    return "arrn" + std::to_string(a.storage);
 }
 
 template <typename ArStep>
 std::string DsmArStep(ArStep a) {
-    return "+ars" + ToHex(a.storage);
+    return "+ars" + std::to_string(a.storage);
 }
 
 template <typename RegT>

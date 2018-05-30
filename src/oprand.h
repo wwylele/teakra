@@ -337,7 +337,7 @@ struct Imm16 : Imm<16> {};
 // struct ProgMemAx_
 struct MemImm8 : Imm8 {};
 struct MemImm16 : Imm16 {};
-struct MemR7Imm7s : Imms<7> {};
+struct MemR7Imm7s : Imm7s {};
 struct MemR7Imm16 : Imm16 {};
 
 
