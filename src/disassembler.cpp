@@ -29,23 +29,23 @@ std::string ToHex(T i)
 }
 
 std::string Dsm(MemImm8 a) {
-    return "[page:" + ToHex((u8)a.Value()) + "]";
+    return "[page:" + ToHex((u8)a.storage) + "]";
 }
 
 std::string Dsm(MemImm16 a) {
-    return "[" + ToHex(a.Value()) + "]";
+    return "[" + ToHex(a.storage) + "]";
 }
 
 std::string Dsm(MemR7Imm16 a) {
-    return "[r7+" + ToHex(a.Value()) + "]";
+    return "[r7+" + ToHex(a.storage) + "]";
 }
 std::string Dsm(MemR7Imm7s a) {
-    return "[r7+" + ToHex(a.Value()) + "]";
+    return "[r7+" + ToHex(a.storage) + "]";
 }
 
 template <typename ImmT>
 std::string DsmImm(ImmT a) {
-    return ToHex(a.Value());
+    return ToHex(a.storage);
 }
 
 template <typename ArRn>

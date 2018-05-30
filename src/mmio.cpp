@@ -108,7 +108,9 @@ MMIORegion::MMIORegion(
     // 20E: some type bit for each
     // 210: some type bit for each
     for (unsigned i = 0; i < 16; ++i) {
-        // 0x212 + i * 4 : ?
+        //impl->cells[0x212 + i * 4].set = [](u16) {
+        //    *(u32*)1 = 1;
+        //};
         impl->cells[0x214 + i * 4].set = std::bind(&ICU::SetVector, &icu, i, _1);
         impl->cells[0x214 + i * 4].get = std::bind(&ICU::GetVector, &icu, i);
     }

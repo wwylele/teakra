@@ -311,18 +311,10 @@ struct RelAddr7 : Oprand<7> {};
 
 template <unsigned bits>
 struct Imm : Oprand<bits> {
-    u16 Value() const {
-        return this->storage;
-    }
 };
 
 template <unsigned bits>
 struct Imms : Oprand<bits> {
-    static constexpr unsigned sign_bit = bits - 1;
-    static constexpr u16 sign_ext_mask = 0xFFFF - ((1 << sign_bit) - 1);
-    s16 Value() const {
-        return (s16)(this->storage | ((this->storage & (1 << sign_bit)) ? sign_ext_mask : 0));
-    }
 };
 
 struct Imm2 : Imm<2> {};

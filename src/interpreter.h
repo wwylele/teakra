@@ -1361,7 +1361,7 @@ public:
         mem.DataWrite(addr.storage + regs.r[7], value);
     }
     void StoreToMemory(MemR7Imm7s addr, u16 value) {
-        mem.DataWrite(addr.storage + regs.r[7], value);
+        mem.DataWrite(SignExtend<7, u16>(addr.storage) + regs.r[7], value);
     }
 
     void mov(Ablh a, MemImm8 b) {
@@ -1391,7 +1391,7 @@ public:
         return mem.DataRead(addr.storage + regs.r[7]);
     }
     u16 LoadFromMemory(MemR7Imm7s addr) {
-        return mem.DataRead(addr.storage + regs.r[7]);
+        return mem.DataRead(SignExtend<7, u16>(addr.storage) + regs.r[7]);
     }
 
     void mov(MemImm16 a, Ax b) {
@@ -1436,19 +1436,19 @@ public:
         throw "unimplemented";
     }
     void mov(Imm8s a, Axh b) {
-        u16 value = (u16)(s16)a.Value();
+        u16 value = SignExtend<8, u16>(a.storage);
         RegFromBus16(b.GetName(), value);
     }
     void mov(Imm8s a, RnOld b) {
-        u16 value = (u16)(s16)a.Value();
+        u16 value = SignExtend<8, u16>(a.storage);
         RegFromBus16(b.GetName(), value);
     }
     void mov_sv(Imm8s a) {
-        u16 value = (u16)(s16)a.Value();
+        u16 value = SignExtend<8, u16>(a.storage);
         regs.sv = value;
     }
     void mov(Imm8 a, Axl b) {
-        u16 value = a.Value();
+        u16 value = a.storage;
         RegFromBus16(b.GetName(), value);
     }
     void mov(MemR7Imm16 a, Ax b) {
