@@ -156,7 +156,7 @@ struct RegisterState {
     // 3 bits each, represent r0~r7
     std::array<u16, 4> arrn{{0, 4, 2, 6}};
 
-    // 2 bits each. for i represent r0~r4, for j represents r5~r7
+    // 2 bits each. for i represent r0~r3, for j represents r4~r7
     std::array<u16, 4> arprni{{0, 1, 2, 3}}, arprnj{{0, 1, 2, 3}};
 
     //// Shadow registers for context switch
