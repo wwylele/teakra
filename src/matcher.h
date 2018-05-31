@@ -23,6 +23,10 @@ public:
     Matcher(const char* const name, u16 mask, u16 expected, bool expanded, handler_function func)
         : name{name}, mask{mask}, expected{expected}, expanded{expanded}, fn{std::move(func)} {}
 
+    static Matcher AllMatcher(handler_function func) {
+        return Matcher("*", 0, 0, false, std::move(func));
+    }
+
     const char* GetName() const {
         return name;
     }

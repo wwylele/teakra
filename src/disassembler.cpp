@@ -396,6 +396,10 @@ class Disassembler {
 public:
     using instruction_return_type = std::string;
 
+    std::string undefined(u16 opcode) {
+        return "[undefined]";
+    }
+
     std::string nop(Dummy) {
         return "nop";
     }
@@ -1162,17 +1166,13 @@ public:
 
 bool NeedExpansion(std::uint16_t opcode) {
     auto decoder = Decode<Disassembler>(opcode);
-    if (!decoder)
-        return false;
-    return decoder->NeedExpansion();
+    return decoder.NeedExpansion();
 }
 
 std::string Do(std::uint16_t opcode, std::uint16_t expansion) {
     Disassembler dsm;
     auto decoder = Decode<Disassembler>(opcode);
-    if (!decoder)
-        return "[unknown]";
-    return decoder->call(dsm, opcode, expansion);
+    return decoder.call(dsm, opcode, expansion);
 }
 
 } // namespace Teakra::dissasembler

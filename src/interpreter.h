@@ -42,14 +42,16 @@ public:
         regs.pc = new_pc;
     }
 
+    void undefined(u16 opcode) {
+        throw "undefined code!";
+    }
+
     void Run(unsigned cycles) {
         for (unsigned i  = 0; i < cycles; ++i) {
             u16 opcode = mem.ProgramRead(regs.pc++);
             auto decoder = Decode<Interpreter>(opcode);
-            if (!decoder)
-                throw "unknown code!";
             u16 expand_value = 0;
-            if (decoder->NeedExpansion()) {
+            if (decoder.NeedExpansion()) {
                 expand_value = mem.ProgramRead(regs.pc++);
             }
 
@@ -72,7 +74,7 @@ public:
                 }
             }
 
-            decoder->call(*this, opcode, expand_value);
+            decoder.call(*this, opcode, expand_value);
 
             // I am not sure if a single-instruction loop is interruptable and how it is handled,
             // so just disable interrupt for it for now.

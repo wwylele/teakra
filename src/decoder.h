@@ -1,7 +1,6 @@
 #pragma once
 #include "matcher.h"
 #include "oprand.h"
-#include <optional>
 #include <type_traits>
 #include <vector>
 
@@ -395,14 +394,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
 }
 
 template<typename V>
-std::optional<Matcher<V>> Decode(u16 instruction) {
+Matcher<V> Decode(u16 instruction) {
     static const auto table = GetDecodeTable<V>();
 
     const auto matches_instruction = [instruction](const auto& matcher) { return matcher.Matches(instruction); };
 
     auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
     if (iter == table.end()) {
-        return std::nullopt;
+        return Matcher<V>::AllMatcher([](V& v, u16 opcode, u16){
+            return v.undefined(opcode);
+        });
     } else {
         auto other = std::find_if(iter + 1, table.end(), matches_instruction);
         if (other != table.end()) {
