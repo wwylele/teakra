@@ -415,3 +415,13 @@ Matcher<V> Decode(u16 instruction) {
         return *iter;
     }
 }
+
+template<typename V>
+std::vector<Matcher<V>> GetDecoderTable() {
+    std::vector<Matcher<V>> table;
+    table.reserve(0x10000);
+    for (u32 i = 0; i < 0x10000; ++i) {
+        table.push_back(Decode<V>((u16)i));
+    }
+    return table;
+}

@@ -49,7 +49,7 @@ public:
     void Run(unsigned cycles) {
         for (unsigned i  = 0; i < cycles; ++i) {
             u16 opcode = mem.ProgramRead(regs.pc++);
-            auto decoder = Decode<Interpreter>(opcode);
+            auto& decoder = decoders[opcode];
             u16 expand_value = 0;
             if (decoder.NeedExpansion()) {
                 expand_value = mem.ProgramRead(regs.pc++);
@@ -2238,6 +2238,8 @@ private:
         regs.p[unit].value = value;
         regs.psign[unit] = value >> 31;
     }
+
+    const std::vector<Matcher<Interpreter>> decoders = GetDecoderTable<Interpreter>();
 };
 
 } // namespace Teakra
