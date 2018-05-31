@@ -271,7 +271,6 @@ struct RegisterState {
         u16 rni, rnj, stepi, stepj, offseti, offsetj;
     };
 
-    // ar/arp's shadow registers are moved out from shodow_swap_registers because bankr instruction needs them
     ShadowSwapAr<0> shadow_swap_ar0;
     ShadowSwapAr<1> shadow_swap_ar1;
     ShadowSwapArp<0> shadow_swap_arp0;
@@ -287,14 +286,34 @@ struct RegisterState {
         shadow_registers.Restore(this);
     }
 
-    void ShadowSwap() {
-        shadow_swap_registers.Swap(this);
+    void SwapAllArArp() {
         shadow_swap_ar0.Swap(this);
         shadow_swap_ar1.Swap(this);
         shadow_swap_arp0.Swap(this);
         shadow_swap_arp1.Swap(this);
         shadow_swap_arp2.Swap(this);
         shadow_swap_arp3.Swap(this);
+    }
+
+    void ShadowSwap() {
+        shadow_swap_registers.Swap(this);
+        SwapAllArArp();
+    }
+
+    void SwapAr(u16 index) {
+        switch(index) {
+        case 0: shadow_swap_ar0.Swap(this); break;
+        case 1: shadow_swap_ar1.Swap(this); break;
+        }
+    }
+
+    void SwapArp(u16 index) {
+        switch(index) {
+        case 0: shadow_swap_arp0.Swap(this); break;
+        case 1: shadow_swap_arp1.Swap(this); break;
+        case 2: shadow_swap_arp2.Swap(this); break;
+        case 3: shadow_swap_arp3.Swap(this); break;
+        }
     }
 
     bool ConditionPass(Cond cond) const {

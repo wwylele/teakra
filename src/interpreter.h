@@ -823,16 +823,17 @@ public:
         }
     }
     void bankr(Dummy) {
-        throw "unimplemented";
+        regs.SwapAllArArp();
     }
     void bankr(Ar a) {
-        throw "unimplemented";
+        regs.SwapAr(a.storage);
     }
     void bankr(Ar a, Arp b) {
-        throw "unimplemented";
+        regs.SwapAr(a.storage);
+        regs.SwapArp(b.storage);
     }
     void bankr(Arp a) {
-        throw "unimplemented";
+        regs.SwapArp(a.storage);
     }
 
     void BitReverse(u32 unit) {
