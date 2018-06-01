@@ -1867,6 +1867,65 @@ public:
         u16 sv = SignExtend<5, u16>(s.storage);
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
+
+    u16 Exp(u64 value) {
+        u64 sign = (value >> 39) & 1;
+        u16 bit = 38, count = 0;
+        while (true) {
+            if (((value >> bit) & 1) != sign)
+                break;
+            ++count;
+            if (bit == 0)
+                break;
+            --bit;
+        }
+        return count - 8;
+    }
+
+    void ExpStore(Ax b) {
+        SetAcc_Simple(b.GetName(), SignExtend<16, u64>(regs.sv));
+    }
+
+    void exp(Bx a) {
+        u64 value = GetAcc(a.GetName());
+        regs.sv = Exp(value);
+    }
+    void exp(Bx a, Ax b) {
+        exp(a);
+        ExpStore(b);
+    }
+    void exp(Rn a, StepZIDS as) {
+        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u64 value = SignExtend<32>((u64)mem.DataRead(address) << 16);
+        regs.sv = Exp(value);
+    }
+    void exp(Rn a, StepZIDS as, Ax b) {
+        exp(a, as);
+        ExpStore(b);
+    }
+    void exp(Register a) {
+        u64 value;
+        if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
+            value = GetAcc(a.GetName());
+        } else {
+            // RegName::p follows the usual rule
+            value = SignExtend<32>((u64)RegToBus16(a.GetName()) << 16);
+        }
+        regs.sv = Exp(value);
+    }
+    void exp(Register a, Ax b) {
+        exp(a);
+        ExpStore(b);
+    }
+    void exp_r6(Dummy) {
+        u64 value = SignExtend<32>((u64)RegToBus16(RegName::r6) << 16);
+        regs.sv = Exp(value);
+    }
+    void exp_r6(Ax b) {
+        exp_r6(Dummy{});
+        ExpStore(b);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
@@ -1987,6 +2046,10 @@ private:
         if (!no_saturation)
             value = SaturateAcc(value, true);
 
+        SetAcc_Simple(name, value);
+    }
+
+    void SetAcc_Simple(RegName name, u64 value) {
         switch(name) {
         case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0].value = value; break;
         case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1].value = value; break;

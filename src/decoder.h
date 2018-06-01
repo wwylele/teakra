@@ -251,6 +251,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(dint, 0x43C0, DummyMatch),
     INST(eint, 0x4380, DummyMatch),
 
+    // <<< EXP >>>
+    INST(exp, 0x9460, At<Bx, 0>),
+    INST(exp, 0x9060, At<Bx, 0>, At<Ax, 8>),
+    INST(exp, 0x9C40, At<Rn, 0>, At<StepZIDS, 3>),
+    INST(exp, 0x9840, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 8>),
+    INST(exp, 0x9440, At<Register, 0>),
+    INST(exp, 0x9040, At<Register, 0>, At<Ax, 8>),
+    INST(exp_r6, 0xD7C1, DummyMatch),
+    INST(exp_r6, 0xD382, At<Ax, 4>),
+
     // <<< MODR >>>
     INST(modr, 0x0080, At<Rn, 0>, At<StepZIDS, 3>),
     INST(modr_dmod, 0x00A0, At<Rn, 0>, At<StepZIDS, 3>),

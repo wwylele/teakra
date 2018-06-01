@@ -1162,6 +1162,31 @@ public:
     std::string movsi(RnOld a, Ab b, Imm5s s) {
         return D("movsi", R(a), R(b), s);
     }
+
+    std::string exp(Bx a) {
+        return D("exp", R(a));
+    }
+    std::string exp(Bx a, Ax b) {
+        return D("exp", R(a), R(b));
+    }
+    std::string exp(Rn a, StepZIDS as) {
+        return D("exp", MemR(a, as));
+    }
+    std::string exp(Rn a, StepZIDS as, Ax b) {
+        return D("exp", MemR(a, as), R(b));
+    }
+    std::string exp(Register a) {
+        return D("exp", R(a));
+    }
+    std::string exp(Register a, Ax b) {
+        return D("exp", R(a), R(b));
+    }
+    std::string exp_r6(Dummy) {
+        return D("exp", "r6");
+    }
+    std::string exp_r6(Ax b) {
+        return D("exp", "r6", R(b));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {
