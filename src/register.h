@@ -68,12 +68,12 @@ struct RegisterState {
     u16 stepi0b = 0, stepj0b = 0;
 
     // 1-bit flags
-    u16 fz = 0, fm = 0, fn = 0, fv = 0, fc = 0, fe = 0;
+    u16 fz = 0, fm = 0, fn = 0, fv = 0, fe = 0;
+    std::array<u16, 2> fc;
     u16 fls = 0; // set on saturation
     u16 flv = 0; // latching fv
     u16 fr = 0;
-    u16 fc1 = 0; // used by max||max||vtrshr?
-    std::array<u16, 2> vtr{}; // fc/fc1 latching
+    std::array<u16, 2> vtr{}; // for viterbi decoding
 
     // interrupt pending bit
     std::array<u16, 3> ip{};
@@ -174,6 +174,19 @@ struct RegisterState {
         u16 shadow = 0;
     };
 
+    template<std::size_t size, std::array<u16, size> RegisterState::* origin>
+    class ShadowArrayRegister {
+    public:
+        void Store(RegisterState* self) {
+            shadow = self->*origin;
+        }
+        void Restore(RegisterState* self) {
+            self->*origin = shadow;
+        }
+    private:
+        std::array<u16, size> shadow{};
+    };
+
     template<typename... ShadowRegisters>
     class ShadowRegisterList : private ShadowRegisters ...{
     public:
@@ -217,12 +230,11 @@ struct RegisterState {
         ShadowRegister<&RegisterState::fls>,
         ShadowRegister<&RegisterState::flv>,
         ShadowRegister<&RegisterState::fe>,
-        ShadowRegister<&RegisterState::fc>,
+        ShadowArrayRegister<2, &RegisterState::fc>,
         ShadowRegister<&RegisterState::fv>,
         ShadowRegister<&RegisterState::fn>,
         ShadowRegister<&RegisterState::fm>,
         ShadowRegister<&RegisterState::fz>,
-        ShadowRegister<&RegisterState::fc1>,
         ShadowRegister<&RegisterState::fr>
     > shadow_registers;
 
@@ -326,7 +338,7 @@ struct RegisterState {
         case CondValue::Lt: return fm == 1;
         case CondValue::Le: return fm == 1 || fz == 1;
         case CondValue::Nn: return fn == 0;
-        case CondValue::C: return fc == 1; // ?
+        case CondValue::C: return fc[0] == 1; // ?
         case CondValue::V: return fv == 1;
         case CondValue::E: return fe == 1;
         case CondValue::L: return fls == 1 || flv == 1; // ??
@@ -460,12 +472,12 @@ using stt0 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::fls>, 0, 1>,
     ProxySlot<Redirector<&RegisterState::flv>, 1, 1>,
     ProxySlot<Redirector<&RegisterState::fe>, 2, 1>,
-    ProxySlot<Redirector<&RegisterState::fc>, 3, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::fc, 0>, 3, 1>,
     ProxySlot<Redirector<&RegisterState::fv>, 4, 1>,
     ProxySlot<Redirector<&RegisterState::fn>, 5, 1>,
     ProxySlot<Redirector<&RegisterState::fm>, 6, 1>,
     ProxySlot<Redirector<&RegisterState::fz>, 7, 1>,
-    ProxySlot<Redirector<&RegisterState::fc1>, 11, 1>
+    ProxySlot<ArrayRedirector<2, &RegisterState::fc, 1>, 11, 1>
 >;
 using stt1 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
@@ -552,7 +564,7 @@ using st0 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
     ProxySlot<DoubleRedirector<&RegisterState::fls, &RegisterState::flv>, 5, 1>,
     ProxySlot<Redirector<&RegisterState::fe>, 6, 1>,
-    ProxySlot<Redirector<&RegisterState::fc>, 7, 1>,
+    ProxySlot<ArrayRedirector<2, &RegisterState::fc, 0>, 7, 1>,
     ProxySlot<Redirector<&RegisterState::fv>, 8, 1>,
     ProxySlot<Redirector<&RegisterState::fn>, 9, 1>,
     ProxySlot<Redirector<&RegisterState::fm>, 10, 1>,

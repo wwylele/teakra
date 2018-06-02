@@ -244,7 +244,7 @@ public:
         a &= 0xFF'FFFF'FFFF;
         b &= 0xFF'FFFF'FFFF;
         u64 result = sub ? a - b : a + b;
-        regs.fc = (result >> 40) & 1;
+        regs.fc[0] = (result >> 40) & 1;
         if (sub)
             b = ~b;
         regs.fv = ((~(a ^ b) & (a ^ result)) >> 39) & 1;
@@ -444,7 +444,7 @@ public:
         }
         case AlbOp::Addv: {
             u32 r = a + b;
-            regs.fc = (r >> 16) != 0;
+            regs.fc[0] = (r >> 16) != 0;
             result = r & 0xFFFF;
             break;
         }
@@ -459,7 +459,7 @@ public:
         case AlbOp::Cmpv:
         case AlbOp::Subv: {
             u32 r = b - a;
-            regs.fc = (r >> 16) != 0;
+            regs.fc[0] = (r >> 16) != 0;
             result = r & 0xFFFF;
             break;
         }
@@ -589,10 +589,10 @@ public:
         u64 value_c = GetAcc(c.GetName());
         u64 result = AddSub(value_c, value_a, false);
         // is this flag handling correct?
-        u16 temp_c = regs.fc;
+        u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, false);
-        regs.fc |= temp_c;
+        regs.fc[0] |= temp_c;
         regs.fv |= temp_v;
         SetAcc(c.GetName(), result);
     }
@@ -602,10 +602,10 @@ public:
         value_b = SignExtend<24>(value_b >> 16);
         u64 value_c = GetAcc(c.GetName());
         u64 result = AddSub(value_c, value_a, false);
-        u16 temp_c = regs.fc;
+        u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, false);
-        regs.fc |= temp_c;
+        regs.fc[0] |= temp_c;
         regs.fv |= temp_v;
         SetAcc(c.GetName(), result);
     }
@@ -616,10 +616,10 @@ public:
         value_b = SignExtend<24>(value_b >> 16);
         u64 value_c = GetAcc(c.GetName());
         u64 result = AddSub(value_c, value_a, false);
-        u16 temp_c = regs.fc;
+        u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, false);
-        regs.fc |= temp_c;
+        regs.fc[0] |= temp_c;
         regs.fv |= temp_v;
         SetAcc(c.GetName(), result);
     }
@@ -667,10 +667,10 @@ public:
         u64 value_c = GetAcc(c.GetName());
         u64 result = AddSub(value_c, value_a, true);
         // is this flag handling correct?
-        u16 temp_c = regs.fc;
+        u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, true);
-        regs.fc |= temp_c;
+        regs.fc[0] |= temp_c;
         regs.fv |= temp_v;
         SetAcc(c.GetName(), result);
     }
@@ -680,10 +680,10 @@ public:
         value_b = SignExtend<24>(value_b >> 16);
         u64 value_c = GetAcc(c.GetName());
         u64 result = AddSub(value_c, value_a, true);
-        u16 temp_c = regs.fc;
+        u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, true);
-        regs.fc |= temp_c;
+        regs.fc[0] |= temp_c;
         regs.fv |= temp_v;
         SetAcc(c.GetName(), result);
     }
@@ -694,10 +694,10 @@ public:
         value_b = SignExtend<24>(value_b >> 16);
         u64 value_c = GetAcc(c.GetName());
         u64 result = AddSub(value_c, value_a, true);
-        u16 temp_c = regs.fc;
+        u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, true);
-        regs.fc |= temp_c;
+        regs.fc[0] |= temp_c;
         regs.fv |= temp_v;
         SetAcc(c.GetName(), result);
     }
@@ -727,8 +727,8 @@ public:
             }
             case ModaOp::Ror: {
                 u64 value = GetAcc(a) & 0xFF'FFFF'FFFF;
-                u16 old_fc = regs.fc;
-                regs.fc = value & 1;
+                u16 old_fc = regs.fc[0];
+                regs.fc[0] = value & 1;
                 value >>= 1;
                 value |= (u64)old_fc << 39;
                 value = SignExtend<40>(value);
@@ -737,8 +737,8 @@ public:
             }
             case ModaOp::Rol: {
                 u64 value = GetAcc(a);
-                u16 old_fc = regs.fc;
-                regs.fc = (value >> 39) & 1;
+                u16 old_fc = regs.fc[0];
+                regs.fc[0] = (value >> 39) & 1;
                 value <<= 1;
                 value |= old_fc;
                 value = SignExtend<40>(value);
@@ -756,7 +756,7 @@ public:
             }
             case ModaOp::Neg: {
                 u64 value = GetAcc(a);
-                regs.fc = value != 0; // ?
+                regs.fc[0] = value != 0; // ?
                 regs.fv = value == 0xFFFF'FF80'0000'0000; // ?
                 if (regs.fv)
                     regs.flv = 1;
@@ -1894,7 +1894,7 @@ public:
                     regs.flv = 1;
                 }
                 value = 0;
-                regs.fc = 0;
+                regs.fc[0] = 0;
             } else {
                 if (regs.s == 0) {
                     regs.fv = SignExtend<40>(value) != SignExtend(value, 40 - sv);
@@ -1903,20 +1903,20 @@ public:
                     }
                 }
                 value <<= sv;
-                regs.fc = (value & ((u64)1 << 40)) != 0;
+                regs.fc[0] = (value & ((u64)1 << 40)) != 0;
             }
         } else {
             u16 nsv = ~sv + 1;
             if (nsv > 40) {
                 if (regs.s == 0) {
                     value = 0xFF'FFFF'FFFF;
-                    regs.fc = 1;
+                    regs.fc[0] = 1;
                 } else {
                     value = 0;
-                    regs.fc = 0;
+                    regs.fc[0] = 0;
                 }
             } else {
-                regs.fc = (value & ((u64)1 << (nsv - 1))) != 0;
+                regs.fc[0] = (value & ((u64)1 << (nsv - 1))) != 0;
                 value >>= nsv;
                 if (regs.s == 0) {
                     value = SignExtend(value, 40 - nsv);
