@@ -1926,6 +1926,12 @@ public:
         ExpStore(b);
     }
 
+    void lim(Ax a, Ax b) {
+        u64 value = GetAcc(a.GetName());
+        value = SaturateAcc_Unconditional(value);
+        SetAcc_NoSaturation(b.GetName(), value);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
@@ -1940,16 +1946,21 @@ private:
         }
     }
 
+    u64 SaturateAcc_Unconditional(u64 value) {
+        if (value != SignExtend<32>(value)) {
+            regs.fls = 1;
+            if ((value >> 39) != 0)
+                return 0xFFFF'FFFF'8000'0000;
+            else
+                return 0x0000'0000'7FFF'FFFF;
+        }
+        // note: fls doesn't change value otherwise
+        return value;
+    }
+
     u64 SaturateAcc(u64 value, bool storing) {
         if (!regs.sar[storing]) {
-            if (value != SignExtend<32>(value)) {
-                regs.fls = 1;
-                if ((value >> 39) != 0)
-                    return 0xFFFF'FFFF'8000'0000;
-                else
-                    return 0x0000'0000'7FFF'FFFF;
-            }
-            // note: fls doesn't change value otherwise
+            return SaturateAcc_Unconditional(value);
         }
         return value;
     }

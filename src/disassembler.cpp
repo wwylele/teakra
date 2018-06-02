@@ -1187,6 +1187,10 @@ public:
     std::string exp_r6(Ax b) {
         return D("exp", "r6", R(b));
     }
+
+    std::string lim(Ax a, Ax b) {
+        return D("lim", R(a), R(b));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

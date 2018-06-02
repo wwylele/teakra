@@ -400,6 +400,9 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(movs, 0x0100, At<Register, 0>, At<Ab, 5>),
     INST(movs_r6_to, 0x5F42, At<Ax, 0>),
     INST(movsi, 0x4080, At<RnOld, 9>, At<Ab, 5>, At<Imm5s, 0>),
+
+    // <<< LIM >>>
+    INST(lim, 0x49C0, At<Ax, 5>, At<Ax, 4>),
     };
 }
 
