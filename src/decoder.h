@@ -403,6 +403,15 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     // <<< LIM >>>
     INST(lim, 0x49C0, At<Ax, 5>, At<Ax, 4>),
+
+    // <<< Viterbi >>>
+    INST(vtrclr0, 0x5F45, DummyMatch),
+    INST(vtrclr1, 0x5F46, DummyMatch),
+    INST(vtrclr, 0x5F47, DummyMatch),
+    INST(vtrmov0, 0xD29A, At<Axl, 0>),
+    INST(vtrmov1, 0xD69A, At<Axl, 0>),
+    INST(vtrmov, 0xD383, At<Axl, 4>),
+    INST(vtrshr, 0xD781, DummyMatch),
     };
 }
 

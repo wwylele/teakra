@@ -1240,6 +1240,29 @@ public:
     std::string lim(Ax a, Ax b) {
         return D("lim", R(a), R(b));
     }
+
+    std::string vtrclr0(Dummy) {
+        return D("vtrclr0");
+    }
+    std::string vtrclr1(Dummy) {
+        return D("vtrclr1");
+    }
+    std::string vtrclr(Dummy) {
+        return D("vtrclr");
+    }
+    std::string vtrmov0(Axl a) {
+        return D("vtrmov0", R(a));
+    }
+    std::string vtrmov1(Axl a) {
+        return D("vtrmov1", R(a));
+    }
+    std::string vtrmov(Axl a) {
+        return D("vtrmov", R(a));
+    }
+    std::string vtrshr(Dummy) {
+        return D("vtrshr");
+    }
+
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

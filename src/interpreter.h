@@ -2022,6 +2022,31 @@ public:
         SetAcc_NoSaturation(b.GetName(), value);
     }
 
+    void vtrclr0(Dummy) {
+        regs.vtr[0] = 0;
+    }
+    void vtrclr1(Dummy) {
+        regs.vtr[1] = 0;
+    }
+    void vtrclr(Dummy) {
+        regs.vtr[0] = 0;
+        regs.vtr[1] = 0;
+    }
+    void vtrmov0(Axl a) {
+        SetAcc(a.GetName(), regs.vtr[0]);
+    }
+    void vtrmov1(Axl a) {
+        SetAcc(a.GetName(), regs.vtr[1]);
+    }
+    void vtrmov(Axl a) {
+        SetAcc(a.GetName(), (regs.vtr[1] & 0xFF00) | (regs.vtr[0] >> 8));
+    }
+    void vtrshr(Dummy) {
+        // TODO: This instruction has one cycle delay on vtr0, but not on vtr1
+        regs.vtr[0] = (regs.vtr[0] >> 1) | (regs.fc[0] << 15);
+        regs.vtr[1] = (regs.vtr[1] >> 1) | (regs.fc[1] << 15);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
