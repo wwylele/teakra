@@ -702,6 +702,61 @@ public:
         SetAcc(c.GetName(), result);
     }
 
+    void addsub_p0_p1(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        // is this flag handling correct?
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] ^= temp_c;
+        regs.fv ^= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void addsub_p1_p0(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_b = ProductToBus40(RegName::p0);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        // is this flag handling correct?
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] ^= temp_c;
+        regs.fv ^= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void addsub_p0_p1a(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        value_b = SignExtend<24>(value_b >> 16);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        // is this flag handling correct?
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] ^= temp_c;
+        regs.fv ^= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+    void addsub_p1a_p0(Ab c) {
+        u64 value_a = ProductToBus40(RegName::p1);
+        value_a = SignExtend<24>(value_a >> 16);
+        u64 value_b = ProductToBus40(RegName::p0);
+        u64 value_c = GetAcc(c.GetName());
+        u64 result = AddSub(value_c, value_a, false);
+        // is this flag handling correct?
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] ^= temp_c;
+        regs.fv ^= temp_v;
+        SetAcc(c.GetName(), result);
+    }
+
     void Moda(ModaOp op, RegName a, Cond cond) {
         if (regs.ConditionPass(cond)) {
             switch (op) {
@@ -2045,6 +2100,17 @@ public:
         // TODO: This instruction has one cycle delay on vtr0, but not on vtr1
         regs.vtr[0] = (regs.vtr[0] >> 1) | (regs.fc[0] << 15);
         regs.vtr[1] = (regs.vtr[1] >> 1) | (regs.fc[1] << 15);
+    }
+
+    void clrp0(Dummy) {
+        ProductFromBus32(RegName::p0, 0);
+    }
+    void clrp1(Dummy) {
+        ProductFromBus32(RegName::p1, 0);
+    }
+    void clrp(Dummy) {
+        ProductFromBus32(RegName::p0, 0);
+        ProductFromBus32(RegName::p1, 0);
     }
 
 private:

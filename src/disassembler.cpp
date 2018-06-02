@@ -572,6 +572,19 @@ public:
         return D("sub3", "p0a", "p1a", R(c));
     }
 
+    std::string addsub_p0_p1(Ab c) {
+        return D("addsub", "p0", "p1", R(c));
+    }
+    std::string addsub_p1_p0(Ab c) {
+        return D("addsub", "p1", "p0", R(c));
+    }
+    std::string addsub_p0_p1a(Ab c) {
+        return D("addsub", "p0", "p1a", R(c));
+    }
+    std::string addsub_p1a_p0(Ab c) {
+        return D("addsub", "p1a", "p0", R(c));
+    }
+
     std::string moda4(Moda4 op, Ax a, Cond cond) {
         return D(op, R(a), cond);
     }
@@ -1261,6 +1274,16 @@ public:
     }
     std::string vtrshr(Dummy) {
         return D("vtrshr");
+    }
+
+    std::string clrp0(Dummy) {
+        return D("clr0");
+    }
+    std::string clrp1(Dummy) {
+        return D("clr1");
+    }
+    std::string clrp(Dummy) {
+        return D("clr");
     }
 
 };

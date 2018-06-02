@@ -122,6 +122,12 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(sub3_p0_p1a, 0x82C6, At<Ab, 10>),
     INST(sub3_p0a_p1a, 0x83C6, At<Ab, 10>),
 
+    /// <<< addsub >>>
+    INST(addsub_p0_p1, 0x906C, At<Ab, 0>),
+    INST(addsub_p1_p0, 0x49C2, At<Ab, 4>),
+    INST(addsub_p0_p1a, 0x916C, At<Ab, 0>),
+    INST(addsub_p1a_p0, 0x49C3, At<Ab, 4>),
+
     // <<< Mul >>>
     INST(mul, 0x8000, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Imm16, 16>, At<Ax, 11>),
     INST(mul_y0, 0x8020, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 11>),
@@ -412,6 +418,11 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(vtrmov1, 0xD69A, At<Axl, 0>),
     INST(vtrmov, 0xD383, At<Axl, 4>),
     INST(vtrshr, 0xD781, DummyMatch),
+
+    // <<< CLRP >>>
+    INST(clrp0, 0x5DFE, DummyMatch),
+    INST(clrp1, 0x5DFD, DummyMatch),
+    INST(clrp, 0x5DFF, DummyMatch),
     };
 }
 
