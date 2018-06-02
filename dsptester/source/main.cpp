@@ -211,7 +211,7 @@ void UdpInit() {
 
     //create a UDP socket
     if((udp_s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-        printf("socket() failed");
+        printf("socket() failed\n");
         return;
     }
 
@@ -224,7 +224,7 @@ void UdpInit() {
 
     //bind socket to port
     if(bind(udp_s, (sockaddr*)&si_me, sizeof(si_me)) == -1) {
-        printf("bind() failed");
+        printf("bind() failed\n");
         return;
     }
 }
