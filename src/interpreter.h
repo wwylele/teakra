@@ -131,7 +131,90 @@ public:
             regs.fr = regs.r[unit] == 0;
         }
     }
-    //INST(swap, 0x4980, At<SwapTypes, 0>),
+    void swap(SwapType swap) {
+        RegName s0, d0, s1, d1;
+        u64 u, v;
+        switch (swap.GetName()) {
+        case SwapTypeValue::a0b0:
+            s0 = d1 = RegName::a0;
+            s1 = d0 = RegName::b0;
+            break;
+        case SwapTypeValue::a0b1:
+            s0 = d1 = RegName::a0;
+            s1 = d0 = RegName::b1;
+            break;
+        case SwapTypeValue::a1b0:
+            s0 = d1 = RegName::a1;
+            s1 = d0 = RegName::b0;
+            break;
+        case SwapTypeValue::a1b1:
+            s0 = d1 = RegName::a1;
+            s1 = d0 = RegName::b1;
+            break;
+        case SwapTypeValue::a0b0a1b1:
+            u = GetAcc(RegName::a1);
+            v = GetAcc(RegName::b1);
+            SetAcc(RegName::a1, v);
+            SetAcc(RegName::b1, u);
+            s0 = d1 = RegName::a0;
+            s1 = d0 = RegName::b0;
+            break;
+        case SwapTypeValue::a0b1a1b0:
+            u = GetAcc(RegName::a1);
+            v = GetAcc(RegName::b0);
+            SetAcc(RegName::a1, v);
+            SetAcc(RegName::b0, u);
+            s0 = d1 = RegName::a0;
+            s1 = d0 = RegName::b1;
+            break;
+        case SwapTypeValue::a0b0a1:
+            s0 = RegName::a0;
+            d0 = s1 = RegName::b0;
+            d1 = RegName::a1;
+            break;
+        case SwapTypeValue::a0b1a1:
+            s0 = RegName::a0;
+            d0 = s1 = RegName::b1;
+            d1 = RegName::a1;
+            break;
+        case SwapTypeValue::a1b0a0:
+            s0 = RegName::a1;
+            d0 = s1 = RegName::b0;
+            d1 = RegName::a0;
+            break;
+        case SwapTypeValue::a1b1a0:
+            s0 = RegName::a1;
+            d0 = s1 = RegName::b1;
+            d1 = RegName::a0;
+            break;
+        case SwapTypeValue::b0a0b1:
+            s0 = d1 = RegName::a0;
+            d0 = RegName::b1;
+            s1 = RegName::b0;
+            break;
+        case SwapTypeValue::b0a1b1:
+            s0 = d1 = RegName::a1;
+            d0 = RegName::b1;
+            s1 = RegName::b0;
+            break;
+        case SwapTypeValue::b1a0b0:
+            s0 = d1 = RegName::a0;
+            d0 = RegName::b0;
+            s1 = RegName::b1;
+            break;
+        case SwapTypeValue::b1a1b0:
+            s0 = d1 = RegName::a1;
+            d0 = RegName::b0;
+            s1 = RegName::b1;
+            break;
+        default:
+            throw "what";
+        }
+        u = GetAcc(s0);
+        v = GetAcc(s1);
+        SetAcc(d0, u);
+        SetAcc(d1, v); // only this one affects flags (except for fl)
+    }
     void trap(Dummy) {
         throw "unimplemented";
     }

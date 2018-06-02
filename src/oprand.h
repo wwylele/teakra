@@ -276,7 +276,28 @@ struct Arp : RegOprand<
     RegName::arp3
 > {};
 
-struct SwapTypes : Oprand<4> {};
+enum SwapTypeValue {
+    a0b0,
+    a0b1,
+    a1b0,
+    a1b1,
+    a0b0a1b1,
+    a0b1a1b0,
+    a0b0a1,
+    a0b1a1,
+    a1b0a0,
+    a1b1a0,
+    b0a0b1,
+    b0a1b1,
+    b1a0b0,
+    b1a1b0,
+    reserved0,
+    reserved1,
+
+    EnumEnd,
+};
+
+using SwapType = EnumAllOprand<SwapTypeValue>;
 
 enum class StepValue {
     Zero,

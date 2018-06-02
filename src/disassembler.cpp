@@ -407,7 +407,56 @@ public:
     std::string norm(Ax a, Rn b, StepZIDS bs) {
         return D("norm", R(a), MemR(b, bs));
     }
-    //INST(swap, 0x4980, At<SwapTypes, 0>),
+    std::string swap(SwapType swap) {
+        std::string desc;
+        switch (swap.GetName()) {
+        case SwapTypeValue::a0b0:
+            desc = "a0<->b0";
+            break;
+        case SwapTypeValue::a0b1:
+            desc = "a0<->b1";
+            break;
+        case SwapTypeValue::a1b0:
+            desc = "a1<->b0";
+            break;
+        case SwapTypeValue::a1b1:
+            desc = "a1<->b1";
+            break;
+        case SwapTypeValue::a0b0a1b1:
+            desc = "a<->b";
+            break;
+        case SwapTypeValue::a0b1a1b0:
+            desc = "a-x-b";
+            break;
+        case SwapTypeValue::a0b0a1:
+            desc = "a0->b0->a1";
+            break;
+        case SwapTypeValue::a0b1a1:
+            desc = "a0->b1->a1";
+            break;
+        case SwapTypeValue::a1b0a0:
+            desc = "a1->b0->a0";
+            break;
+        case SwapTypeValue::a1b1a0:
+            desc = "a1->b1->a0";
+            break;
+        case SwapTypeValue::b0a0b1:
+            desc = "b0->a0->b1";
+            break;
+        case SwapTypeValue::b0a1b1:
+            desc = "b0->a1->b1";
+            break;
+        case SwapTypeValue::b1a0b0:
+            desc = "b1->a0->b0";
+            break;
+        case SwapTypeValue::b1a1b0:
+            desc = "b1->a1->b0";
+            break;
+        default:
+            desc = "?";
+        }
+        return D("swap", desc);
+    }
     std::string trap(Dummy) {
         return "trap";
     }

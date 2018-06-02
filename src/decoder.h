@@ -41,7 +41,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     // <<< Misc >>>
     INST(nop, 0x0000, DummyMatch),
     INST(norm, 0x94C0, At<Ax, 8>, At<Rn, 0>, At<StepZIDS, 3>),
-    //INST(swap, 0x4980, At<SwapTypes, 0>),
+    INST(swap, 0x4980, At<SwapType, 0>),
     INST(trap, 0x0020, DummyMatch),
 
     // <<< ALM normal >>>
