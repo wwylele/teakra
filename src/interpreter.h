@@ -122,7 +122,14 @@ public:
     }
 
     void norm(Ax a, Rn b, StepZIDS bs) {
-        throw "unimplemented";
+        if (regs.fn == 0) {
+            u64 value = GetAcc(a.GetName());
+            value = ShiftBus40(value, 1);
+            SetAcc_NoSaturation(a.GetName(), value);
+            u32 unit = GetRnUnit(b.GetName());
+            RnAddressAndModify(unit, bs.GetName());
+            regs.fr = regs.r[unit] == 0;
+        }
     }
     //INST(swap, 0x4980, At<SwapTypes, 0>),
     void trap(Dummy) {
