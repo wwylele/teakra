@@ -439,6 +439,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(clrp0, 0x5DFE, DummyMatch),
     INST(clrp1, 0x5DFD, DummyMatch),
     INST(clrp, 0x5DFF, DummyMatch),
+
+    // <<< min/max >>>
+    INST(max_ge, 0x8460, At<Ax, 8>, At<StepZIDS, 3>),
+    INST(max_gt, 0x8660, At<Ax, 8>, At<StepZIDS, 3>),
+    INST(min_le, 0x8860, At<Ax, 8>, At<StepZIDS, 3>),
+    INST(min_lt, 0x8A60, At<Ax, 8>, At<StepZIDS, 3>),
+    INST(max_ge_r0, 0x8060, At<Ax, 8>, At<StepZIDS, 3>),
+    INST(max_gt_r0, 0x8260, At<Ax, 8>, At<StepZIDS, 3>),
+    INST(min_le_r0, 0x47A0, At<Ax, 3>, At<StepZIDS, 0>),
+    INST(min_lt_r0, 0x47A4, At<Ax, 3>, At<StepZIDS, 0>),
     };
 }
 

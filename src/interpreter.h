@@ -3,6 +3,7 @@
 #include "oprand.h"
 #include "register.h"
 #include "memory_interface.h"
+#include <unordered_map>
 #include <unordered_set>
 #include <tuple>
 #include <type_traits>
@@ -2233,6 +2234,112 @@ public:
         ProductFromBus32(RegName::p1, 0);
     }
 
+    void max_ge(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u64 v = GetAcc(CounterAcc(a.GetName()));
+        u64 d = v - u;
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        if (((d >> 63) & 1) == 0) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+    void max_gt(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u64 v = GetAcc(CounterAcc(a.GetName()));
+        u64 d = v - u;
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        if (((d >> 63) & 1) == 0 && d != 0) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+    void min_le(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u64 v = GetAcc(CounterAcc(a.GetName()));
+        u64 d = v - u;
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        if (((d >> 63) & 1) == 1 || d == 0) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+    void min_lt(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u64 v = GetAcc(CounterAcc(a.GetName()));
+        u64 d = v - u;
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        if (((d >> 63) & 1) == 1) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+
+    void max_ge_r0(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u64 d = v - u;
+        if (((d >> 63) & 1) == 0) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+    void max_gt_r0(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u64 d = v - u;
+        if (((d >> 63) & 1) == 0 && d != 0) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+    void min_le_r0(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u64 d = v - u;
+        if (((d >> 63) & 1) == 1 || d == 0) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+    void min_lt_r0(Ax a, StepZIDS bs) {
+        u64 u = GetAcc(a.GetName());
+        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u64 d = v - u;
+        if (((d >> 63) & 1) == 1) {
+            regs.fm = 1;
+            regs.mixp = r0;
+            SetAcc_Simple(a.GetName(), v);
+        } else {
+            regs.fm = 0;
+        }
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
@@ -2650,6 +2757,28 @@ private:
         }
         regs.p[unit].value = value;
         regs.psign[unit] = value >> 31;
+    }
+
+    static RegName CounterAcc(RegName in) {
+        static std::unordered_map<RegName, RegName> map{
+            {RegName::a0, RegName::a1},
+            {RegName::a1, RegName::a0},
+            {RegName::b0, RegName::b1},
+            {RegName::b1, RegName::b0},
+            {RegName::a0l, RegName::a1l},
+            {RegName::a1l, RegName::a0l},
+            {RegName::b0l, RegName::b1l},
+            {RegName::b1l, RegName::b0l},
+            {RegName::a0h, RegName::a1h},
+            {RegName::a1h, RegName::a0h},
+            {RegName::b0h, RegName::b1h},
+            {RegName::b1h, RegName::b0h},
+            {RegName::a0e, RegName::a1e},
+            {RegName::a1e, RegName::a0e},
+            {RegName::b0e, RegName::b1e},
+            {RegName::b1e, RegName::b0e},
+        };
+        return map.at(in);
     }
 
     const std::vector<Matcher<Interpreter>> decoders = GetDecoderTable<Interpreter>();

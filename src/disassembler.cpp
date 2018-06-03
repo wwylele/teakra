@@ -1319,6 +1319,31 @@ public:
         return D("clr");
     }
 
+    std::string max_ge(Ax a, StepZIDS bs) {
+        return D("max_ge", R(a), "^", "r0", bs);
+    }
+    std::string max_gt(Ax a, StepZIDS bs) {
+        return D("max_gt", R(a), "^", "r0", bs);
+    }
+    std::string min_le(Ax a, StepZIDS bs) {
+        return D("min_le", R(a), "^", "r0", bs);
+    }
+    std::string min_lt(Ax a, StepZIDS bs) {
+        return D("min_lt", R(a), "^", "r0", bs);
+    }
+
+    std::string max_ge_r0(Ax a, StepZIDS bs) {
+        return D("max_ge", R(a), "[r0]", bs);
+    }
+    std::string max_gt_r0(Ax a, StepZIDS bs) {
+        return D("max_gt", R(a), "[r0]", bs);
+    }
+    std::string min_le_r0(Ax a, StepZIDS bs) {
+        return D("min_le", R(a), "[r0]", bs);
+    }
+    std::string min_lt_r0(Ax a, StepZIDS bs) {
+        return D("min_lt", R(a), "[r0]", bs);
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {
