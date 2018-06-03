@@ -134,6 +134,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(sub_add, 0x6FC0, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<Ab, 3>),
     INST(sub_sub, 0x6FE0, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<Ab, 3>),
 
+    /// <<< add||sub sv >>>
+    INST(add_sub_sv, 0x5DB0, At<ArRn1, 1>, At<ArStep1, 0>, At<Ab, 2>),
+    INST(sub_add_sv, 0x5DE0, At<ArRn1, 1>, At<ArStep1, 0>, At<Ab, 2>),
+
     // <<< Mul >>>
     INST(mul, 0x8000, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Imm16, 16>, At<Ax, 11>),
     INST(mul_y0, 0x8020, At<Mul3, 8>, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 11>),

@@ -801,6 +801,26 @@ public:
         u64 result = SignExtend<32>(((u64)high << 16) | low);
         SetAcc_Simple(b.GetName(), result);
     }
+    void add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
+        u16 u = GetArRnUnit(a.storage);
+        auto s = GetArStep(as.storage);
+        u16 o = GetArOffset(as.storage);
+        u16 address = RnAddressAndModify(u, s);
+        u16 high = mem.DataRead(address) + regs.sv;
+        u16 low = mem.DataRead(address + o) - regs.sv;
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+    }
+    void sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
+        u16 u = GetArRnUnit(a.storage);
+        auto s = GetArStep(as.storage);
+        u16 o = GetArOffset(as.storage);
+        u16 address = RnAddressAndModify(u, s);
+        u16 high = mem.DataRead(address) - regs.sv;
+        u16 low = mem.DataRead(address + o) + regs.sv;
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+    }
 
     void Moda(ModaOp op, RegName a, Cond cond) {
         if (regs.ConditionPass(cond)) {

@@ -598,6 +598,13 @@ public:
         return D("sub||sub", MemARPSJ(a, asj), MemARPSI(a, asi), R(b));
     }
 
+    std::string add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
+        return D("add||sub", MemARS(a, as), "sv", R(b));
+    }
+    std::string sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
+        return D("sub||add", MemARS(a, as), "sv", R(b));
+    }
+
     std::string moda4(Moda4 op, Ax a, Cond cond) {
         return D(op, R(a), cond);
     }
