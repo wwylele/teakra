@@ -757,6 +757,51 @@ public:
         SetAcc(c.GetName(), result);
     }
 
+    void add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(j) + mem.DataRead(i);
+        u16 low = mem.DataRead(j + oj) + mem.DataRead(i + oi);
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+    }
+    void add_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(j) + mem.DataRead(i);
+        u16 low = mem.DataRead(j + oj) - mem.DataRead(i + oi);
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+    }
+    void sub_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+       auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(j) - mem.DataRead(i);
+        u16 low = mem.DataRead(j + oj) + mem.DataRead(i + oi);
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+    }
+    void sub_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(j) - mem.DataRead(i);
+        u16 low = mem.DataRead(j + oj) - mem.DataRead(i + oi);
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+    }
+
     void Moda(ModaOp op, RegName a, Cond cond) {
         if (regs.ConditionPass(cond)) {
             switch (op) {
@@ -2370,13 +2415,22 @@ private:
             ConvertArStep(regs.arpstepj[arpstepj]));
     }
 
-    u16 GetArOffset(u16 arstep) const {
-        switch(regs.aroffset[arstep]) {
+    static u16 ConvertArOffset(u16 arvalue) {
+        switch(arvalue) {
         case 0: return 0;
         case 1: return 1;
         case 2: case 3: return 0xFFFF;
         default: throw "???";
         }
+    }
+
+    u16 GetArOffset(u16 arstep) const {
+        return ConvertArOffset(regs.aroffset[arstep]);
+    }
+
+    std::tuple<u16, u16> GetArpOffset(u16 arpstepi, u16 arpstepj) const {
+        return std::make_tuple(ConvertArOffset(regs.arpoffseti[arpstepi]),
+            ConvertArOffset(regs.arpoffsetj[arpstepj]));
     }
 
     u16 RnAddressAndModify(unsigned unit, StepValue step, bool dmod = false) {
