@@ -821,6 +821,60 @@ public:
         u64 result = SignExtend<32>(((u64)high << 16) | low);
         SetAcc_Simple(b.GetName(), result);
     }
+    void sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        u16 oi;
+        std::tie(oi, std::ignore) = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(i) - regs.sv;
+        u16 low = mem.DataRead(i + oi) + regs.sv;
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+        regs.sv = mem.DataRead(j);
+    }
+    void sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        u16 oj;
+        std::tie(std::ignore, oj) = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(j) - regs.sv;
+        u16 low = mem.DataRead(j + oj) + regs.sv;
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        SetAcc_Simple(b.GetName(), result);
+        regs.sv = mem.DataRead(i);
+    }
+    void add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        u16 oi;
+        std::tie(oi, std::ignore) = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(i) + regs.sv;
+        u16 low = mem.DataRead(i + oi) - regs.sv;
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
+        SetAcc_Simple(b.GetName(), result);
+        mem.DataWrite(j, exchange);
+    }
+    void add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a.storage);
+        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        u16 oj;
+        std::tie(std::ignore, oj) = GetArpOffset(asi.storage, asj.storage);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u16 high = mem.DataRead(j) + regs.sv;
+        u16 low = mem.DataRead(j + oj) - regs.sv;
+        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
+        SetAcc_Simple(b.GetName(), result);
+        mem.DataWrite(i, exchange);
+    }
 
     void Moda(ModaOp op, RegName a, Cond cond) {
         if (regs.ConditionPass(cond)) {
@@ -2192,6 +2246,16 @@ private:
         }
     }
 
+    u64 SaturateAcc_Unconditional_NoFlag(u64 value) {
+        if (value != SignExtend<32>(value)) {
+            if ((value >> 39) != 0)
+                return 0xFFFF'FFFF'8000'0000;
+            else
+                return 0x0000'0000'7FFF'FFFF;
+        }
+        return value;
+    }
+
     u64 SaturateAcc_Unconditional(u64 value) {
         if (value != SignExtend<32>(value)) {
             regs.fls = 1;
@@ -2207,6 +2271,13 @@ private:
     u64 SaturateAcc(u64 value, bool storing) {
         if (!regs.sar[storing]) {
             return SaturateAcc_Unconditional(value);
+        }
+        return value;
+    }
+
+    u64 SaturateAcc_NoFlag(u64 value, bool storing) {
+        if (!regs.sar[storing]) {
+            return SaturateAcc_Unconditional_NoFlag(value);
         }
         return value;
     }

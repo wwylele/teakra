@@ -605,6 +605,19 @@ public:
         return D("sub||add", MemARS(a, as), "sv", R(b));
     }
 
+    std::string sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        return D("sub||add", MemARPSI(a, asi), R(b), "||mov", MemARPSJ(a, asj), "sv");
+    }
+    std::string sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        return D("sub||add", MemARPSJ(a, asj), R(b), "||mov", MemARPSI(a, asi), "sv");
+    }
+    std::string add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        return D("add_sub", MemARPSI(a, asi), R(b), "||mov", R(b), MemARPSJ(a, asj));
+    }
+    std::string add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        return D("add_sub", MemARPSJ(a, asj), R(b), "||mov", R(b), MemARPSI(a, asi));
+    }
+
     std::string moda4(Moda4 op, Ax a, Cond cond) {
         return D(op, R(a), cond);
     }
