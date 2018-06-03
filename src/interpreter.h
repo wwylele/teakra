@@ -5,6 +5,7 @@
 #include "memory_interface.h"
 #include <unordered_set>
 #include <tuple>
+#include <type_traits>
 
 namespace Teakra {
 class Interpreter {
@@ -758,9 +759,9 @@ public:
     }
 
     void add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
-        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(j) + mem.DataRead(i);
@@ -769,9 +770,9 @@ public:
         SetAcc_Simple(b.GetName(), result);
     }
     void add_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
-        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(j) + mem.DataRead(i);
@@ -780,9 +781,9 @@ public:
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-       auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
-        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+       auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(j) - mem.DataRead(i);
@@ -791,9 +792,9 @@ public:
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
-        auto [oi, oj] = GetArpOffset(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(j) - mem.DataRead(i);
@@ -802,9 +803,9 @@ public:
         SetAcc_Simple(b.GetName(), result);
     }
     void add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
-        u16 u = GetArRnUnit(a.storage);
-        auto s = GetArStep(as.storage);
-        u16 o = GetArOffset(as.storage);
+        u16 u = GetArRnUnit(a);
+        auto s = GetArStep(as);
+        u16 o = GetArOffset(as);
         u16 address = RnAddressAndModify(u, s);
         u16 high = mem.DataRead(address) + regs.sv;
         u16 low = mem.DataRead(address + o) - regs.sv;
@@ -812,9 +813,9 @@ public:
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
-        u16 u = GetArRnUnit(a.storage);
-        auto s = GetArStep(as.storage);
-        u16 o = GetArOffset(as.storage);
+        u16 u = GetArRnUnit(a);
+        auto s = GetArStep(as);
+        u16 o = GetArOffset(as);
         u16 address = RnAddressAndModify(u, s);
         u16 high = mem.DataRead(address) - regs.sv;
         u16 low = mem.DataRead(address + o) + regs.sv;
@@ -822,10 +823,10 @@ public:
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
         u16 oi;
-        std::tie(oi, std::ignore) = GetArpOffset(asi.storage, asj.storage);
+        std::tie(oi, std::ignore) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(i) - regs.sv;
@@ -835,10 +836,10 @@ public:
         regs.sv = mem.DataRead(j);
     }
     void sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
         u16 oj;
-        std::tie(std::ignore, oj) = GetArpOffset(asi.storage, asj.storage);
+        std::tie(std::ignore, oj) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(j) - regs.sv;
@@ -848,10 +849,10 @@ public:
         regs.sv = mem.DataRead(i);
     }
     void add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
         u16 oi;
-        std::tie(oi, std::ignore) = GetArpOffset(asi.storage, asj.storage);
+        std::tie(oi, std::ignore) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(i) + regs.sv;
@@ -862,10 +863,10 @@ public:
         mem.DataWrite(j, exchange);
     }
     void add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-        auto [ui, uj] = GetArpRnUnit(a.storage);
-        auto [si, sj] = GetArpStep(asi.storage, asj.storage);
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
         u16 oj;
-        std::tie(std::ignore, oj) = GetArpOffset(asi.storage, asj.storage);
+        std::tie(std::ignore, oj) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u16 high = mem.DataRead(j) + regs.sv;
@@ -1050,13 +1051,13 @@ public:
         }
     }
     void bkreprst(ArRn2 a) {
-        RestoreBlockRepeat(regs.r[GetArRnUnit(a.storage)]);
+        RestoreBlockRepeat(regs.r[GetArRnUnit(a)]);
     }
     void bkreprst_memsp(Dummy) {
         RestoreBlockRepeat(regs.sp);
     }
     void bkrepsto(ArRn2 a) {
-        StoreBlockRepeat(regs.r[GetArRnUnit(a.storage)]);
+        StoreBlockRepeat(regs.r[GetArRnUnit(a)]);
     }
     void bkrepsto_memsp(Dummy) {
         StoreBlockRepeat(regs.sp);
@@ -1537,32 +1538,32 @@ public:
     void modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
-        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
-        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        std::tie(uniti, unitj) = GetArpRnUnit(a);
+        std::tie(stepi, stepj) = GetArpStep(asi, asj);
         RnAddressAndModify(uniti, stepi);
         RnAddressAndModify(unitj, stepj);
     }
     void modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
-        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
-        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        std::tie(uniti, unitj) = GetArpRnUnit(a);
+        std::tie(stepi, stepj) = GetArpStep(asi, asj);
         RnAddressAndModify(uniti, stepi);
         RnAddressAndModify(unitj, stepj, true);
     }
     void modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
-        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
-        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        std::tie(uniti, unitj) = GetArpRnUnit(a);
+        std::tie(stepi, stepj) = GetArpStep(asi, asj);
         RnAddressAndModify(uniti, stepi, true);
         RnAddressAndModify(unitj, stepj);
     }
     void modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
-        std::tie(uniti, unitj) = GetArpRnUnit(a.storage);
-        std::tie(stepi, stepj) = GetArpStep(asi.storage, asj.storage);
+        std::tie(uniti, unitj) = GetArpRnUnit(a);
+        std::tie(stepi, stepj) = GetArpStep(asi, asj);
         RnAddressAndModify(uniti, stepi, true);
         RnAddressAndModify(unitj, stepj, true);
     }
@@ -1892,34 +1893,34 @@ public:
     }
 
     void mov_repc_to(ArRn1 b, ArStep1 bs) {
-        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
         u16 value = regs.repc;
         mem.DataWrite(address, value);
     }
     void mov(ArArp a, ArRn1 b, ArStep1 bs) {
-        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
         u16 value = RegToBus16(a.GetName());
         mem.DataWrite(address, value);
     }
     void mov(SttMod a, ArRn1 b, ArStep1 bs) {
-        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
         u16 value = RegToBus16(a.GetName());
         mem.DataWrite(address, value);
     }
 
     void mov_repc(ArRn1 a, ArStep1 as) {
-        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
+        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
         u16 value = mem.DataRead(address);
         regs.repc = value;
     }
     void mov(ArRn1 a, ArStep1 as, ArArp b) {
         // are you sure it is ok to both use and modify ar registers?
-        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
+        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
         u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void mov(ArRn1 a, ArStep1 as, SttMod b) {
-        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
+        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
         u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
@@ -1984,8 +1985,8 @@ public:
         u32 value = ProductToBus32_NoShift(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
-        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
-        u16 address2 = address + GetArOffset(bs.storage);
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 address2 = address + GetArOffset(bs);
         // NOTE: keep the write order exactly like this.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
@@ -1994,15 +1995,15 @@ public:
         u64 value = ProductToBus40(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
-        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
-        u16 address2 = address + GetArOffset(bs.storage);
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 address2 = address + GetArOffset(bs);
         // NOTE: keep the write order exactly like this.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
     }
     void mov2(ArRn2 a, ArStep2 as, Px b) {
-        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
-        u16 address2 = address + GetArOffset(as.storage);
+        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
+        u16 address2 = address + GetArOffset(as);
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
@@ -2012,16 +2013,16 @@ public:
         u64 value = SaturateAcc(GetAcc(a.GetName()), false);
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
-        u16 address = RnAddressAndModify(GetArRnUnit(b.storage), GetArStep(bs.storage));
-        u16 address2 = address + GetArOffset(bs.storage);
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 address2 = address + GetArOffset(bs);
         // NOTE: keep the write order exactly like this. The second one overrides the first one if
         // the offset is zero.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
     }
     void mova(ArRn2 a, ArStep2 as, Ab b) {
-        u16 address = RnAddressAndModify(GetArRnUnit(a.storage), GetArStep(as.storage));
-        u16 address2 = address + GetArOffset(as.storage);
+        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
+        u16 address2 = address + GetArOffset(as);
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
@@ -2477,12 +2478,16 @@ private:
         }
     }
 
-    u16 GetArRnUnit(u16 arrn) const {
-        return regs.arrn[arrn];
+    template <typename ArRnX>
+    u16 GetArRnUnit(ArRnX arrn) const {
+        static_assert(std::is_same_v<ArRnX, ArRn1> || std::is_same_v<ArRnX, ArRn2>);
+        return regs.arrn[arrn.storage];
     }
 
-    std::tuple<u16, u16> GetArpRnUnit(u16 arprn) const {
-        return std::make_tuple(regs.arprni[arprn], regs.arprnj[arprn] + 4);
+    template <typename ArpRnX>
+    std::tuple<u16, u16> GetArpRnUnit(ArpRnX arprn) const {
+        static_assert(std::is_same_v<ArpRnX, ArpRn1> || std::is_same_v<ArpRnX, ArpRn2>);
+        return std::make_tuple(regs.arprni[arprn.storage], regs.arprnj[arprn.storage] + 4);
     }
 
     static StepValue ConvertArStep(u16 arvalue) {
@@ -2497,13 +2502,17 @@ private:
         }
     }
 
-    StepValue GetArStep(u16 arstep) const {
-        return ConvertArStep(regs.arstep[arstep]);
+    template <typename ArStepX>
+    StepValue GetArStep(ArStepX arstep) const {
+        static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
+        return ConvertArStep(regs.arstep[arstep.storage]);
     }
 
-    std::tuple<StepValue, StepValue> GetArpStep(u16 arpstepi, u16 arpstepj) const {
-        return std::make_tuple(ConvertArStep(regs.arpstepi[arpstepi]),
-            ConvertArStep(regs.arpstepj[arpstepj]));
+    template <typename ArpStepX>
+    std::tuple<StepValue, StepValue> GetArpStep(ArpStepX arpstepi, ArpStepX arpstepj) const {
+        static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
+        return std::make_tuple(ConvertArStep(regs.arpstepi[arpstepi.storage]),
+            ConvertArStep(regs.arpstepj[arpstepj.storage]));
     }
 
     static u16 ConvertArOffset(u16 arvalue) {
@@ -2515,13 +2524,17 @@ private:
         }
     }
 
-    u16 GetArOffset(u16 arstep) const {
-        return ConvertArOffset(regs.aroffset[arstep]);
+    template <typename ArStepX>
+    u16 GetArOffset(ArStepX arstep) const {
+        static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
+        return ConvertArOffset(regs.aroffset[arstep.storage]);
     }
 
-    std::tuple<u16, u16> GetArpOffset(u16 arpstepi, u16 arpstepj) const {
-        return std::make_tuple(ConvertArOffset(regs.arpoffseti[arpstepi]),
-            ConvertArOffset(regs.arpoffsetj[arpstepj]));
+    template <typename ArpStepX>
+    std::tuple<u16, u16> GetArpOffset(ArpStepX arpstepi, ArpStepX arpstepj) const {
+        static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
+        return std::make_tuple(ConvertArOffset(regs.arpoffseti[arpstepi.storage]),
+            ConvertArOffset(regs.arpoffsetj[arpstepj.storage]));
     }
 
     u16 RnAddressAndModify(unsigned unit, StepValue step, bool dmod = false) {
