@@ -988,6 +988,12 @@ public:
         Moda(op.GetName(), a.GetName(), cond);
     }
 
+    void pacr1(Ax a) {
+        u64 value = ProductToBus40(RegName::p1);
+        u64 result = AddSub(value, 0x8000, false);
+        SetAcc(a.GetName(), result);
+    }
+
     void BlockRepeat(u16 lc, u32 address) {
         if (regs.bcn > 3)
             throw "stack overflow";

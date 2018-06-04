@@ -626,6 +626,10 @@ public:
         return D(op, R(a), cond);
     }
 
+    std::string pacr1(Ax a) {
+        return D("pacr p1", R(a));
+    }
+
     std::string bkrep(Imm8 a, Address16 addr) {
         return D("bkrep", a, addr);
     }

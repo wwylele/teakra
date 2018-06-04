@@ -160,6 +160,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(moda4, 0x6700, At<Moda4, 4>, At<Ax, 12>, At<Cond, 0>)
         .EXCEPT(AtConst<Moda4, 4, 7>),
     INST(moda3, 0x6F00, At<Moda3, 4>, At<Bx, 12>, At<Cond, 0>),
+    INST(pacr1, 0xD7C2, At<Ax, 0>),
 
     // <<< Block repeat >>>
     INST(bkrep, 0x5C00, At<Imm8, 0>, At<Address16, 16>),
