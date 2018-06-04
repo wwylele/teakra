@@ -1258,6 +1258,37 @@ public:
         return D("movsi", R(a), R(b), s);
     }
 
+    std::string mov2_axh_m_y0_m(Axh a, ArRn2 b, ArStep2 bs) {
+        return D("mov||mov", R(a), "y0", MemARS(b, bs));
+    }
+    std::string mov2_ax_mij(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
+        return D("mov hilj", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
+    }
+    std::string mov2_ax_mji(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
+        return D("mov lihj", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
+    }
+    std::string mov2_mij_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        return D("mov hilj", MemARPSI(a, asi), MemARPSJ(a, asj), R(b));
+    }
+    std::string mov2_mji_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        return D("mov lihj", MemARPSI(a, asi), MemARPSJ(a, asj), R(b));
+    }
+    std::string mov2_abh_m(Abh ax, Abh ay, ArRn1 b, ArStep1 bs) {
+        return D("mov||mov", R(ax), R(ay), MemARS(b, bs));
+    }
+    std::string exchange_iaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        return D("exchange i->a->j", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
+    }
+    std::string exchange_riaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        return D("exchange ri->a->j", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
+    }
+    std::string exchange_jai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        return D("exchange j->a->i", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
+    }
+    std::string exchange_rjai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        return D("exchange rj->a->i", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
+    }
+
     std::string exp(Bx a) {
         return D("exp", R(a));
     }

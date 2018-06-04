@@ -2061,6 +2061,100 @@ public:
         regs.r[6] = value;
     }
 
+    void mov2_axh_m_y0_m(Axh a, ArRn2 b, ArStep2 bs) {
+        u16 u = (u16)((SaturateAcc_NoFlag(GetAcc(a.GetName()), false) >> 16) & 0xFFFF);
+        u16 v = regs.y[0];
+        u16 ua = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 va = ua + GetArOffset(bs);
+        // keep the order
+        mem.DataWrite(va, v);
+        mem.DataWrite(ua, u);
+    }
+
+    void mov2_ax_mij(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
+        auto [ui, uj] = GetArpRnUnit(b);
+        auto [si, sj] = GetArpStep(bsi, bsj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        mem.DataWrite(i, (u16)((value >> 16) & 0xFFFF));
+        mem.DataWrite(j, (u16)(value & 0xFFFF));
+    }
+    void mov2_ax_mji(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
+        auto [ui, uj] = GetArpRnUnit(b);
+        auto [si, sj] = GetArpStep(bsi, bsj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        mem.DataWrite(j, (u16)((value >> 16) & 0xFFFF));
+        mem.DataWrite(i, (u16)(value & 0xFFFF));
+    }
+    void mov2_mij_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        u16 h = mem.DataRead(RnAddressAndModify(ui, si));
+        u16 l = mem.DataRead(RnAddressAndModify(uj, sj));
+        u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
+        SetAcc_Simple(b.GetName(), value);
+    }
+    void mov2_mji_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        u16 l = mem.DataRead(RnAddressAndModify(ui, si));
+        u16 h = mem.DataRead(RnAddressAndModify(uj, sj));
+        u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
+        SetAcc_Simple(b.GetName(), value);
+    }
+    void mov2_abh_m(Abh ax, Abh ay, ArRn1 b, ArStep1 bs) {
+        u16 u = (u16)((SaturateAcc_NoFlag(GetAcc(ax.GetName()), false) >> 16) & 0xFFFF);
+        u16 v = (u16)((SaturateAcc_NoFlag(GetAcc(ay.GetName()), false) >> 16) & 0xFFFF);
+        u16 ua = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 va = ua + GetArOffset(bs);
+        // keep the order
+        mem.DataWrite(va, v);
+        mem.DataWrite(ua, u);
+    }
+    void exchange_iaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        auto [ui, uj] = GetArpRnUnit(b);
+        auto [si, sj] = GetArpStep(bsi, bsj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        mem.DataWrite(j, (u16)((value >> 16) & 0xFFFF));
+        value = SignExtend<32, u64>((u64)mem.DataRead(i) << 16);
+        SetAcc_Simple(a.GetName(), value);
+    }
+    void exchange_riaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        auto [ui, uj] = GetArpRnUnit(b);
+        auto [si, sj] = GetArpStep(bsi, bsj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        mem.DataWrite(j, (u16)((value >> 16) & 0xFFFF));
+        value = SignExtend<32, u64>(((u64)mem.DataRead(i) << 16) | 0x8000);
+        SetAcc_Simple(a.GetName(), value);
+    }
+    void exchange_jai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        auto [ui, uj] = GetArpRnUnit(b);
+        auto [si, sj] = GetArpStep(bsi, bsj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        mem.DataWrite(i, (u16)((value >> 16) & 0xFFFF));
+        value = SignExtend<32, u64>((u64)mem.DataRead(j) << 16);
+        SetAcc_Simple(a.GetName(), value);
+    }
+    void exchange_rjai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+        auto [ui, uj] = GetArpRnUnit(b);
+        auto [si, sj] = GetArpStep(bsi, bsj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        mem.DataWrite(i, (u16)((value >> 16) & 0xFFFF));
+        value = SignExtend<32, u64>(((u64)mem.DataRead(j) << 16) | 0x8000);
+        SetAcc_Simple(a.GetName(), value);
+    }
+
     u64 ShiftBus40(u64 value, u16 sv) {
         value &= 0xFF'FFFF'FFFF;
         if (sv < 0x8000) {

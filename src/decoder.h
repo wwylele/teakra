@@ -423,6 +423,18 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(movs_r6_to, 0x5F42, At<Ax, 0>),
     INST(movsi, 0x4080, At<RnOld, 9>, At<Ab, 5>, At<Imm5s, 0>),
 
+    // <<< MOV MOV >>>
+    INST(mov2_axh_m_y0_m, 0x4390, At<Axh, 6>, At<ArRn2, 2>, At<ArStep2, 0>),
+    INST(mov2_ax_mij, 0x43A0, At<Ab, 3>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
+    INST(mov2_ax_mji, 0x43E0, At<Ab, 3>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
+    INST(mov2_mij_ax, 0x80C4, At<ArpRn1, 9>, At<ArpStep1, 0>, At<ArpStep1, 8>, At<Ab, 10>),
+    INST(mov2_mji_ax, 0xD4C0, At<ArpRn1, 5>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<Ab, 2>),
+    INST(mov2_abh_m, 0x9D40, At<Abh, 4>, At<Abh, 2>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(exchange_iaj, 0x8C60, At<Axh, 4>, At<ArpRn2, 8>, At<ArpStep2, 0>, At<ArpStep2, 2>),
+    INST(exchange_riaj, 0x7F80, At<Axh, 6>, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>),
+    INST(exchange_jai, 0x4900, At<Axh, 6>, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>),
+    INST(exchange_rjai, 0x4800, At<Axh, 6>, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>),
+
     // <<< LIM >>>
     INST(lim, 0x49C0, At<Ax, 5>, At<Ax, 4>),
 
