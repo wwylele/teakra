@@ -124,6 +124,8 @@ u16* dspD = (u16*)0x1FF40000;
 u16* srcBase = &dspD[0x2000];
 u16* dstBase = &dspD[0x2FD0];
 
+constexpr u32 reg_region_size = 0x60;
+
 IReg* MakeHexReg(const std::string& name, unsigned offset) {
     return new HexReg(name, srcBase[offset], dstBase[offset]);
 }
@@ -189,6 +191,7 @@ void UploadDspProgram(const std::vector<u16>& code) {
 }
 
 int udp_s;
+int udp_s_broadcast;
 
 void UdpInit() {
     #define SOC_ALIGN       0x1000
@@ -227,30 +230,54 @@ void UdpInit() {
         printf("bind() failed\n");
         return;
     }
+
+    //create a UDP broadcast socket
+    if((udp_s_broadcast = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+        printf("socket()(broadcast) failed\n");
+        return;
+    }
 }
 
-std::vector<u16> CheckProgramPackage() {
+
+PrintConsole topScreen, bottomScreen;
+
+void CheckPackage() {
     constexpr unsigned BUFLEN = 512;
     char buf[BUFLEN];
     sockaddr_in si_other;
     socklen_t slen = sizeof(si_other);
     int recv_len;
     if((recv_len = recvfrom(udp_s, buf, BUFLEN, MSG_DONTWAIT, (sockaddr*)&si_other, &slen)) < 4)
-        return {};
+        return;
     u16 magic;
     memcpy(&magic, buf, 2);
-    if (magic != 0xD590)
-        return {};
-    std::vector<u16> program_package((recv_len - 2) / 2);
-    memcpy(program_package.data(), buf + 2, program_package.size() * 2);
-    return program_package;
+    if (magic == 0xD590) {
+        std::vector<u16> program_package((recv_len - 2) / 2);
+        memcpy(program_package.data(), buf + 2, program_package.size() * 2);
+        consoleSelect(&bottomScreen);
+        printf("--------\nNew program received!\n");
+        for (u16 code : program_package) {
+            printf("%04X ", code);
+        }
+        UploadDspProgram(program_package);
+        printf("\nUploaded!\n");
+
+        consoleSelect(&topScreen);
+    } else if (magic == 0x4352) {
+        recv_len -= 2;
+        if ((unsigned)recv_len > reg_region_size) recv_len = reg_region_size;
+        consoleSelect(&bottomScreen);
+        printf("--------\nRegister sync received!\n");
+        memcpy(srcBase, buf + 2, recv_len);
+        printf("\nSynced!\n");
+        consoleSelect(&topScreen);
+    }
 }
 
 int main() {
     aptInit();
     gfxInitDefault();
 
-    PrintConsole topScreen, bottomScreen;
     consoleInit(GFX_TOP, &topScreen);
     consoleInit(GFX_BOTTOM, &bottomScreen);
 
@@ -408,23 +435,27 @@ int main() {
            InvalidateCache(&dspD[0x3000], 0x40000 - 0x6000);
         }
 
+        if (kDown & KEY_TOUCH) {
+            consoleSelect(&bottomScreen);
+            printf("--------\nSending register sync!\n");
+            u8 buf[reg_region_size+2];
+            u16 magic = 0x4352;
+            memcpy(buf, &magic, 2);
+            memcpy(buf + 2, srcBase, reg_region_size);
+            sockaddr_in addr{};
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons(8888);
+            addr.sin_addr.s_addr = 0xFFFFFFFF;
+            sendto(udp_s_broadcast, buf, reg_region_size + 2, 0, (sockaddr*)&addr, sizeof(addr));
+            printf("\nSynced!\n");
+            consoleSelect(&topScreen);
+        }
+
         FlushCache(&dspD[0x2000], 0x1000);
         InvalidateCache(&dspD[0x2000], 0x2000);
         PrintAll();
 
-        auto program_package = CheckProgramPackage();
-
-        if (program_package.size()) {
-            consoleSelect(&bottomScreen);
-            printf("--------\nNew program received!\n");
-            for (u16 code : program_package) {
-                printf("%04X ", code);
-            }
-            UploadDspProgram(program_package);
-            printf("\nUploaded!\n");
-
-            consoleSelect(&topScreen);
-        }
+        CheckPackage();
 
         // Flush and swap framebuffers
         gfxFlushBuffers();
