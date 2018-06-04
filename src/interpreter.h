@@ -2228,6 +2228,53 @@ public:
         SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
     }
 
+    void movr(ArRn2 a, ArStep2 as, Abh b) {
+        u16 value16 = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
+        u64 value = SignExtend<32, u64>((u64)value16 << 16);
+        u64 result = AddSub(value, 0x8000, false);
+        SetAcc(b.GetName(), result);
+    }
+    void movr(Rn a, StepZIDS as, Ax b) {
+        u16 value16 = mem.DataRead(RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName()));
+        // Do 16-bit arithmetic. Flag C is set according to bit 16 but Flag V is always cleared
+        // Looks like a hardware bug to me
+        u64 result = (u64)value16 + 0x8000;
+        regs.fc[0] = result >> 16;
+        regs.fv = 0;
+        result &= 0xFFFF;
+        SetAcc(b.GetName(), result);
+    }
+    void movr(Register a, Ax b) {
+        u64 result;
+        if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
+            u64 value = GetAcc(a.GetName());
+            result = AddSub(value, 0x8000, false);
+        } else if (a.GetName() == RegName::p) {
+            u64 value = ProductToBus40(RegName::p0);
+            result = AddSub(value, 0x8000, false);
+        } else {
+            u16 value16 = RegToBus16(a.GetName());
+            result = (u64)value16 + 0x8000;
+            regs.fc[0] = result >> 16;
+            regs.fv = 0;
+            result &= 0xFFFF;
+        }
+        SetAcc(b.GetName(), result);
+    }
+    void movr(Bx a, Ax b) {
+        u64 value = GetAcc(a.GetName());
+        u64 result = AddSub(value, 0x8000, false);
+        SetAcc(b.GetName(), result);
+    }
+    void movr_r6_to(Ax b) {
+        u16 value16 = regs.r[6];
+        u64 result = (u64)value16 + 0x8000;
+        regs.fc[0] = result >> 16;
+        regs.fv = 0;
+        result &= 0xFFFF;
+        SetAcc(b.GetName(), result);
+    }
+
     u16 Exp(u64 value) {
         u64 sign = (value >> 39) & 1;
         u16 bit = 38, count = 0;

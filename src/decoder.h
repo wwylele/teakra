@@ -435,6 +435,13 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(exchange_jai, 0x4900, At<Axh, 6>, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>),
     INST(exchange_rjai, 0x4800, At<Axh, 6>, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>),
 
+    // <<< MOVR >>>
+    INST(movr, 0x8864, At<ArRn2, 3>, At<ArStep2, 0>, At<Abh, 8>),
+    INST(movr, 0x9CE0, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 8>),
+    INST(movr, 0x9CC0, At<Register, 0>, At<Ax, 8>),
+    INST(movr, 0x5DF4, At<Bx, 1>, At<Ax, 0>),
+    INST(movr_r6_to, 0x8961, At<Ax, 3>),
+
     // <<< LIM >>>
     INST(lim, 0x49C0, At<Ax, 5>, At<Ax, 4>),
 

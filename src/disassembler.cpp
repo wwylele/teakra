@@ -1289,6 +1289,22 @@ public:
         return D("exchange rj->a->i", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
 
+    std::string movr(ArRn2 a, ArStep2 as, Abh b) {
+        return D("movr", MemARS(a, as), R(b));
+    }
+    std::string movr(Rn a, StepZIDS as, Ax b) {
+        return D("movr", MemR(a, as), R(b));
+    }
+    std::string movr(Register a, Ax b) {
+        return D("movr", R(a), R(b));
+    }
+    std::string movr(Bx a, Ax b) {
+        return D("movr", R(a), R(b));
+    }
+    std::string movr_r6_to(Ax b) {
+        return D("movr", "r6", R(b));
+    }
+
     std::string exp(Bx a) {
         return D("exp", R(a));
     }
