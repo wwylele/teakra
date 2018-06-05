@@ -533,6 +533,13 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(sqr_sqr_add3, 0xD790, At<Ab, 2>, At<Ab, 0>),
     INST(sqr_sqr_add3, 0x4B00, At<ArRn2, 4>, At<ArStep2, 2>, At<Ab, 0>),
     INST(sqr_mpysu_add3a, 0x49C4, At<Ab, 4>, At<Ab, 0>),
+
+    // <<< CMP Extra >>>
+    INST(cmp, 0x4D8C, At<Ax, 1>, At<Bx, 0>),
+    INST(cmp_b0_b1, 0xD483, NoParam),
+    INST(cmp_b1_b0, 0xD583, NoParam),
+    INST(cmp, 0xDA9A, At<Bx, 10>, At<Ax, 0>),
+    INST(cmp_p1_to, 0x8B63, At<Ax, 4>),
     };
 }
 

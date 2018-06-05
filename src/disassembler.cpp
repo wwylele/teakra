@@ -1430,6 +1430,22 @@ public:
     std::string sqr_mpysu_add3a(Ab a, Ab b) {
         return D("sqr h||mpysu hl", R(a), "||add3a", R(b));
     }
+
+    std::string cmp(Ax a, Bx b) {
+        return D("cmp", R(a), R(b));
+    }
+    std::string cmp_b0_b1() {
+        return D("cmp", "b0", "b1");
+    }
+    std::string cmp_b1_b0() {
+        return D("cmp", "b1", "b0");
+    }
+    std::string cmp(Bx a, Ax b) {
+        return D("cmp", R(a), R(b));
+    }
+    std::string cmp_p1_to(Ax b) {
+        return D("cmp", "p1", R(b));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

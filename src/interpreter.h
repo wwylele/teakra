@@ -1417,10 +1417,16 @@ public:
     }
 
     void tst4b(ArRn2 b, ArStep2 bs) {
-        throw "unimplemented";
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 value = mem.DataRead(address);
+        u64 bit = GetAcc(RegName::a0) & 0xF;
+        // Is this correct? an why?
+        regs.fz = regs.fc[0] = (value >> bit) & 1;
     }
     void tst4b(ArRn2 b, ArStep2 bs, Ax c) {
-        throw "unimplemented";
+        tst4b(b, bs);
+        // why?
+        SetAcc_Simple(c.GetName(), GetAcc(RegName::a0));
     }
     void tstb(MemImm8 a, Imm4 b) {
         u16 value = LoadFromMemory(a);
@@ -2589,6 +2595,31 @@ public:
         DoMultiplication(1, false, true);
     }
 
+    void cmp(Ax a, Bx b) {
+        u64 va = GetAcc(a.GetName());
+        u64 vb = GetAcc(b.GetName());
+        SetAccFlag(AddSub(vb, va, true));
+    }
+    void cmp_b0_b1() {
+        u64 va = GetAcc(RegName::b0);
+        u64 vb = GetAcc(RegName::b1);
+        SetAccFlag(AddSub(vb, va, true));
+    }
+    void cmp_b1_b0() {
+        u64 va = GetAcc(RegName::b1);
+        u64 vb = GetAcc(RegName::b0);
+        SetAccFlag(AddSub(vb, va, true));
+    }
+    void cmp(Bx a, Ax b) {
+        u64 va = GetAcc(a.GetName());
+        u64 vb = GetAcc(b.GetName());
+        SetAccFlag(AddSub(vb, va, true));
+    }
+    void cmp_p1_to(Ax b) {
+        u64 va = ProductToBus40(RegName::p1);
+        u64 vb = GetAcc(b.GetName());
+        SetAccFlag(AddSub(vb, va, true));
+    }
 private:
     RegisterState& regs;
     MemoryInterface& mem;
