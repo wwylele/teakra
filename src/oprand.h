@@ -16,7 +16,7 @@ struct At {
      || (Bits == 16 && pos == 16), "!");
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
     static constexpr bool NeedExpansion = pos == 16;
-
+    static constexpr bool PassAsParameter = true;
     static constexpr OprandT Filter(u16 opcode, u16 expansion) {
         OprandT oprand{};
         if (NeedExpansion)
@@ -27,16 +27,31 @@ struct At {
     }
 };
 
+template <unsigned pos>
+struct Unused {
+    static_assert(pos < 16);
+    static constexpr u16 Mask = 1 << pos;
+    static constexpr bool NeedExpansion = false;
+    static constexpr bool PassAsParameter = false;
+};
+
 template<typename OprandT, u16 value>
 struct Const {
     using OprandType = OprandT;
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
+    static constexpr bool PassAsParameter = true;
     static constexpr OprandT Filter(u16, u16) {
         OprandT oprand{};
         oprand.storage = value;
         return oprand;
     }
+};
+
+struct NoParam {
+    static constexpr u16 Mask = 0;
+    static constexpr bool NeedExpansion = false;
+    static constexpr bool PassAsParameter = false;
 };
 
 template<typename OprandT, unsigned pos, u16 value>
@@ -46,9 +61,6 @@ struct AtConst {
     static constexpr u16 Mask = Base::Mask;
     static constexpr u16 Pad = value << pos;
 };
-
-struct Dummy : Oprand<1> {};
-using DummyMatch = Const<Dummy, 0>;
 
 //////////////////////////////////////////////////////////////////////////////
 

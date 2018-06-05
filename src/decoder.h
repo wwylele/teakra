@@ -4,16 +4,58 @@
 #include <type_traits>
 #include <vector>
 
+template <typename ... OprandAtT>
+struct OprandList {
+    template <typename OprandAtT0>
+    using prefix = OprandList<OprandAtT0, OprandAtT...>;
+};
+
+template <typename ... OprandAtT>
+struct FilterOprand;
+
+template <>
+struct FilterOprand<> {
+    using result = OprandList<>;
+};
+
+template <bool keep, typename OprandAtT0, typename ... OprandAtT>
+struct FilterOprandHelper;
+
+template <typename OprandAtT0, typename ... OprandAtT>
+struct FilterOprandHelper<false, OprandAtT0, OprandAtT...> {
+    using result = typename FilterOprand<OprandAtT...>::result;
+};
+
+template <typename OprandAtT0, typename ... OprandAtT>
+struct FilterOprandHelper<true, OprandAtT0, OprandAtT...> {
+    using result = typename FilterOprand<OprandAtT...>::result
+        ::template prefix<OprandAtT0>;
+};
+
+template <typename OprandAtT0, typename ... OprandAtT>
+struct FilterOprand<OprandAtT0, OprandAtT...> {
+    using result = typename FilterOprandHelper<OprandAtT0::PassAsParameter,
+        OprandAtT0, OprandAtT...>::result;
+};
+
 template <typename V, typename F, u16 expected, typename ... OprandAtT>
 struct MatcherCreator {
+    template <typename OprandListT>
+    struct Proxy;
+
+    template <typename... OprandAtTs>
+    struct Proxy<OprandList<OprandAtTs...>> {
+        F func;
+        auto operator()(V& visitor, [[maybe_unused]]u16 opcode, [[maybe_unused]]u16 expansion) const {
+            return (visitor.*func)(OprandAtTs::Filter(opcode, expansion) ...);
+        }
+    };
 
     static Matcher<V> Create(const char* name, F func) {
         // Oprands shouldn't overlap each other, nor overlap with the expected ones
         static_assert((OprandAtT::Mask + ... + expected) == (OprandAtT::Mask | ... | expected), "Error");
 
-        auto proxy = [func](V& visitor, u16 opcode, u16 expansion) {
-            return (visitor.*func)(OprandAtT::Filter(opcode, expansion) ...);
-        };
+        Proxy<typename FilterOprand<OprandAtT...>::result> proxy{func};
 
         u16 mask = (~OprandAtT::Mask & ...);
         bool expanded = (OprandAtT::NeedExpansion || ...);
@@ -26,9 +68,17 @@ struct RejectorCreator {
     static constexpr Rejector rejector{(OprandAtConstT::Mask | ...), (OprandAtConstT::Pad | ...)};
 };
 
+template<typename V, typename OprandListT>
+struct VisitorFunctionWithoutFilter;
+
 template<typename V, typename ... OprandAtT>
-struct VisitorFunction{
+struct VisitorFunctionWithoutFilter<V, OprandList<OprandAtT...>> {
     using type = typename V::instruction_return_type (V::*)(typename OprandAtT::OprandType...);
+};
+
+template<typename V, typename ... OprandAtT>
+struct VisitorFunction {
+    using type = typename VisitorFunctionWithoutFilter<V, typename FilterOprand<OprandAtT...>::result>::type;
 };
 
 template <typename V>
@@ -39,10 +89,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
 #define EXCEPT(...) Except(RejectorCreator<__VA_ARGS__>::rejector)
 
     // <<< Misc >>>
-    INST(nop, 0x0000, DummyMatch),
+    INST(nop, 0x0000, NoParam),
     INST(norm, 0x94C0, At<Ax, 8>, At<Rn, 0>, At<StepZIDS, 3>),
     INST(swap, 0x4980, At<SwapType, 0>),
-    INST(trap, 0x0020, DummyMatch),
+    INST(trap, 0x0020, NoParam),
 
     // <<< ALM normal >>>
     INST(alm, 0xA000, At<Alm, 9>, At<MemImm8, 0>, At<Ax, 8>),
@@ -64,7 +114,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(alm_r6, 0x5E23, Const<Alm, 11>, At<Ax, 8>),
     INST(alm_r6, 0x5E22, Const<Alm, 12>, At<Ax, 8>),
     INST(alm_r6, 0x5F41, Const<Alm, 13>, Const<Ax, 0>),
-    INST(alm_r6, 0x9062, Const<Alm, 14>, At<Ax, 8>), // unused@0
+    INST(alm_r6, 0x9062, Const<Alm, 14>, At<Ax, 8>, Unused<0>),
     INST(alm_r6, 0x8A63, Const<Alm, 15>, At<Ax, 3>),
 
     // <<< ALU normal >>>
@@ -157,7 +207,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(msu, 0xD080, At<R45, 2>, At<StepZIDS, 5>, At<R0123, 0>, At<StepZIDS, 3>, At<Ax, 8>),
     INST(msu, 0x90C0, At<Rn, 0>, At<StepZIDS, 3>, At<Imm16, 16>, At<Ax, 8>),
     INST(msusu, 0x8264, At<ArRn2, 3>, At<ArStep2, 0>, At<Ax, 8>),
-    INST(mac_x1to0, 0x4D84, At<Ax, 1>), // Unused1@0
+    INST(mac_x1to0, 0x4D84, At<Ax, 1>, Unused<0>),
     INST(mac1, 0x5E28, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<Ax, 8>),
 
     // <<< MODA >>>
@@ -170,14 +220,14 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(bkrep, 0x5C00, At<Imm8, 0>, At<Address16, 16>),
     INST(bkrep, 0x5D00, At<Register, 0>, At<Address18_16, 16>, At<Address18_2, 5>),
     INST(bkrep_r6, 0x8FDC, At<Address18_16, 16>, At<Address18_2, 0>),
-    INST(bkreprst, 0xDA9C, At<ArRn2, 0>), // MemR0425
-    INST(bkreprst_memsp, 0x5F48, DummyMatch), // Unused2@0
-    INST(bkrepsto, 0xDADC, At<ArRn2, 0>), // MemR0425, Unused1@10
-    INST(bkrepsto_memsp, 0x9468, DummyMatch), // Unused3@0
+    INST(bkreprst, 0xDA9C, At<ArRn2, 0>),
+    INST(bkreprst_memsp, 0x5F48, Unused<0>, Unused<1>),
+    INST(bkrepsto, 0xDADC, At<ArRn2, 0>, Unused<10>),
+    INST(bkrepsto_memsp, 0x9468, Unused<0>, Unused<1>, Unused<2>),
 
     // <<< Bank >>>
     INST(banke, 0x4B80, At<BankFlags, 0>),
-    INST(bankr, 0x8CDF, DummyMatch),
+    INST(bankr, 0x8CDF, NoParam),
     INST(bankr, 0x8CDC, At<Ar, 0>),
     INST(bankr, 0x8CD0, At<Ar, 2>, At<Arp, 0>),
     INST(bankr, 0x8CD8, At<Arp, 0>),
@@ -192,7 +242,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(brr, 0x5000, At<RelAddr7, 4>, At<Cond, 0>),
 
     // <<< Break >>>
-    INST(break_, 0xD3C0, DummyMatch),
+    INST(break_, 0xD3C0, NoParam),
 
     // <<< Call >>>
     INST(call, 0x41C0, At<Address18_16, 16>, At<Address18_2, 4>, At<Cond, 0>),
@@ -201,16 +251,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(callr, 0x1000, At<RelAddr7, 4>, At<Cond, 0>),
 
     // <<< Context >>>
-    INST(cntx_s, 0xD380, DummyMatch),
-    INST(cntx_r, 0xD390, DummyMatch),
+    INST(cntx_s, 0xD380, NoParam),
+    INST(cntx_r, 0xD390, NoParam),
 
     // <<< Return >>>
     INST(ret, 0x4580, At<Cond, 0>),
-    INST(retd, 0xD780, DummyMatch),
+    INST(retd, 0xD780, NoParam),
     INST(reti, 0x45C0, At<Cond, 0>),
     INST(retic, 0x45D0, At<Cond, 0>),
-    INST(retid, 0xD7C0, DummyMatch),
-    INST(retidc, 0xD3C3, DummyMatch),
+    INST(retid, 0xD7C0, NoParam),
+    INST(retidc, 0xD3C3, NoParam),
     INST(rets, 0x0900, At<Imm8, 0>),
 
     // <<< Load >>>
@@ -220,42 +270,42 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(load_page, 0x0400, At<Imm8, 0>),
     INST(load_modi, 0x0200, At<Imm9, 0>),
     INST(load_modj, 0x0A00, At<Imm9, 0>),
-    INST(load_movpd, 0xD7D8, At<Imm2, 1>), // unused1@0
+    INST(load_movpd, 0xD7D8, At<Imm2, 1>, Unused<0>),
     INST(load_ps01, 0x0010, At<Imm4, 0>),
 
     // <<< Push >>>
     INST(push, 0x5F40, At<Imm16, 16>),
     INST(push, 0x5E40, At<Register, 0>),
-    INST(push, 0xD7C8, At<Abe, 1>), // unused1@0
+    INST(push, 0xD7C8, At<Abe, 1>, Unused<0>),
     INST(push, 0xD3D0, At<ArArpSttMod, 0>),
-    INST(push_prpage, 0xD7FC, DummyMatch), // unused2@0
-    INST(push, 0xD78C, At<Px, 1>), // unused1@0
-    INST(push_r6, 0xD4D7, DummyMatch), // unused1@5
-    INST(push_repc, 0xD7F8, DummyMatch), // unused2@0
-    INST(push_x0, 0xD4D4, DummyMatch), // unused1@5
-    INST(push_x1, 0xD4D5, DummyMatch), // unused1@5
-    INST(push_y1, 0xD4D6, DummyMatch), // unused1@5
-    INST(pusha, 0x4384, At<Ax, 6>), // unused2@0
-    INST(pusha, 0xD788, At<Bx, 1>), // unused1@0
+    INST(push_prpage, 0xD7FC, Unused<0>, Unused<1>),
+    INST(push, 0xD78C, At<Px, 1>, Unused<0>),
+    INST(push_r6, 0xD4D7, Unused<5>),
+    INST(push_repc, 0xD7F8, Unused<0>, Unused<1>),
+    INST(push_x0, 0xD4D4, Unused<5>),
+    INST(push_x1, 0xD4D5, Unused<5>),
+    INST(push_y1, 0xD4D6, Unused<5>),
+    INST(pusha, 0x4384, At<Ax, 6>, Unused<0>, Unused<1>),
+    INST(pusha, 0xD788, At<Bx, 1>, Unused<0>),
 
     // <<< Pop >>>
     INST(pop, 0x5E60, At<Register, 0>),
     INST(pop, 0x47B4, At<Abe, 0>),
     INST(pop, 0x80C7, At<ArArpSttMod, 8>),
-    INST(pop, 0x0006, At<Bx, 5>), // unused1@0
-    INST(pop_prpage, 0xD7F4, DummyMatch), // unused2@0
+    INST(pop, 0x0006, At<Bx, 5>, Unused<0>),
+    INST(pop_prpage, 0xD7F4, Unused<0>, Unused<1>),
     INST(pop, 0xD496, At<Px, 0>),
-    INST(pop_r6, 0x0024, DummyMatch), // unused1@0
-    INST(pop_repc, 0xD7F0, DummyMatch), // unued2@0
-    INST(pop_x0, 0xD494, DummyMatch),
-    INST(pop_x1, 0xD495, DummyMatch),
-    INST(pop_y1, 0x0004, DummyMatch), // unused1@0
+    INST(pop_r6, 0x0024, Unused<0>),
+    INST(pop_repc, 0xD7F0, Unused<0>, Unused<1>),
+    INST(pop_x0, 0xD494, NoParam),
+    INST(pop_x1, 0xD495, NoParam),
+    INST(pop_y1, 0x0004, Unused<0>),
     INST(popa, 0x47B0, At<Ab, 0>),
 
     // <<< Repeat >>>
     INST(rep, 0x0C00, At<Imm8, 0>),
     INST(rep, 0x0D00, At<Register, 0>),
-    INST(rep_r6, 0x0002, DummyMatch), // unused1@0
+    INST(rep_r6, 0x0002, Unused<0>), // unused1@0
 
     // <<< Shift >>>
     INST(shfc, 0xD280, At<Ab, 10>, At<Ab, 5>, At<Cond, 0>),
@@ -275,8 +325,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(and_, 0x6770, At<Ab, 2>, At<Ab, 0>, At<Ax, 12>),
 
     // <<< Interrupt >>>
-    INST(dint, 0x43C0, DummyMatch),
-    INST(eint, 0x4380, DummyMatch),
+    INST(dint, 0x43C0, NoParam),
+    INST(eint, 0x4380, NoParam),
 
     // <<< EXP >>>
     INST(exp, 0x9460, At<Bx, 0>),
@@ -285,7 +335,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(exp, 0x9840, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 8>),
     INST(exp, 0x9440, At<Register, 0>),
     INST(exp, 0x9040, At<Register, 0>, At<Ax, 8>),
-    INST(exp_r6, 0xD7C1, DummyMatch),
+    INST(exp_r6, 0xD7C1, NoParam),
     INST(exp_r6, 0xD382, At<Ax, 4>),
 
     // <<< MODR >>>
@@ -368,10 +418,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(movpdw, 0xD499, At<Ax, 8>),
 
     // <<< MOV 2 >>>
-    INST(mov_a0h_stepi0, 0xD49B, DummyMatch),
-    INST(mov_a0h_stepj0, 0xD59B, DummyMatch),
-    INST(mov_stepi0_a0h, 0xD482, DummyMatch),
-    INST(mov_stepj0_a0h, 0xD582, DummyMatch),
+    INST(mov_a0h_stepi0, 0xD49B, NoParam),
+    INST(mov_a0h_stepj0, 0xD59B, NoParam),
+    INST(mov_stepi0_a0h, 0xD482, NoParam),
+    INST(mov_stepj0_a0h, 0xD582, NoParam),
 
     INST(mov_prpage, 0x9164, At<Abl, 0>),
     INST(mov_repc, 0x9064, At<Abl, 0>),
@@ -391,19 +441,19 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov, 0x8062, At<ArRn1, 4>, At<ArStep1, 3>, At<ArArp, 8>),
     INST(mov, 0x8063, At<ArRn1, 4>, At<ArStep1, 3>, At<SttMod, 8>),
 
-    INST(mov_repc_to, 0xD3C8, At<MemR7Imm16, 16>), // unused3@0
+    INST(mov_repc_to, 0xD3C8, At<MemR7Imm16, 16>, Unused<0>, Unused<1>, Unused<2>),
     INST(mov, 0x5F50, At<ArArpSttMod, 0>, At<MemR7Imm16, 16>),
 
-    INST(mov_repc, 0xD2DC, At<MemR7Imm16, 16>), // unused2@0, unused1@10
+    INST(mov_repc, 0xD2DC, At<MemR7Imm16, 16>, Unused<0>, Unused<1>, Unused<10>),
     INST(mov, 0x4D90, At<MemR7Imm16, 16>, At<ArArpSttMod, 0>),
 
     INST(mov_pc, 0x886B, At<Ax, 8>),
     INST(mov_pc, 0x8863, At<Bx, 8>),
 
     INST(mov_mixp_to, 0x8A73, At<Bx, 3>),
-    INST(mov_mixp_r6, 0x4381, DummyMatch),
+    INST(mov_mixp_r6, 0x4381, NoParam),
     INST(mov_p0h_to, 0x4382, At<Bx, 0>),
-    INST(mov_p0h_r6, 0xD3C2, DummyMatch),
+    INST(mov_p0h_r6, 0xD3C2, NoParam),
     INST(mov_p0h_to, 0x4B60, At<Register, 0>),
     INST(mov_p0, 0x8FD4, At<Ab, 0>),
     INST(mov_p1_to, 0x8FD8, At<Ab, 0>),
@@ -415,10 +465,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mova, 0x4BC0, At<ArRn2, 2>, At<ArStep2, 0>, At<Ab, 4>),
 
     INST(mov_r6_to, 0xD481, At<Bx, 8>),
-    INST(mov_r6_mixp, 0x43C1, DummyMatch),
+    INST(mov_r6_mixp, 0x43C1, NoParam),
     INST(mov_r6_to, 0x5F00, At<Register, 0>),
     INST(mov_r6, 0x5F60, At<Register, 0>),
-    INST(mov_memsp_r6, 0xD29C, DummyMatch), // Unused2@0, Unused1@10
+    INST(mov_memsp_r6, 0xD29C, Unused<0>, Unused<1>, Unused<10>),
     INST(mov_r6_to, 0x1B00, At<Rn, 0>, At<StepZIDS, 3>),
     INST(mov_r6, 0x1B20, At<Rn, 0>, At<StepZIDS, 3>),
 
@@ -451,18 +501,18 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(lim, 0x49C0, At<Ax, 5>, At<Ax, 4>),
 
     // <<< Viterbi >>>
-    INST(vtrclr0, 0x5F45, DummyMatch),
-    INST(vtrclr1, 0x5F46, DummyMatch),
-    INST(vtrclr, 0x5F47, DummyMatch),
+    INST(vtrclr0, 0x5F45, NoParam),
+    INST(vtrclr1, 0x5F46, NoParam),
+    INST(vtrclr, 0x5F47, NoParam),
     INST(vtrmov0, 0xD29A, At<Axl, 0>),
     INST(vtrmov1, 0xD69A, At<Axl, 0>),
     INST(vtrmov, 0xD383, At<Axl, 4>),
-    INST(vtrshr, 0xD781, DummyMatch),
+    INST(vtrshr, 0xD781, NoParam),
 
     // <<< CLRP >>>
-    INST(clrp0, 0x5DFE, DummyMatch),
-    INST(clrp1, 0x5DFD, DummyMatch),
-    INST(clrp, 0x5DFF, DummyMatch),
+    INST(clrp0, 0x5DFE, NoParam),
+    INST(clrp1, 0x5DFD, NoParam),
+    INST(clrp, 0x5DFF, NoParam),
 
     // <<< min/max >>>
     INST(max_ge, 0x8460, At<Ax, 8>, At<StepZIDS, 3>),

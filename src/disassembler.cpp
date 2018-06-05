@@ -400,7 +400,7 @@ public:
         return "[undefined]";
     }
 
-    std::string nop(Dummy) {
+    std::string nop() {
         return "nop";
     }
 
@@ -457,7 +457,7 @@ public:
         }
         return D("swap", desc);
     }
-    std::string trap(Dummy) {
+    std::string trap() {
         return "trap";
     }
 
@@ -642,13 +642,13 @@ public:
     std::string bkreprst(ArRn2 a) {
         return D("bkreprst", MemAR(a));
     }
-    std::string bkreprst_memsp(Dummy) {
+    std::string bkreprst_memsp() {
         return D("bkreprst", "[sp]");
     }
     std::string bkrepsto(ArRn2 a) {
         return D("bkrepsto", MemAR(a));
     }
-    std::string bkrepsto_memsp(Dummy) {
+    std::string bkrepsto_memsp() {
         return D("bkrepsto", "[sp]");
     }
 
@@ -662,7 +662,7 @@ public:
         if (flags.storage & 32) s += " cfgj";
         return "banke" + s;
     }
-    std::string bankr(Dummy) {
+    std::string bankr() {
         return "bankr";
     }
     std::string bankr(Ar a) {
@@ -693,7 +693,7 @@ public:
         return D("brr", ToHex(addr.storage), cond);
     }
 
-    std::string break_(Dummy) {
+    std::string break_() {
         return "break";
     }
 
@@ -710,17 +710,17 @@ public:
         return D("callr", ToHex(addr.storage), cond);
     }
 
-    std::string cntx_s(Dummy) {
+    std::string cntx_s() {
         return "cntx s";
     }
-    std::string cntx_r(Dummy) {
+    std::string cntx_r() {
         return "cntx r";
     }
 
     std::string ret(Cond c) {
         return D("ret", c);
     }
-    std::string retd(Dummy) {
+    std::string retd() {
         return "retd";
     }
     std::string reti(Cond c) {
@@ -729,10 +729,10 @@ public:
     std::string retic(Cond c) {
         return D("retic", c);
     }
-    std::string retid(Dummy) {
+    std::string retid() {
         return "retid";
     }
-    std::string retidc(Dummy) {
+    std::string retidc() {
         return "retidc";
     }
     std::string rets(Imm8 a) {
@@ -776,25 +776,25 @@ public:
     std::string push(ArArpSttMod a) {
         return D("push", R(a));
     }
-    std::string push_prpage(Dummy) {
+    std::string push_prpage() {
         return D("push", "prpage");
     }
     std::string push(Px a) {
         return D("push", R(a));
     }
-    std::string push_r6(Dummy) {
+    std::string push_r6() {
         return D("push", "r6");
     }
-    std::string push_repc(Dummy) {
+    std::string push_repc() {
         return D("push", "repc");
     }
-    std::string push_x0(Dummy) {
+    std::string push_x0() {
         return D("push", "x0");
     }
-    std::string push_x1(Dummy) {
+    std::string push_x1() {
         return D("push", "x1");
     }
-    std::string push_y1(Dummy) {
+    std::string push_y1() {
         return D("push", "y1");
     }
     std::string pusha(Ax a) {
@@ -816,25 +816,25 @@ public:
     std::string pop(Bx a) {
         return D("pop", R(a));
     }
-    std::string pop_prpage(Dummy) {
+    std::string pop_prpage() {
         return  D("pop", "prpage");
     }
     std::string pop(Px a) {
         return  D("pop", R(a));
     }
-    std::string pop_r6(Dummy) {
+    std::string pop_r6() {
         return D("pop", "r6");
     }
-    std::string pop_repc(Dummy) {
+    std::string pop_repc() {
         return D("pop", "repc");
     }
-    std::string pop_x0(Dummy) {
+    std::string pop_x0() {
         return D("pop", "x0");
     }
-    std::string pop_x1(Dummy) {
+    std::string pop_x1() {
         return D("pop", "x1");
     }
-    std::string pop_y1(Dummy) {
+    std::string pop_y1() {
         return D("pop", "y1");
     }
     std::string popa(Ab a) {
@@ -847,7 +847,7 @@ public:
     std::string rep(Register a) {
         return D("rep", R(a));
     }
-    std::string rep_r6(Dummy) {
+    std::string rep_r6() {
         return D("rep", "r6");
     }
 
@@ -884,10 +884,10 @@ public:
         return D("and", R(a), R(b), R(c));
     }
 
-    std::string dint(Dummy) {
+    std::string dint() {
         return "dint";
     }
-    std::string eint(Dummy) {
+    std::string eint() {
         return "eint";
     }
 
@@ -1122,16 +1122,16 @@ public:
         return D("mov", a, "prpage");
     }
 
-    std::string mov_a0h_stepi0(Dummy) {
+    std::string mov_a0h_stepi0() {
         return D("mov", "a0h", "stepi0");
     }
-    std::string mov_a0h_stepj0(Dummy) {
+    std::string mov_a0h_stepj0() {
         return D("mov", "a0h", "stepj0");
     }
-    std::string mov_stepi0_a0h(Dummy) {
+    std::string mov_stepi0_a0h() {
         return D("mov", "stepi0", "a0h");
     }
-    std::string mov_stepj0_a0h(Dummy) {
+    std::string mov_stepj0_a0h() {
         return D("mov", "stepi0", "a1h");
     }
 
@@ -1205,13 +1205,13 @@ public:
     std::string mov_mixp_to(Bx b) {
         return D("mov", "mixp", R(b));
     }
-    std::string mov_mixp_r6(Dummy) {
+    std::string mov_mixp_r6() {
         return D("mov", "mixp", "r6");
     }
     std::string mov_p0h_to(Bx b) {
         return D("mov", "p0h", R(b));
     }
-    std::string mov_p0h_r6(Dummy) {
+    std::string mov_p0h_r6() {
         return D("mov", "p0h", "r6");
     }
     std::string mov_p0h_to(Register b) {
@@ -1243,7 +1243,7 @@ public:
     std::string mov_r6_to(Bx b) {
         return D("mov", "r6", R(b));
     }
-    std::string mov_r6_mixp(Dummy) {
+    std::string mov_r6_mixp() {
         return D("mov", "r6", "mixp");
     }
     std::string mov_r6_to(Register b) {
@@ -1252,7 +1252,7 @@ public:
     std::string mov_r6(Register a) {
         return D("mov", R(a), "r6");
     }
-    std::string mov_memsp_r6(Dummy) {
+    std::string mov_memsp_r6() {
         return D("mov", "[sp]", "r6");
     }
     std::string mov_r6_to(Rn b, StepZIDS bs) {
@@ -1343,7 +1343,7 @@ public:
     std::string exp(Register a, Ax b) {
         return D("exp", R(a), R(b));
     }
-    std::string exp_r6(Dummy) {
+    std::string exp_r6() {
         return D("exp", "r6");
     }
     std::string exp_r6(Ax b) {
@@ -1354,13 +1354,13 @@ public:
         return D("lim", R(a), R(b));
     }
 
-    std::string vtrclr0(Dummy) {
+    std::string vtrclr0() {
         return D("vtrclr0");
     }
-    std::string vtrclr1(Dummy) {
+    std::string vtrclr1() {
         return D("vtrclr1");
     }
-    std::string vtrclr(Dummy) {
+    std::string vtrclr() {
         return D("vtrclr");
     }
     std::string vtrmov0(Axl a) {
@@ -1372,17 +1372,17 @@ public:
     std::string vtrmov(Axl a) {
         return D("vtrmov", R(a));
     }
-    std::string vtrshr(Dummy) {
+    std::string vtrshr() {
         return D("vtrshr");
     }
 
-    std::string clrp0(Dummy) {
+    std::string clrp0() {
         return D("clr0");
     }
-    std::string clrp1(Dummy) {
+    std::string clrp1() {
         return D("clr1");
     }
-    std::string clrp(Dummy) {
+    std::string clrp() {
         return D("clr");
     }
 

@@ -119,7 +119,7 @@ public:
 
     using instruction_return_type = void;
 
-    void nop(Dummy) {
+    void nop() {
         // literally nothing
     }
 
@@ -217,7 +217,7 @@ public:
         SetAcc(d0, u);
         SetAcc(d1, v); // only this one affects flags (except for fl)
     }
-    void trap(Dummy) {
+    void trap() {
         throw "unimplemented";
     }
 
@@ -1060,13 +1060,13 @@ public:
     void bkreprst(ArRn2 a) {
         RestoreBlockRepeat(regs.r[GetArRnUnit(a)]);
     }
-    void bkreprst_memsp(Dummy) {
+    void bkreprst_memsp() {
         RestoreBlockRepeat(regs.sp);
     }
     void bkrepsto(ArRn2 a) {
         StoreBlockRepeat(regs.r[GetArRnUnit(a)]);
     }
-    void bkrepsto_memsp(Dummy) {
+    void bkrepsto_memsp() {
         StoreBlockRepeat(regs.sp);
     }
 
@@ -1096,7 +1096,7 @@ public:
                 std::swap(regs.stepj0, regs.stepj0b);
         }
     }
-    void bankr(Dummy) {
+    void bankr() {
         regs.SwapAllArArp();
     }
     void bankr(Ar a) {
@@ -1145,7 +1145,7 @@ public:
         }
     }
 
-    void break_(Dummy) {
+    void break_() {
         if (!regs.lp) {
             throw "not in a loop";
         }
@@ -1190,10 +1190,10 @@ public:
         std::swap(regs.a[1].value, regs.b[1].value);
     }
 
-    void cntx_s(Dummy) {
+    void cntx_s() {
         ContextStore();
     }
-    void cntx_r(Dummy) {
+    void cntx_r() {
         ContextRestore();
     }
 
@@ -1202,7 +1202,7 @@ public:
             PopPC();
         }
     }
-    void retd(Dummy) {
+    void retd() {
         throw "unimplemented";
     }
     void reti(Cond c) {
@@ -1218,10 +1218,10 @@ public:
             ContextRestore();
         }
     }
-    void retid(Dummy) {
+    void retid() {
         throw "unimplemented";
     }
-    void retidc(Dummy) {
+    void retidc() {
         throw "unimplemented";
     }
     void rets(Imm8 a) {
@@ -1271,7 +1271,7 @@ public:
         u16 value = RegToBus16(a.GetName());
         mem.DataWrite(--regs.sp, value);
     }
-    void push_prpage(Dummy) {
+    void push_prpage() {
         throw "unimplemented";
     }
     void push(Px a) {
@@ -1281,23 +1281,23 @@ public:
         mem.DataWrite(--regs.sp, l);
         mem.DataWrite(--regs.sp, h);
     }
-    void push_r6(Dummy) {
+    void push_r6() {
         u16 value = regs.r[6];
         mem.DataWrite(--regs.sp, value);
     }
-    void push_repc(Dummy) {
+    void push_repc() {
         u16 value = regs.repc;
         mem.DataWrite(--regs.sp, value);
     }
-    void push_x0(Dummy) {
+    void push_x0() {
         u16 value = regs.x[0];
         mem.DataWrite(--regs.sp, value);
     }
-    void push_x1(Dummy) {
+    void push_x1() {
         u16 value = regs.x[1];
         mem.DataWrite(--regs.sp, value);
     }
-    void push_y1(Dummy) {
+    void push_y1() {
         u16 value = regs.y[1];
         mem.DataWrite(--regs.sp, value);
     }
@@ -1341,7 +1341,7 @@ public:
         u16 value = mem.DataRead(regs.sp++);
         RegFromBus16(a.GetName(), value);
     }
-    void pop_prpage(Dummy) {
+    void pop_prpage() {
         throw "unimplemented";
     }
     void pop(Px a) {
@@ -1350,23 +1350,23 @@ public:
         u32 value = ((u32)h << 16) | l;
         ProductFromBus32(a.GetName(), value);
     }
-    void pop_r6(Dummy) {
+    void pop_r6() {
         u16 value = mem.DataRead(regs.sp++);
         regs.r[6] = value;
     }
-    void pop_repc(Dummy) {
+    void pop_repc() {
         u16 value = mem.DataRead(regs.sp++);
         regs.repc = value;
     }
-    void pop_x0(Dummy) {
+    void pop_x0() {
         u16 value = mem.DataRead(regs.sp++);
         regs.x[0] = value;
     }
-    void pop_x1(Dummy) {
+    void pop_x1() {
         u16 value = mem.DataRead(regs.sp++);
         regs.x[1] = value;
     }
-    void pop_y1(Dummy) {
+    void pop_y1() {
         u16 value = mem.DataRead(regs.sp++);
         regs.y[1] = value;
     }
@@ -1388,7 +1388,7 @@ public:
     void rep(Register a) {
         Repeat(RegToBus16(a.GetName()));
     }
-    void rep_r6(Dummy) {
+    void rep_r6() {
         Repeat(regs.r[6]);
     }
 
@@ -1439,10 +1439,10 @@ public:
         SetAcc_NoSaturation(c.GetName(), value);
     }
 
-    void dint(Dummy) {
+    void dint() {
         regs.ie = 0;
     }
-    void eint(Dummy) {
+    void eint() {
         regs.ie = 1;
     }
 
@@ -1902,19 +1902,19 @@ public:
         throw "unimplemented";
     }
 
-    void mov_a0h_stepi0(Dummy) {
+    void mov_a0h_stepi0() {
         u16 value = RegToBus16(RegName::a0h);
         regs.stepi0 = value;
     }
-    void mov_a0h_stepj0(Dummy) {
+    void mov_a0h_stepj0() {
         u16 value = RegToBus16(RegName::a0h);
         regs.stepj0 = value;
     }
-    void mov_stepi0_a0h(Dummy) {
+    void mov_stepi0_a0h() {
         u16 value = regs.stepi0;
         RegFromBus16(RegName::a0h, value);
     }
-    void mov_stepj0_a0h(Dummy) {
+    void mov_stepj0_a0h() {
         u16 value = regs.stepj0;
         RegFromBus16(RegName::a0h, value);
     }
@@ -2015,7 +2015,7 @@ public:
         u16 value = regs.mixp;
         RegFromBus16(b.GetName(), value);
     }
-    void mov_mixp_r6(Dummy) {
+    void mov_mixp_r6() {
         u16 value = regs.mixp;
         regs.r[6] = value;
     }
@@ -2023,7 +2023,7 @@ public:
         u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
         RegFromBus16(b.GetName(), value);
     }
-    void mov_p0h_r6(Dummy) {
+    void mov_p0h_r6() {
         u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
         regs.r[6] = value;
     }
@@ -2092,7 +2092,7 @@ public:
         u16 value = regs.r[6];
         RegFromBus16(b.GetName(), value);
     }
-    void mov_r6_mixp(Dummy) {
+    void mov_r6_mixp() {
         u16 value = regs.r[6];
         regs.mixp = value;
     }
@@ -2104,7 +2104,7 @@ public:
         u16 value = RegToBus16(a.GetName());
         regs.r[6] = value;
     }
-    void mov_memsp_r6(Dummy) {
+    void mov_memsp_r6() {
         u16 value = mem.DataRead(regs.sp);
         regs.r[6] = value;
     }
@@ -2382,12 +2382,12 @@ public:
         exp(a);
         ExpStore(b);
     }
-    void exp_r6(Dummy) {
+    void exp_r6() {
         u64 value = SignExtend<32>((u64)RegToBus16(RegName::r6) << 16);
         regs.sv = Exp(value);
     }
     void exp_r6(Ax b) {
-        exp_r6(Dummy{});
+        exp_r6({});
         ExpStore(b);
     }
 
@@ -2397,13 +2397,13 @@ public:
         SetAcc_NoSaturation(b.GetName(), value);
     }
 
-    void vtrclr0(Dummy) {
+    void vtrclr0() {
         regs.vtr[0] = 0;
     }
-    void vtrclr1(Dummy) {
+    void vtrclr1() {
         regs.vtr[1] = 0;
     }
-    void vtrclr(Dummy) {
+    void vtrclr() {
         regs.vtr[0] = 0;
         regs.vtr[1] = 0;
     }
@@ -2416,19 +2416,19 @@ public:
     void vtrmov(Axl a) {
         SetAcc(a.GetName(), (regs.vtr[1] & 0xFF00) | (regs.vtr[0] >> 8));
     }
-    void vtrshr(Dummy) {
+    void vtrshr() {
         // TODO: This instruction has one cycle delay on vtr0, but not on vtr1
         regs.vtr[0] = (regs.vtr[0] >> 1) | (regs.fc[0] << 15);
         regs.vtr[1] = (regs.vtr[1] >> 1) | (regs.fc[1] << 15);
     }
 
-    void clrp0(Dummy) {
+    void clrp0() {
         ProductFromBus32(RegName::p0, 0);
     }
-    void clrp1(Dummy) {
+    void clrp1() {
         ProductFromBus32(RegName::p1, 0);
     }
-    void clrp(Dummy) {
+    void clrp() {
         ProductFromBus32(RegName::p0, 0);
         ProductFromBus32(RegName::p1, 0);
     }
