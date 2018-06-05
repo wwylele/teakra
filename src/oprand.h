@@ -17,8 +17,8 @@ struct At {
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
     static constexpr bool NeedExpansion = pos == 16;
 
-    static OprandT Filter(u16 opcode, u16 expansion) {
-        OprandT oprand;
+    static constexpr OprandT Filter(u16 opcode, u16 expansion) {
+        OprandT oprand{};
         if (NeedExpansion)
             oprand.storage = expansion;
         else
@@ -32,8 +32,8 @@ struct Const {
     using OprandType = OprandT;
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
-    static OprandT Filter(u16, u16) {
-        OprandT oprand;
+    static constexpr OprandT Filter(u16, u16) {
+        OprandT oprand{};
         oprand.storage = value;
         return oprand;
     }
@@ -61,14 +61,14 @@ constexpr unsigned log2(unsigned n) {
 template <typename EnumT, EnumT ... names>
 struct EnumOprand : Oprand<log2(sizeof...(names))> {
     static constexpr EnumT values[] = {names...};
-    EnumT GetName() const {
+    constexpr EnumT GetName() const {
         return values[this->storage];
     }
 };
 
 template <typename EnumT>
 struct EnumAllOprand : Oprand<log2((unsigned)EnumT::EnumEnd)> {
-    EnumT GetName() const {
+    constexpr EnumT GetName() const {
         return (EnumT)this->storage;
     }
 };
