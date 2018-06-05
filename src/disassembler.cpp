@@ -914,6 +914,22 @@ public:
         return D("mpyi", "y0", x);
     }
 
+    std::string msu(R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
+        return D("msu", MemR(y, ys), MemR(x, xs), R(a));
+    }
+    std::string msu(Rn y, StepZIDS ys, Imm16 x, Ax a) {
+        return D("msu", MemR(y, ys), x, R(a));
+    }
+    std::string msusu(ArRn2 x, ArStep2 xs, Ax a) {
+        return D("msusu", "y0", MemARS(x, xs), R(a));
+    }
+    std::string mac_x1to0(Ax a) {
+        return D("mac", "y0", "x1->x0", R(a));
+    }
+    std::string mac1(ArpRn1 xy, ArpStep1 xis, ArpStep1 yjs, Ax a) {
+        return D("mac1", MemARPSJ(xy, yjs), MemARPSI(xy, xis), R(a));
+    }
+
     std::string modr(Rn a, StepZIDS as) {
         return D("modr", MemR(a, as));
     }

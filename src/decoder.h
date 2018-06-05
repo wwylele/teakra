@@ -154,7 +154,11 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     // <<< Mul Extra >>>
     INST(mpyi, 0x0800, At<Imm8s, 0>),
-    // TODO: more
+    INST(msu, 0xD080, At<R45, 2>, At<StepZIDS, 5>, At<R0123, 0>, At<StepZIDS, 3>, At<Ax, 8>),
+    INST(msu, 0x90C0, At<Rn, 0>, At<StepZIDS, 3>, At<Imm16, 16>, At<Ax, 8>),
+    INST(msusu, 0x8264, At<ArRn2, 3>, At<ArStep2, 0>, At<Ax, 8>),
+    INST(mac_x1to0, 0x4D84, At<Ax, 1>), // Unused1@0
+    INST(mac1, 0x5E28, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<Ax, 8>),
 
     // <<< MODA >>>
     INST(moda4, 0x6700, At<Moda4, 4>, At<Ax, 12>, At<Cond, 0>)

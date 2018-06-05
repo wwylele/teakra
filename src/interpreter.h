@@ -1512,6 +1512,58 @@ public:
         DoMultiplication(0, true, true);
     }
 
+    void msu(R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
+        u16 yi = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
+        u16 xi = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
+        u64 value = GetAcc(a.GetName());
+        u64 product = ProductToBus40(RegName::p0);
+        u64 result = AddSub(value, product, true);
+        SetAcc(a.GetName(), result);
+        regs.y[0] = mem.DataRead(yi);
+        regs.x[0] = mem.DataRead(xi);
+        DoMultiplication(0, true, true);
+    }
+    void msu(Rn y, StepZIDS ys, Imm16 x, Ax a) {
+        u16 yi = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
+        u64 value = GetAcc(a.GetName());
+        u64 product = ProductToBus40(RegName::p0);
+        u64 result = AddSub(value, product, true);
+        SetAcc(a.GetName(), result);
+        regs.y[0] = mem.DataRead(yi);
+        regs.x[0] = x.storage;
+        DoMultiplication(0, true, true);
+    }
+    void msusu(ArRn2 x, ArStep2 xs, Ax a) {
+        u16 xi = RnAddressAndModify(GetArRnUnit(x), GetArStep(xs));
+        u64 value = GetAcc(a.GetName());
+        u64 product = ProductToBus40(RegName::p0);
+        u64 result = AddSub(value, product, true);
+        SetAcc(a.GetName(), result);
+        regs.x[0] = mem.DataRead(xi);
+        DoMultiplication(0, false, true);
+    }
+    void mac_x1to0(Ax a) {
+        u64 value = GetAcc(a.GetName());
+        u64 product = ProductToBus40(RegName::p0);
+        u64 result = AddSub(value, product, false);
+        SetAcc(a.GetName(), result);
+        regs.x[0] = regs.x[1];
+        DoMultiplication(0, true, true);
+    }
+    void mac1(ArpRn1 xy, ArpStep1 xis, ArpStep1 yjs, Ax a) {
+        auto [ui, uj] = GetArpRnUnit(xy);
+        auto [si, sj] = GetArpStep(xis, yjs);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        u64 value = GetAcc(a.GetName());
+        u64 product = ProductToBus40(RegName::p1);
+        u64 result = AddSub(value, product, false);
+        SetAcc(a.GetName(), result);
+        regs.x[1] = mem.DataRead(i);
+        regs.y[1] = mem.DataRead(j);
+        DoMultiplication(1, true, true);
+    }
+
     void modr(Rn a, StepZIDS as) {
         u32 unit = GetRnUnit(a.GetName());
         RnAddressAndModify(unit, as.GetName());
