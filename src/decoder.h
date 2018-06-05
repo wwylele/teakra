@@ -528,6 +528,11 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     // <<< Division Step >>>
     INST(divs, 0x0E00, At<MemImm8, 0>, At<Ax, 8>),
+
+    // <<< Sqr >>>
+    INST(sqr_sqr_add3, 0xD790, At<Ab, 2>, At<Ab, 0>),
+    INST(sqr_sqr_add3, 0x4B00, At<ArRn2, 4>, At<ArStep2, 2>, At<Ab, 0>),
+    INST(sqr_mpysu_add3a, 0x49C4, At<Ab, 4>, At<Ab, 0>),
     };
 }
 

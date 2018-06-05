@@ -1420,6 +1420,16 @@ public:
     std::string divs(MemImm8 a, Ax b) {
         return D("divs", a, R(b));
     }
+
+    std::string sqr_sqr_add3(Ab a, Ab b) {
+        return D("sqr h||l", R(a), "||add3", R(b));
+    }
+    std::string sqr_sqr_add3(ArRn2 a, ArStep2 as, Ab b) {
+        return D("sqr h||l", MemARS(a, as), "||add3", R(b));
+    }
+    std::string sqr_mpysu_add3a(Ab a, Ab b) {
+        return D("sqr h||mpysu hl", R(a), "||add3a", R(b));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

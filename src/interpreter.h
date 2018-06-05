@@ -225,7 +225,6 @@ public:
         // Am I doing it right?
         u32 x = regs.x[unit];
         u32 y = regs.y[unit];
-        // does y modification also apply to y1?
         if (regs.ym == 1 || regs.ym == 3) {
             y >>= 8; // no sign extension?
         } else if (regs.ym == 2) {
@@ -2560,6 +2559,34 @@ public:
         } else {
             SetAcc_NoSaturation(b.GetName(), (value << 1) + 1);
         }
+    }
+
+    void sqr_sqr_add3(Ab a, Ab b) {
+        u64 value = GetAcc(a.GetName());
+        add3_p0_p1(b);
+        regs.x[0] = regs.y[0] = (u16)((value >> 16) & 0xFFFF);
+        regs.x[1] = regs.y[1] = (u16)(value & 0xFFFF);
+        DoMultiplication(0, true, true);
+        DoMultiplication(1, true, true);
+    }
+
+    void sqr_sqr_add3(ArRn2 a, ArStep2 as, Ab b) {
+        add3_p0_p1(b);
+        u16 address0 = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
+        u16 address1 = address0 + GetArOffset(as);
+        regs.x[0] = regs.y[0] = mem.DataRead(address0);
+        regs.x[1] = regs.y[1] = mem.DataRead(address1);
+        DoMultiplication(0, true, true);
+        DoMultiplication(1, true, true);
+    }
+
+    void sqr_mpysu_add3a(Ab a, Ab b) {
+        u64 value = GetAcc(a.GetName());
+        add3_p0_p1a(b);
+        regs.x[0] = regs.y[0] = regs.y[1] = (u16)((value >> 16) & 0xFFFF);
+        regs.x[1] = (u16)(value & 0xFFFF);
+        DoMultiplication(0, true, true);
+        DoMultiplication(1, false, true);
     }
 
 private:
