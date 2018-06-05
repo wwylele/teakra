@@ -525,6 +525,9 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(max_gt_r0, 0x8260, At<Ax, 8>, At<StepZIDS, 3>),
     INST(min_le_r0, 0x47A0, At<Ax, 3>, At<StepZIDS, 0>),
     INST(min_lt_r0, 0x47A4, At<Ax, 3>, At<StepZIDS, 0>),
+
+    // <<< Division Step >>>
+    INST(divs, 0x0E00, At<MemImm8, 0>, At<Ax, 8>),
     };
 }
 

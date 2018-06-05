@@ -2551,6 +2551,17 @@ public:
         }
     }
 
+    void divs(MemImm8 a, Ax b) {
+        u16 da = LoadFromMemory(a);
+        u64 db = GetAcc(b.GetName());
+        u64 value = db - ((u64)da << 15);
+        if (value >> 63) {
+            SetAcc_NoSaturation(b.GetName(), db << 1);
+        } else {
+            SetAcc_NoSaturation(b.GetName(), (value << 1) + 1);
+        }
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;

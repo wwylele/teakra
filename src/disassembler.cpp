@@ -1417,6 +1417,9 @@ public:
     std::string min_lt_r0(Ax a, StepZIDS bs) {
         return D("min_lt", R(a), "[r0]", bs);
     }
+    std::string divs(MemImm8 a, Ax b) {
+        return D("divs", a, R(b));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {
