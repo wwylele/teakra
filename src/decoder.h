@@ -215,6 +215,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
         .EXCEPT(AtConst<Moda4, 4, 7>),
     INST(moda3, 0x6F00, At<Moda3, 4>, At<Bx, 12>, At<Cond, 0>),
     INST(pacr1, 0xD7C2, At<Ax, 0>),
+    INST(clr, 0x8ED0, At<Ab, 2>, At<Ab, 0>),
+    INST(clrr, 0x8DD0, At<Ab, 2>, At<Ab, 0>),
 
     // <<< Block repeat >>>
     INST(bkrep, 0x5C00, At<Imm8, 0>, At<Address16, 16>),
@@ -305,7 +307,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     // <<< Repeat >>>
     INST(rep, 0x0C00, At<Imm8, 0>),
     INST(rep, 0x0D00, At<Register, 0>),
-    INST(rep_r6, 0x0002, Unused<0>), // unused1@0
+    INST(rep_r6, 0x0002, Unused<0>),
 
     // <<< Shift >>>
     INST(shfc, 0xD280, At<Ab, 10>, At<Ab, 5>, At<Cond, 0>),

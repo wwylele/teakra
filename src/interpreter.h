@@ -993,6 +993,18 @@ public:
         u64 result = AddSub(value, 0x8000, false);
         SetAcc(a.GetName(), result);
     }
+    void clr(Ab a, Ab b) {
+        if (b.storage == a.storage)
+            b.storage = (b.storage + 1) % 4;
+        SetAcc(a.GetName(), 0);
+        SetAcc(b.GetName(), 0);
+    }
+    void clrr(Ab a, Ab b) {
+        if (b.storage == a.storage)
+            b.storage = (b.storage + 1) % 4;
+        SetAcc(a.GetName(), 0x8000);
+        SetAcc(b.GetName(), 0x8000);
+    }
 
     void BlockRepeat(u16 lc, u32 address) {
         if (regs.bcn > 3)

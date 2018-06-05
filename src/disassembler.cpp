@@ -629,6 +629,12 @@ public:
     std::string pacr1(Ax a) {
         return D("pacr p1", R(a));
     }
+    std::string clr(Ab a, Ab b) {
+        return D("clr", R(a), R(b));
+    }
+    std::string clrr(Ab a, Ab b) {
+        return D("clrr", R(a), R(b));
+    }
 
     std::string bkrep(Imm8 a, Address16 addr) {
         return D("bkrep", a, addr);
