@@ -2620,6 +2620,139 @@ public:
         u64 vb = GetAcc(b.GetName());
         SetAccFlag(AddSub(vb, va, true));
     }
+
+    void MinMaxVtr(RegName a, RegName b, bool min) {
+        u64 u = GetAcc(a);
+        u64 v = GetAcc(b);
+        u64 uh = SignExtend<24, u64>(u >> 16);
+        u64 ul = SignExtend<16, u64>(u & 0xFFFF);
+        u64 vh = SignExtend<24, u64>(v >> 16);
+        u64 vl = SignExtend<16, u64>(v & 0xFFFF);
+        u64 wh = min ? uh - vh : vh - uh;
+        u64 wl = min ? ul - vl : vl - ul;
+        wh = (regs.fc[0] = !(wh >> 63)) ? vh : uh;
+        wl = (regs.fc[1] = !(wl >> 63)) ? vl : ul;
+        u64 w = (wh << 16) | (wl & 0xFFFF);
+        SetAcc_Simple(a, w);
+        vtrshr();
+    }
+
+    void max2_vtr(Ax a) {
+        MinMaxVtr(a.GetName(), CounterAcc(a.GetName()), false);
+    }
+    void min2_vtr(Ax a) {
+        MinMaxVtr(a.GetName(), CounterAcc(a.GetName()), true);
+    }
+    void max2_vtr(Ax a, Bx b) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+    }
+    void min2_vtr(Ax a, Bx b) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+    }
+    void max2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)(value & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void max2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)((value >> 16) & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void max2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)(value & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void max2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)((value >> 16) & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void min2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)(value & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void min2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)((value >> 16) & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void min2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)(value & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void min2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
+        u16 value16 = (u16)((value >> 16) & 0xFFFF);
+        mem.DataWrite(address, value16);
+    }
+    void max2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 h = (u16)((value >> 16) & 0xFFFF);
+        u16 l = (u16)(value & 0xFFFF);
+        auto [ui, uj] = GetArpRnUnit(c);
+        auto [si, sj] = GetArpStep(csi, csj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        mem.DataWrite(i, h);
+        mem.DataWrite(j, l);
+    }
+    void max2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        MinMaxVtr(a.GetName(), b.GetName(), false);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 h = (u16)((value >> 16) & 0xFFFF);
+        u16 l = (u16)(value & 0xFFFF);
+        auto [ui, uj] = GetArpRnUnit(c);
+        auto [si, sj] = GetArpStep(csi, csj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        mem.DataWrite(i, l);
+        mem.DataWrite(j, h);
+    }
+    void min2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 h = (u16)((value >> 16) & 0xFFFF);
+        u16 l = (u16)(value & 0xFFFF);
+        auto [ui, uj] = GetArpRnUnit(c);
+        auto [si, sj] = GetArpStep(csi, csj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        mem.DataWrite(i, h);
+        mem.DataWrite(j, l);
+    }
+    void min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        MinMaxVtr(a.GetName(), b.GetName(), true);
+        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u16 h = (u16)((value >> 16) & 0xFFFF);
+        u16 l = (u16)(value & 0xFFFF);
+        auto [ui, uj] = GetArpRnUnit(c);
+        auto [si, sj] = GetArpStep(csi, csj);
+        u16 i = RnAddressAndModify(ui, si);
+        u16 j = RnAddressAndModify(uj, sj);
+        mem.DataWrite(i, l);
+        mem.DataWrite(j, h);
+    }
 private:
     RegisterState& regs;
     MemoryInterface& mem;

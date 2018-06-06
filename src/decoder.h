@@ -540,6 +540,25 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(cmp_b1_b0, 0xD583, NoParam),
     INST(cmp, 0xDA9A, At<Bx, 10>, At<Ax, 0>),
     INST(cmp_p1_to, 0x8B63, At<Ax, 4>),
+
+    // <<< min||max||vtrshr >>>
+    INST(max2_vtr, 0x5E21, At<Ax, 8>),
+    INST(min2_vtr, 0x43C2, At<Ax, 0>),
+    INST(max2_vtr, 0xD784, At<Ax, 1>, At<Bx, 0>),
+    INST(min2_vtr, 0xD4BA, At<Ax, 8>, At<Bx, 0>),
+    INST(max2_vtr_movl, 0x4A40, At<Ax, 3>, At<Bx, 4>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(max2_vtr_movh, 0x4A44, At<Ax, 3>, At<Bx, 4>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(max2_vtr_movl, 0x4A60, At<Bx, 4>, At<Ax, 3>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(max2_vtr_movh, 0x4A64, At<Bx, 4>, At<Ax, 3>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(min2_vtr_movl, 0x4A00, At<Ax, 3>, At<Bx, 4>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(min2_vtr_movh, 0x4A04, At<Ax, 3>, At<Bx, 4>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(min2_vtr_movl, 0x4A20, At<Bx, 4>, At<Ax, 3>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(min2_vtr_movh, 0x4A24, At<Bx, 4>, At<Ax, 3>, At<ArRn1, 1>, At<ArStep1, 0>),
+    INST(max2_vtr_movij, 0xD590, At<Ax, 6>, At<Bx, 5>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
+    INST(max2_vtr_movji, 0x45A0, At<Ax, 4>, At<Bx, 3>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
+    INST(min2_vtr_movij, 0xD2B8, At<Ax, 11>, At<Bx, 10>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
+    INST(min2_vtr_movji, 0x45E0, At<Ax, 4>, At<Bx, 3>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
+
     };
 }
 

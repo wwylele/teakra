@@ -1446,6 +1446,55 @@ public:
     std::string cmp_p1_to(Ax b) {
         return D("cmp", "p1", R(b));
     }
+
+    std::string max2_vtr(Ax a) {
+        return D("max h||l", R(a), "||vtrshr");
+    }
+    std::string min2_vtr(Ax a) {
+        return D("min h||l", R(a), "||vtrshr");
+    }
+    std::string max2_vtr(Ax a, Bx b) {
+        return D("max h||l", R(a), R(b), "||vtrshr");
+    }
+    std::string min2_vtr(Ax a, Bx b) {
+        return D("min h||l", R(a), R(b), "||vtrshr");
+    }
+    std::string max2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
+    }
+    std::string max2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
+    }
+    std::string max2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
+    }
+    std::string max2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
+    }
+    std::string min2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
+    }
+    std::string min2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
+    }
+    std::string min2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
+    }
+    std::string min2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
+    }
+    std::string max2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+    }
+    std::string max2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+    }
+    std::string min2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+    }
+    std::string min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {
