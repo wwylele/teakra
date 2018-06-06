@@ -59,6 +59,10 @@ std::string DsmArStep(ArStep a) {
     return "+ars" + std::to_string(a.storage);
 }
 
+std::string DsmArStepAlt(ArStep1Alt a) {
+    return "+ars" + std::to_string(a.storage + 2);
+}
+
 template <typename ArpRn>
 std::string DsmArpRni(ArpRn a) {
     return "arprni" + std::to_string(a.storage);
@@ -326,6 +330,12 @@ struct MemARS {
     ArStep step;
 };
 
+struct MemARSAlt {
+    MemARSAlt(ArRn1 reg, ArStep1Alt step) : reg(reg), step(step) {}
+    ArRn1 reg;
+    ArStep1Alt step;
+};
+
 template <typename ArpRn, typename ArpStep>
 struct MemARPSI {
     MemARPSI(ArpRn reg, ArpStep step) : reg(reg), step(step) {}
@@ -366,6 +376,11 @@ template <typename ArRn, typename ArStep>
 std::string Dsm(MemARS<ArRn, ArStep> t) {
     return "[" + DsmArRn(t.reg) + DsmArStep(t.step) + "]";
 }
+
+std::string Dsm(MemARSAlt t) {
+    return "[" + DsmArRn(t.reg) + DsmArStepAlt(t.step) + "]";
+}
+
 
 template <typename ArpRn, typename ArpStep>
 std::string Dsm(MemARPSI<ArpRn, ArpStep> t) {
@@ -1494,6 +1509,31 @@ public:
     }
     std::string min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+    }
+
+    std::string mov_addsubsv(ArRn1 a, ArStep1 as, Bx b) {
+        return D("mov", MemARS(a, as), "sv", "->addsubsv", "p1", "p0", R(b));
+    }
+    std::string mov_addsubsv(ArRn1 a, ArStep1Alt as, Bx b) {
+        return D("mov", MemARSAlt(a, as), "sv", "->addsubsv", "p1", "p0", R(b));
+    }
+    std::string mov_addsubrndsv(ArRn1 a, ArStep1 as, Bx b) {
+        return D("mov", MemARS(a, as), "sv", "->addsubrndsv", "p1", "p0", R(b));
+    }
+    std::string mov_addsubrndsv(ArRn1 a, ArStep1Alt as, Bx b) {
+        return D("mov", MemARSAlt(a, as), "sv", "->addsubrndsv", "p1", "p0", R(b));
+    }
+    std::string mov_sub3sv(ArRn1 a, ArStep1 as, Bx b) {
+        return D("mov", MemARS(a, as), "sv", "->sub3sv", "p0", "p1", R(b));
+    }
+    std::string mov_sub3sv(ArRn1 a, ArStep1Alt as, Bx b) {
+        return D("mov", MemARSAlt(a, as), "sv", "->sub3sv", "p0", "p1", R(b));
+    }
+    std::string mov_sub3rndsv(ArRn1 a, ArStep1 as, Bx b) {
+        return D("mov", MemARS(a, as), "sv", "->sub3rndsv", "p0", "p1", R(b));
+    }
+    std::string mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
+        return D("mov", MemARSAlt(a, as), "sv", "->sub3rndsv", "p0", "p1", R(b));
     }
 };
 

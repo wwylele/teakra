@@ -2753,6 +2753,91 @@ public:
         mem.DataWrite(i, l);
         mem.DataWrite(j, h);
     }
+
+    void I_addsubsv_p1_p0(RegName c) {
+        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_b = ProductToBus40(RegName::p0);
+        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16);
+        u64 result = AddSub(value_c, value_a, false);
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] ^= temp_c;
+        regs.fv ^= temp_v;
+        SetAcc(c, result);
+    }
+
+    void I_addsubrndsv_p1_p0(RegName c) {
+        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_b = ProductToBus40(RegName::p0);
+        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
+        u64 result = AddSub(value_c, value_a, false);
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] ^= temp_c;
+        regs.fv ^= temp_v;
+        SetAcc(c, result);
+    }
+
+    void I_sub3sv_p0_p1(RegName c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16);
+        u64 result = AddSub(value_c, value_a, true);
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c, result);
+    }
+
+    void I_sub3rndsv_p0_p1(RegName c) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
+        u64 result = AddSub(value_c, value_a, true);
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, true);
+        regs.fc[0] |= temp_c;
+        regs.fv |= temp_v;
+        SetAcc(c, result);
+    }
+
+    void mov_addsubsv(ArRn1 a, ArStep1 as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
+        I_addsubsv_p1_p0(b.GetName());
+    }
+    void mov_addsubsv(ArRn1 a, ArStep1Alt as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
+        I_addsubsv_p1_p0(b.GetName());
+    }
+    void mov_addsubrndsv(ArRn1 a, ArStep1 as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
+        I_addsubrndsv_p1_p0(b.GetName());
+    }
+    void mov_addsubrndsv(ArRn1 a, ArStep1Alt as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
+        I_addsubrndsv_p1_p0(b.GetName());
+    }
+    void mov_sub3sv(ArRn1 a, ArStep1 as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
+        I_sub3sv_p0_p1(b.GetName());
+    }
+    void mov_sub3sv(ArRn1 a, ArStep1Alt as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
+        I_sub3sv_p0_p1(b.GetName());
+    }
+    void mov_sub3rndsv(ArRn1 a, ArStep1 as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
+        I_sub3rndsv_p0_p1(b.GetName());
+    }
+    void mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
+        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
+        I_sub3rndsv_p0_p1(b.GetName());
+    }
 private:
     RegisterState& regs;
     MemoryInterface& mem;
@@ -3026,6 +3111,10 @@ private:
     StepValue GetArStep(ArStepX arstep) const {
         static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
         return ConvertArStep(regs.arstep[arstep.storage]);
+    }
+
+    StepValue GetArStepAlt(ArStep1Alt arstep) const {
+        return ConvertArStep(regs.arstep[arstep.storage + 2]);
     }
 
     template <typename ArpStepX>

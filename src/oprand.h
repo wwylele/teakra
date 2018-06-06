@@ -330,6 +330,7 @@ using StepZIDS = EnumOprand<StepValue,
 struct ArRn1 : Oprand<1> {};
 struct ArRn2 : Oprand<2> {};
 struct ArStep1 : Oprand<1> {};
+struct ArStep1Alt : Oprand<1> {};
 struct ArStep2 : Oprand<2> {};
 struct ArpRn1 : Oprand<1> {};
 struct ArpRn2 : Oprand<2> {};

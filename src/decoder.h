@@ -559,6 +559,17 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(min2_vtr_movij, 0xD2B8, At<Ax, 11>, At<Bx, 10>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
     INST(min2_vtr_movji, 0x45E0, At<Ax, 4>, At<Bx, 3>, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>),
 
+    // <<< MOV ADDSUB >>>
+    INST(mov_addsubsv, 0x4B40, At<ArRn1, 3>, At<ArStep1, 2>, At<Bx, 0>),
+    INST(mov_addsubsv, 0x9960, At<ArRn1, 4>, At<ArStep1Alt, 3>, At<Bx, 2>),
+    INST(mov_addsubrndsv, 0x4B42, At<ArRn1, 3>, At<ArStep1, 2>, At<Bx, 0>),
+    INST(mov_addsubrndsv, 0x99E0, At<ArRn1, 4>, At<ArStep1Alt, 3>, At<Bx, 2>),
+    INST(mov_sub3sv, 0x5F4C, At<ArRn1, 1>, At<ArStep1, 0>, Const<Bx, 0>),
+    INST(mov_sub3sv, 0x8873, At<ArRn1, 8>, At<ArStep1, 3>, Const<Bx, 1>),
+    INST(mov_sub3sv, 0x9860, At<ArRn1, 4>, At<ArStep1Alt, 3>, At<Bx, 2>),
+    INST(mov_sub3rndsv, 0xDE9C, At<ArRn1, 1>, At<ArStep1, 0>, Const<Bx, 0>),
+    INST(mov_sub3rndsv, 0xD4B4, At<ArRn1, 1>, At<ArStep1, 0>, Const<Bx, 1>),
+    INST(mov_sub3rndsv, 0x98E0, At<ArRn1, 4>, At<ArStep1Alt, 3>, At<Bx, 2>),
     };
 }
 
