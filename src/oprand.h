@@ -544,3 +544,12 @@ enum class CondValue {
 using Cond = EnumAllOprand<CondValue>;
 
 struct BankFlags : Oprand<6>{};
+
+enum class CbsCondValue {
+    Ge,
+    Gt,
+
+    EnumEnd
+};
+
+using CbsCond = EnumAllOprand<CbsCondValue>;

@@ -2838,6 +2838,55 @@ public:
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
         I_sub3rndsv_p0_p1(b.GetName());
     }
+
+    void Cbs(u16 u, u16 v, u16 r, CbsCond c) {
+        u16 x0 = std::exchange(regs.x[0], u);
+        u64 diff = ProductToBus40(RegName::p0) - ProductToBus40(RegName::p1);
+        regs.y[0] = u;
+        DoMultiplication(0, true, true);
+        regs.y[0] = (u16)((ProductToBus40(RegName::p0) >> 16) & 0xFFFF);
+        regs.x[0] = x0;
+        bool cond;
+        switch(c.GetName()) {
+        case CbsCondValue::Ge:
+            cond = !(diff >> 63);
+            break;
+        case CbsCondValue::Gt:
+            cond = !(diff >> 63) && diff != 0;
+            break;
+        }
+        if (cond) {
+            regs.mixp = r;
+            regs.x[0] = regs.y[1];
+            regs.x[1] = regs.y[0];
+        }
+        regs.y[1] = v;
+        DoMultiplication(0, true, true);
+        DoMultiplication(1, true, true);
+    }
+
+    void cbs(Axh a, CbsCond c) {
+        u16 u = (u16)((GetAcc(a.GetName()) >> 16) & 0xFFFF);
+        u16 v = (u16)((GetAcc(CounterAcc(a.GetName())) >> 16) & 0xFFFF);
+        u16 r = regs.r[0];
+        Cbs(u, v, r, c);
+    }
+    void cbs(Axh a, Bxh b, CbsCond c) {
+        u16 u = (u16)((GetAcc(a.GetName()) >> 16) & 0xFFFF);
+        u16 v = (u16)((GetAcc(b.GetName()) >> 16) & 0xFFFF);
+        u16 r = regs.r[0];
+        Cbs(u, v, r, c);
+    }
+    void cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
+        auto [ui, uj] = GetArpRnUnit(a);
+        auto [si, sj] = GetArpStep(asi, asj);
+        u16 ai = RnAddressAndModify(ui, si);
+        u16 aj = RnAddressAndModify(uj, sj);
+        u16 u = mem.DataRead(ai);
+        u16 v = mem.DataRead(aj);
+        u16 r = ai;
+        Cbs(u, v, r, c);
+    }
 private:
     RegisterState& regs;
     MemoryInterface& mem;

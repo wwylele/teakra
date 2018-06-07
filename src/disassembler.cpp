@@ -402,6 +402,14 @@ std::string Dsm(MemG<Reg> t) {
     return "[" + DsmReg(t.reg) + "]";
 }
 
+std::string Dsm(CbsCond c) {
+    switch(c.GetName()) {
+    case CbsCondValue::Ge: return "ge";
+    case CbsCondValue::Gt: return "gt";
+    default: throw "?";
+    }
+}
+
 template <typename ... T>
 std::string D(T ... t) {
     return ((Dsm(t) + "    ") + ...);
@@ -1534,6 +1542,16 @@ public:
     }
     std::string mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
         return D("mov", MemARSAlt(a, as), "sv", "->sub3rndsv", "p0", "p1", R(b));
+    }
+
+    std::string cbs(Axh a, CbsCond c) {
+        return D("cbs", R(a), "r0", c);
+    }
+    std::string cbs(Axh a, Bxh b, CbsCond c) {
+        return D("cbs", R(a), R(b), "r0", c);
+    }
+    std::string cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
+        return D("cbs", MemARPSI(a, asi), MemARPSJ(a, asj), c);
     }
 };
 

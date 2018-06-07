@@ -570,6 +570,11 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov_sub3rndsv, 0xDE9C, At<ArRn1, 1>, At<ArStep1, 0>, Const<Bx, 0>),
     INST(mov_sub3rndsv, 0xD4B4, At<ArRn1, 1>, At<ArStep1, 0>, Const<Bx, 1>),
     INST(mov_sub3rndsv, 0x98E0, At<ArRn1, 4>, At<ArStep1Alt, 3>, At<Bx, 2>),
+
+    // <<< CBS >>>
+    INST(cbs, 0x9068, At<Axh, 0>, At<CbsCond, 8>),
+    INST(cbs, 0xD49E, At<Axh, 8>, At<Bxh, 5>, At<CbsCond, 0>),
+    INST(cbs, 0xD5C0, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<CbsCond, 3>),
     };
 }
 
