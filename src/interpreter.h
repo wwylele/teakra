@@ -253,7 +253,63 @@ public:
             regs.flv = 1;
         }
         return SignExtend<40>(result);
+    }
+
+    enum class SumBase {
+        Zero,
+        Acc,
+        Sv,
+        SvRnd,
     };
+
+    struct ProductSumConfig {
+        bool align;
+        bool sub;
+    };
+
+    static constexpr ProductSumConfig p_add{false, false};
+    static constexpr ProductSumConfig p_adda{true, false};
+    static constexpr ProductSumConfig p_sub{false, true};
+    static constexpr ProductSumConfig p_suba{true, true};
+
+    void ProductSum(SumBase base, RegName acc, const ProductSumConfig& p0, const ProductSumConfig& p1) {
+        u64 value_a = ProductToBus40(RegName::p0);
+        u64 value_b = ProductToBus40(RegName::p1);
+        if (p0.align) {
+            value_a = SignExtend<24>(value_a >> 16);
+        }
+        if (p1.align) {
+            value_b = SignExtend<24>(value_b >> 16);
+        }
+        u64 value_c;
+        switch(base) {
+        case SumBase::Zero:
+            value_c = 0;
+            break;
+        case SumBase::Acc:
+            value_c = GetAcc(acc);
+            break;
+        case SumBase::Sv:
+            value_c = SignExtend<32, u64>((u64)regs.sv << 16);
+            break;
+        case SumBase::SvRnd:
+            value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
+            break;
+        }
+        u64 result = AddSub(value_c, value_a, p0.sub);
+        u16 temp_c = regs.fc[0];
+        u16 temp_v = regs.fv;
+        result = AddSub(result, value_b, p1.sub);
+        // Is this correct?
+        if (p0.sub == p1.sub) {
+            regs.fc[0] |= temp_c;
+            regs.fv |= temp_v;
+        } else {
+            regs.fc[0] ^= temp_c;
+            regs.fv ^= temp_v;
+        }
+        SetAcc(acc, result);
+    }
 
     void AlmGeneric(AlmOp op, u64 a, Ax b) {
         switch(op) {
@@ -572,57 +628,19 @@ public:
         SetAcc(b.GetName(), result);
     }
     void add_p0_p1(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 result = AddSub(value_a, value_b, false);
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Zero, c.GetName(), p_add, p_add);
     }
     void add_p0_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 result = AddSub(value_a, value_b, false);
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Zero, c.GetName(), p_add, p_adda);
     }
     void add3_p0_p1(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        // is this flag handling correct?
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, false);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_add, p_add);
     }
     void add3_p0_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, false);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_add, p_adda);
     }
     void add3_p0a_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        value_a = SignExtend<24>(value_a >> 16);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, false);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_adda, p_adda);
     }
 
     void sub(Ab a, Bx b) {
@@ -650,112 +668,32 @@ public:
         SetAcc(b.GetName(), result);
     }
     void sub_p0_p1(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 result = AddSub(value_a, value_b, true);
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Zero, c.GetName(), p_add, p_sub);
     }
     void sub_p0_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 result = AddSub(value_a, value_b, true);
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Zero, c.GetName(), p_add, p_suba);
     }
     void sub3_p0_p1(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, true);
-        // is this flag handling correct?
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_sub);
     }
     void sub3_p0_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, true);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_suba);
     }
     void sub3_p0a_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        value_a = SignExtend<24>(value_a >> 16);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, true);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_suba, p_suba);
     }
 
     void addsub_p0_p1(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        // is this flag handling correct?
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] ^= temp_c;
-        regs.fv ^= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_add, p_sub);
     }
     void addsub_p1_p0(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p1);
-        u64 value_b = ProductToBus40(RegName::p0);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        // is this flag handling correct?
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] ^= temp_c;
-        regs.fv ^= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_add);
     }
     void addsub_p0_p1a(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        value_b = SignExtend<24>(value_b >> 16);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        // is this flag handling correct?
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] ^= temp_c;
-        regs.fv ^= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_add, p_suba);
     }
     void addsub_p1a_p0(Ab c) {
-        u64 value_a = ProductToBus40(RegName::p1);
-        value_a = SignExtend<24>(value_a >> 16);
-        u64 value_b = ProductToBus40(RegName::p0);
-        u64 value_c = GetAcc(c.GetName());
-        u64 result = AddSub(value_c, value_a, false);
-        // is this flag handling correct?
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] ^= temp_c;
-        regs.fv ^= temp_v;
-        SetAcc(c.GetName(), result);
+        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_adda);
     }
 
     void add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -2754,89 +2692,37 @@ public:
         mem.DataWrite(j, h);
     }
 
-    void I_addsubsv_p1_p0(RegName c) {
-        u64 value_a = ProductToBus40(RegName::p1);
-        u64 value_b = ProductToBus40(RegName::p0);
-        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16);
-        u64 result = AddSub(value_c, value_a, false);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] ^= temp_c;
-        regs.fv ^= temp_v;
-        SetAcc(c, result);
-    }
-
-    void I_addsubrndsv_p1_p0(RegName c) {
-        u64 value_a = ProductToBus40(RegName::p1);
-        u64 value_b = ProductToBus40(RegName::p0);
-        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
-        u64 result = AddSub(value_c, value_a, false);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] ^= temp_c;
-        regs.fv ^= temp_v;
-        SetAcc(c, result);
-    }
-
-    void I_sub3sv_p0_p1(RegName c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16);
-        u64 result = AddSub(value_c, value_a, true);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c, result);
-    }
-
-    void I_sub3rndsv_p0_p1(RegName c) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
-        u64 value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
-        u64 result = AddSub(value_c, value_a, true);
-        u16 temp_c = regs.fc[0];
-        u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, true);
-        regs.fc[0] |= temp_c;
-        regs.fv |= temp_v;
-        SetAcc(c, result);
-    }
-
     void mov_addsubsv(ArRn1 a, ArStep1 as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        I_addsubsv_p1_p0(b.GetName());
+        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_add);
     }
     void mov_addsubsv(ArRn1 a, ArStep1Alt as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        I_addsubsv_p1_p0(b.GetName());
+        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_add);
     }
     void mov_addsubrndsv(ArRn1 a, ArStep1 as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        I_addsubrndsv_p1_p0(b.GetName());
+        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_add);
     }
     void mov_addsubrndsv(ArRn1 a, ArStep1Alt as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        I_addsubrndsv_p1_p0(b.GetName());
+        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_add);
     }
     void mov_sub3sv(ArRn1 a, ArStep1 as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        I_sub3sv_p0_p1(b.GetName());
+        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_sub);
     }
     void mov_sub3sv(ArRn1 a, ArStep1Alt as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        I_sub3sv_p0_p1(b.GetName());
+        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_sub);
     }
     void mov_sub3rndsv(ArRn1 a, ArStep1 as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        I_sub3rndsv_p0_p1(b.GetName());
+        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_sub);
     }
     void mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        I_sub3rndsv_p0_p1(b.GetName());
+        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_sub);
     }
 
     void Cbs(u16 u, u16 v, u16 r, CbsCond c) {
@@ -2854,6 +2740,8 @@ public:
         case CbsCondValue::Gt:
             cond = !(diff >> 63) && diff != 0;
             break;
+        default:
+            throw "???";
         }
         if (cond) {
             regs.mixp = r;
