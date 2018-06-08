@@ -1607,6 +1607,22 @@ public:
             PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
             Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
+
+    std::string mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("mov", R(u), R(v), MemARS(w, ws), "x0<->x1",
+            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    }
+
+    std::string mma_mov(ArRn2 w, ArStep1 ws, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("mov,^", DsmReg(a), MemARS(w, ws), "x0<->x1",
+            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

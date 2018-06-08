@@ -396,7 +396,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov, 0x1800, At<Register, 5>, At<Rn, 0>, At<StepZIDS, 3>)
         .EXCEPT(AtConst<Register, 5, 24>).EXCEPT(AtConst<Register, 5, 25>), // override by mov_r6(_to)
     INST(mov, 0x5EC0, At<Register, 0>, At<Bx, 5>),
-    INST(mov, 0x5800, At<Register, 0>, At<Register, 5>),
+    INST(mov, 0x5800, At<Register, 0>, At<Register, 5>)
+        .EXCEPT(AtConst<Register, 0, 24>).EXCEPT(AtConst<Register, 0, 25>), // override by mma_mov
     INST(mov_repc_to, 0xD490, At<Ab, 5>),
     INST(mov_sv_to, 0x7D00, At<MemImm8, 0>),
     INST(mov_x0_to, 0xD493, At<Ab, 5>),
@@ -663,6 +664,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mma_my_my, 0x94E5, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, UX, SY, BAc, Add, PP, Add, PP),
     INST(mma_my_my, 0x94E6, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
     INST(mma_my_my, 0x94E7, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, UX, SY, BAc, Add, PP, Add, PA),
+
+    // [[[XXX_xy_XXX_xy_XXX_mov]]]
+    INST(mma_mov, 0x4FA0, At<Axh, 6>, At<Bxh, 2>, At<ArRn1, 1>, At<ArStep1, 0>, AtNamed<Ab, 3>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma_mov, 0xD3A0, At<Axh, 6>, At<Bxh, 2>, At<ArRn1, 1>, At<ArStep1, 0>, AtNamed<Ab, 3>, SX, SY, SX, SY, BAc, Add, PP, Sub, PP),
+    INST(mma_mov, 0x80D0, At<Axh, 9>, At<Bxh, 8>, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 10>, SX, SY, SX, SY, BSv, Add, PP, Sub, PP),
+    INST(mma_mov, 0x80D1, At<Axh, 9>, At<Bxh, 8>, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 10>, SX, SY, SX, SY, BSr, Add, PP, Sub, PP),
+    INST(mma_mov, 0x80D2, At<Axh, 9>, At<Bxh, 8>, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 10>, SX, SY, SX, SY, BSv, Add, PP, Add, PP),
+    INST(mma_mov, 0x80D3, At<Axh, 9>, At<Bxh, 8>, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 10>, SX, SY, SX, SY, BSr, Add, PP, Add, PP),
+    INST(mma_mov, 0x5818, At<ArRn2, 7>, At<ArStep1, 6>, AtNamed<Ax, 0>, SX, SY, SX, SY, BSv, Add, PP, Sub, PP),
+    INST(mma_mov, 0x5838, At<ArRn2, 7>, At<ArStep1, 6>, AtNamed<Ax, 0>, SX, SY, SX, SY, BSr, Add, PP, Sub, PP),
     };
 }
 

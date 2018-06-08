@@ -2828,6 +2828,34 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
+    void mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        u16 address = RnAddressAndModify(GetArRnUnit(w), GetArStep(ws));
+        u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(u.GetName()), false) >> 16) & 0xFFFF);
+        u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(v.GetName()), false) >> 16) & 0xFFFF);
+        mem.DataWrite(address, u_value);
+        mem.DataWrite(address + GetArOffset(ws), v_value);
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        std::swap(regs.x[0], regs.x[1]);
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
+    }
+
+    void mma_mov(ArRn2 w, ArStep1 ws, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        u16 address = RnAddressAndModify(GetArRnUnit(w), GetArStep(ws));
+        u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(a), false) >> 16) & 0xFFFF);
+        u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(CounterAcc(a)), false) >> 16) & 0xFFFF);
+        mem.DataWrite(address, u_value);
+        mem.DataWrite(address + GetArOffset(ws), v_value);
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        std::swap(regs.x[0], regs.x[1]);
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
