@@ -2848,8 +2848,9 @@ public:
         u16 address = RnAddressAndModify(GetArRnUnit(w), GetArStep(ws));
         u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(a), false) >> 16) & 0xFFFF);
         u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(CounterAcc(a)), false) >> 16) & 0xFFFF);
-        mem.DataWrite(address, u_value);
+        // keep the order like this
         mem.DataWrite(address + GetArOffset(ws), v_value);
+        mem.DataWrite(address, u_value);
         ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
         std::swap(regs.x[0], regs.x[1]);
         DoMultiplication(0, x0_sign, y0_sign);
