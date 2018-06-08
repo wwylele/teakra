@@ -1627,6 +1627,19 @@ public:
     std::string addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
         return D(MemARS(a, as), R(b), R(c));
     }
+
+    std::string mov_ext0(Imm8s a) {
+        return D("mov", a, "ext0");
+    }
+    std::string mov_ext1(Imm8s a) {
+        return D("mov", a, "ext1");
+    }
+    std::string mov_ext2(Imm8s a) {
+        return D("mov", a, "ext2");
+    }
+    std::string mov_ext3(Imm8s a) {
+        return D("mov", a, "ext3");
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

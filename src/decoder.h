@@ -378,7 +378,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov, 0x5E00, At<Imm16, 16>, At<Register, 0>),
     INST(mov_icr, 0x4F80, At<Imm5, 0>),
     INST(mov, 0x2500, At<Imm8s, 0>, At<Axh, 12>),
-    // ext move skippeda
+    INST(mov_ext0, 0x2900, At<Imm8s, 0>),
+    INST(mov_ext1, 0x2D00, At<Imm8s, 0>),
+    INST(mov_ext2, 0x3900, At<Imm8s, 0>),
+    INST(mov_ext3, 0x3D00, At<Imm8s, 0>),
     INST(mov, 0x2300, At<Imm8s, 0>, At<RnOld, 10>),
     INST(mov_sv, 0x0500, At<Imm8s, 0>),
     INST(mov, 0x2100, At<Imm8, 0>, At<Axl, 12>),

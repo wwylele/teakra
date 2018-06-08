@@ -2865,6 +2865,19 @@ public:
         SetAcc_NoSaturation(c.GetName(), result);
     }
 
+    void mov_ext0(Imm8s a) {
+        throw "unimplemented";
+    }
+    void mov_ext1(Imm8s a) {
+        throw "unimplemented";
+    }
+    void mov_ext2(Imm8s a) {
+        throw "unimplemented";
+    }
+    void mov_ext3(Imm8s a) {
+        throw "unimplemented";
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
