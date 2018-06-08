@@ -83,9 +83,8 @@ std::string DsmArpStepj(ArpStep a) {
     return "+arpsj" + std::to_string(a.storage);
 }
 
-template <typename RegT>
-std::string DsmReg(RegT a) {
-    switch (a.GetName()) {
+std::string DsmReg(RegName a) {
+    switch (a) {
     case RegName::a0: return "a0";
     case RegName::a0l: return "a0l";
     case RegName::a0h: return "a0h";
@@ -144,8 +143,13 @@ std::string DsmReg(RegT a) {
     case RegName::st0: return "st0";
     case RegName::st1: return "st1";
     case RegName::st2: return "st2";
-    default: return "???" + std::to_string((int)a.GetName());
+    default: return "???" + std::to_string((int)a);
     }
+}
+
+template <typename RegT>
+std::string R(RegT a) {
+    return DsmReg(a.GetName());
 }
 
 std::string Dsm(Alm alm) {
@@ -311,12 +315,6 @@ std::string Dsm(std::string t) {
 }
 
 template <typename RegT>
-struct R {
-    R(RegT reg) : reg(reg) {}
-    RegT reg;
-};
-
-template <typename RegT>
 struct MemR {
     MemR(RegT reg, StepZIDS step) : reg(reg), step(step) {}
     RegT reg;
@@ -363,13 +361,8 @@ struct MemG {
 };
 
 template <typename RegT>
-std::string Dsm(R<RegT> t) {
-    return DsmReg(t.reg);
-}
-
-template <typename RegT>
 std::string Dsm(MemR<RegT> t) {
-    return "[" + DsmReg(t.reg) + Dsm(t.step) + "]";
+    return "[" + R(t.reg) + Dsm(t.step) + "]";
 }
 
 template <typename ArRn, typename ArStep>
@@ -399,7 +392,7 @@ std::string Dsm(MemAR<ArRn> t) {
 
 template <typename Reg>
 std::string Dsm(MemG<Reg> t) {
-    return "[" + DsmReg(t.reg) + "]";
+    return "[" + R(t.reg) + "]";
 }
 
 std::string Dsm(CbsCond c) {
@@ -413,6 +406,27 @@ std::string Dsm(CbsCond c) {
 template <typename ... T>
 std::string D(T ... t) {
     return ((Dsm(t) + "    ") + ...);
+}
+
+std::string Mul(bool x_sign, bool y_sign) {
+    return std::string("mpy ") + (x_sign ? "sx " : "ux ") + (y_sign ? "sy" : "uy");
+}
+
+std::string PA(SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::string result;
+    switch(base) {
+    case SumBase::Zero: result = "0  "; break;
+    case SumBase::Acc:  result = "acc"; break;
+    case SumBase::Sv:   result = "sv "; break;
+    case SumBase::SvRnd:result = "svr"; break;
+    }
+    result += sub_p0 ? "-" : "+";
+    result += "p0";
+    result += p0_align ? "a" : " ";
+    result += sub_p1 ? "-" : "+";
+    result += "p1";
+    result += p1_align ? "a" : " ";
+    return result;
 }
 
 class Disassembler {
@@ -1552,6 +1566,12 @@ public:
     }
     std::string cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
         return D("cbs", MemARPSI(a, asi), MemARPSJ(a, asj), c);
+    }
+
+    std::string mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("x0<->x1", PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 };
 

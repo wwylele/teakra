@@ -10,8 +10,7 @@ struct Oprand {
 
 template<typename OprandT, unsigned pos>
 struct At {
-    using OprandType = OprandT;
-    static constexpr unsigned Bits = OprandType::Bits;
+    static constexpr unsigned Bits = OprandT::Bits;
     static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16)
      || (Bits == 16 && pos == 16), "!");
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
@@ -27,6 +26,18 @@ struct At {
     }
 };
 
+template <typename OprandT, unsigned pos>
+struct AtNamed {
+    using BaseType = At<OprandT, pos>;
+    static constexpr unsigned Bits = BaseType::Bits;
+    static constexpr u16 Mask = BaseType::Mask;
+    static constexpr bool NeedExpansion = BaseType::NeedExpansion;
+    static constexpr bool PassAsParameter = BaseType::PassAsParameter;
+    static constexpr auto Filter(u16 opcode, u16 expansion) {
+        return BaseType::Filter(opcode, expansion).GetName();
+    }
+};
+
 template <unsigned pos>
 struct Unused {
     static_assert(pos < 16);
@@ -37,7 +48,6 @@ struct Unused {
 
 template<typename OprandT, u16 value>
 struct Const {
-    using OprandType = OprandT;
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
@@ -47,6 +57,36 @@ struct Const {
         return oprand;
     }
 };
+
+enum class SumBase {
+    Zero,
+    Acc,
+    Sv,
+    SvRnd,
+};
+
+template<typename T, T value>
+struct Cn {
+    static constexpr u16 Mask = 0;
+    static constexpr bool NeedExpansion = false;
+    static constexpr bool PassAsParameter = true;
+    static constexpr T Filter(u16, u16) {
+        return value;
+    }
+};
+
+using SX = Cn<bool, true>;
+using UX = Cn<bool, false>;
+using SY = Cn<bool, true>;
+using UY = Cn<bool, false>;
+using BZr = Cn<SumBase, SumBase::Zero>;
+using BAc = Cn<SumBase, SumBase::Acc>;
+using BSv = Cn<SumBase, SumBase::Sv>;
+using BSr = Cn<SumBase, SumBase::SvRnd>;
+using PA = Cn<bool, true>;
+using PP = Cn<bool, false>;
+using Sub = Cn<bool, true>;
+using Add = Cn<bool, false>;
 
 struct NoParam {
     static constexpr u16 Mask = 0;

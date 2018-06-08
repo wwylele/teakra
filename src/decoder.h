@@ -73,7 +73,7 @@ struct VisitorFunctionWithoutFilter;
 
 template<typename V, typename ... OprandAtT>
 struct VisitorFunctionWithoutFilter<V, OprandList<OprandAtT...>> {
-    using type = typename V::instruction_return_type (V::*)(typename OprandAtT::OprandType...);
+    using type = typename V::instruction_return_type (V::*)(decltype(OprandAtT::Filter(0, 0))...);
 };
 
 template<typename V, typename ... OprandAtT>
@@ -575,6 +575,26 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(cbs, 0x9068, At<Axh, 0>, At<CbsCond, 8>),
     INST(cbs, 0xD49E, At<Axh, 8>, At<Bxh, 5>, At<CbsCond, 0>),
     INST(cbs, 0xD5C0, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, At<CbsCond, 3>),
+
+    // [[[XXX_xy_XXX_xy_XXX]]]
+    INST(mma, 0x4D88, AtNamed<Ax, 1>, SX, SY, SX, SY, BZr, Add, PP, Sub, PP),
+    INST(mma, 0xD49D, AtNamed<Bx, 5>, SX, SY, SX, SY, BZr, Add, PP, Sub, PP),
+    INST(mma, 0x5E24, AtNamed<Ab, 0>, SX, SY, SX, SY, BZr, Add, PP, Add, PP),
+    INST(mma, 0x8061, AtNamed<Ab, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma, 0x8071, AtNamed<Ab, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x8461, AtNamed<Ab, 8>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PP),
+    INST(mma, 0x8471, AtNamed<Ab, 8>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0xD484, AtNamed<Ab, 0>, SX, SY, SX, SY, BAc, Add, PA, Add, PA),
+    INST(mma, 0xD4A0, AtNamed<Ab, 0>, SX, SY, SX, SY, BAc, Add, PP, Sub, PP),
+    INST(mma, 0x4D89, AtNamed<Ax, 1>, SX, SY, SX, UY, BZr, Add, PP, Sub, PP),
+    INST(mma, 0xD59D, AtNamed<Bx, 5>, SX, SY, SX, UY, BZr, Add, PP, Sub, PP),
+    INST(mma, 0x5F24, AtNamed<Ab, 0>, SX, SY, SX, UY, BZr, Add, PP, Add, PP),
+    INST(mma, 0x8069, AtNamed<Ab, 8>, SX, SY, SX, UY, BAc, Add, PP, Add, PP),
+    INST(mma, 0x8079, AtNamed<Ab, 8>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x8469, AtNamed<Ab, 8>, SX, SY, SX, UY, BAc, Sub, PP, Sub, PP),
+    INST(mma, 0x8479, AtNamed<Ab, 8>, SX, SY, SX, UY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0xD584, AtNamed<Ab, 0>, SX, SY, SX, UY, BAc, Add, PA, Add, PA),
+    INST(mma, 0xD5A0, AtNamed<Ab, 0>, SX, SY, SX, UY, BAc, Add, PP, Sub, PP),
     };
 }
 

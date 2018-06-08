@@ -255,13 +255,6 @@ public:
         return SignExtend<40>(result);
     }
 
-    enum class SumBase {
-        Zero,
-        Acc,
-        Sv,
-        SvRnd,
-    };
-
     struct ProductSumConfig {
         bool align;
         bool sub;
@@ -295,6 +288,8 @@ public:
         case SumBase::SvRnd:
             value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
             break;
+        default:
+            throw "?";
         }
         u64 result = AddSub(value_c, value_a, p0.sub);
         u16 temp_c = regs.fc[0];
@@ -2774,6 +2769,14 @@ public:
         u16 v = mem.DataRead(aj);
         u16 r = ai;
         Cbs(u, v, r, c);
+    }
+
+    void mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        std::swap(regs.x[0], regs.x[1]);
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
     }
 private:
     RegisterState& regs;
