@@ -674,6 +674,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mma_mov, 0x80D3, At<Axh, 9>, At<Bxh, 8>, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 10>, SX, SY, SX, SY, BSr, Add, PP, Add, PP),
     INST(mma_mov, 0x5818, At<ArRn2, 7>, At<ArStep1, 6>, AtNamed<Ax, 0>, SX, SY, SX, SY, BSv, Add, PP, Sub, PP),
     INST(mma_mov, 0x5838, At<ArRn2, 7>, At<ArStep1, 6>, AtNamed<Ax, 0>, SX, SY, SX, SY, BSr, Add, PP, Sub, PP),
+
+    INST(addhp, 0x90E0, At<ArRn2, 2>, At<ArStep2, 0>, At<Px, 4>, At<Ax, 8>),
     };
 }
 

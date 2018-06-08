@@ -1623,6 +1623,10 @@ public:
             PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
             Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
+
+    std::string addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
+        return D(MemARS(a, as), R(b), R(c));
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {

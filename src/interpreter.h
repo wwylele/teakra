@@ -2857,6 +2857,14 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
+    void addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
+        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
+        u64 value = SignExtend<32, u64>(((u64)mem.DataRead(address) << 16) | 0x8000);
+        u64 p = ProductToBus40(b.GetName());
+        u64 result = AddSub(value, p, false);
+        SetAcc_NoSaturation(c.GetName(), result);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;
