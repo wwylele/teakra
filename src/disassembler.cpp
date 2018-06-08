@@ -286,18 +286,8 @@ std::string Dsm(Address16 addr) {
     return ToHex((u32)(addr.storage));
 }
 
-std::string Dsm(Address18_16 addr_low, Address18_2 addr_high) {
+std::string A18(Address18_16 addr_low, Address18_2 addr_high) {
     return ToHex((u32)(addr_low.storage + (addr_high.storage << 16)));
-}
-
-struct A18 {
-    A18(Address18_16 low, Address18_2 high) : low(low), high(high) {}
-    Address18_16 low;
-    Address18_2 high;
-};
-
-std::string Dsm(A18 addr) {
-    return Dsm(addr.low, addr.high);
 }
 
 std::string Dsm(StepZIDS step) {
@@ -315,84 +305,38 @@ std::string Dsm(std::string t) {
 }
 
 template <typename RegT>
-struct MemR {
-    MemR(RegT reg, StepZIDS step) : reg(reg), step(step) {}
-    RegT reg;
-    StepZIDS step;
-};
-
-template <typename ArRn, typename ArStep>
-struct MemARS {
-    MemARS(ArRn reg, ArStep step) : reg(reg), step(step) {}
-    ArRn reg;
-    ArStep step;
-};
-
-struct MemARSAlt {
-    MemARSAlt(ArRn1 reg, ArStep1Alt step) : reg(reg), step(step) {}
-    ArRn1 reg;
-    ArStep1Alt step;
-};
-
-template <typename ArpRn, typename ArpStep>
-struct MemARPSI {
-    MemARPSI(ArpRn reg, ArpStep step) : reg(reg), step(step) {}
-    ArpRn reg;
-    ArpStep step;
-};
-
-template <typename ArpRn, typename ArpStep>
-struct MemARPSJ {
-    MemARPSJ(ArpRn reg, ArpStep step) : reg(reg), step(step) {}
-    ArpRn reg;
-    ArpStep step;
-};
-
-template <typename ArRn>
-struct MemAR {
-    MemAR(ArRn reg) : reg(reg){}
-    ArRn reg;
-};
-
-template <typename Reg>
-struct MemG {
-    MemG(Reg reg) : reg(reg){}
-    Reg reg;
-};
-
-template <typename RegT>
-std::string Dsm(MemR<RegT> t) {
-    return "[" + R(t.reg) + Dsm(t.step) + "]";
+std::string MemR(RegT reg, StepZIDS step) {
+    return "[" + R(reg) + Dsm(step) + "]";
 }
 
 template <typename ArRn, typename ArStep>
-std::string Dsm(MemARS<ArRn, ArStep> t) {
-    return "[" + DsmArRn(t.reg) + DsmArStep(t.step) + "]";
+std::string MemARS(ArRn reg, ArStep step)  {
+    return "[" + DsmArRn(reg) + DsmArStep(step) + "]";
 }
 
-std::string Dsm(MemARSAlt t) {
-    return "[" + DsmArRn(t.reg) + DsmArStepAlt(t.step) + "]";
+std::string MemARSAlt(ArRn1 reg, ArStep1Alt step) {
+    return "[" + DsmArRn(reg) + DsmArStepAlt(step) + "]";
 }
 
 
 template <typename ArpRn, typename ArpStep>
-std::string Dsm(MemARPSI<ArpRn, ArpStep> t) {
-    return "[" + DsmArpRni(t.reg) + DsmArpStepi(t.step) + "]";
+std::string MemARPSI(ArpRn reg, ArpStep step)  {
+    return "[" + DsmArpRni(reg) + DsmArpStepi(step) + "]";
 }
 
 template <typename ArpRn, typename ArpStep>
-std::string Dsm(MemARPSJ<ArpRn, ArpStep> t) {
-    return "[" + DsmArpRnj(t.reg) + DsmArpStepj(t.step) + "]";
+std::string MemARPSJ(ArpRn reg, ArpStep step) {
+    return "[" + DsmArpRnj(reg) + DsmArpStepj(step) + "]";
 }
 
 template <typename ArRn>
-std::string Dsm(MemAR<ArRn> t) {
-    return "[" + DsmArRn(t.reg) + "]";
+std::string MemAR(ArRn reg) {
+    return "[" + DsmArRn(reg) + "]";
 }
 
 template <typename Reg>
-std::string Dsm(MemG<Reg> t) {
-    return "[" + R(t.reg) + "]";
+std::string MemG(Reg reg) {
+    return "[" + R(reg) + "]";
 }
 
 std::string Dsm(CbsCond c) {
