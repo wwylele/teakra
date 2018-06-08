@@ -2797,6 +2797,37 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
+    void mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        std::swap(regs.x[0], regs.x[1]);
+        regs.y[0] = mem.DataRead(RnAddressAndModify(GetArRnUnit(y), GetArStep(ys)));
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
+    }
+
+    void mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        std::swap(regs.x[0], regs.x[1]);
+        regs.y[1] = mem.DataRead(RnAddressAndModify(GetArRnUnit(y), GetArStep(ys)));
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
+    }
+
+    void mma_my_my(ArRn1 x, ArStep1 xs, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        u16 address = RnAddressAndModify(GetArRnUnit(x), GetArStep(xs));
+        regs.x[0] = mem.DataRead(address);
+        regs.x[1] = mem.DataRead(address + GetArOffset(xs));
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;

@@ -640,6 +640,29 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     INST(mma, 0xC800, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
     INST(mma, 0xC900, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PP),
+
+    // [[[XXX_mx_XXX_xy_XXX]]]
+    INST(mma_mx_xy, 0xD5E0, At<ArRn1, 1>, At<ArStep1, 0>, AtNamed<Ax, 3>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PP),
+    INST(mma_mx_xy, 0xD5E4, At<ArRn1, 1>, At<ArStep1, 0>, AtNamed<Ax, 3>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+
+    // [[[XXX_xy_XXX_mx_XXX]]]
+    INST(mma_xy_mx, 0x8862, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PP),
+    INST(mma_xy_mx, 0x8A62, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+
+    // [[[XXX_my_XXX_my_XXX]]]
+    INST(mma_my_my, 0x4DA0, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 4>, SX, SY, SX, UY, BAc, Sub, PP, Sub, PP),
+    INST(mma_my_my, 0x4DA1, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 4>, SX, SY, SX, UY, BAc, Sub, PP, Sub, PA),
+    INST(mma_my_my, 0x4DA2, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 4>, SX, SY, SX, UY, BAc, Add, PP, Add, PP),
+    INST(mma_my_my, 0x4DA3, At<ArRn1, 3>, At<ArStep1, 2>, AtNamed<Ax, 4>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+
+    INST(mma_my_my, 0x94E0, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PP),
+    INST(mma_my_my, 0x94E1, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, UX, SY, BAc, Sub, PP, Sub, PP),
+    INST(mma_my_my, 0x94E2, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PA),
+    INST(mma_my_my, 0x94E3, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, UX, SY, BAc, Sub, PP, Sub, PA),
+    INST(mma_my_my, 0x94E4, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma_my_my, 0x94E5, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, UX, SY, BAc, Add, PP, Add, PP),
+    INST(mma_my_my, 0x94E6, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma_my_my, 0x94E7, At<ArRn1, 4>, At<ArStep1, 3>, AtNamed<Ax, 8>, SX, SY, UX, SY, BAc, Add, PP, Add, PA),
     };
 }
 

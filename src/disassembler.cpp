@@ -1578,10 +1578,34 @@ public:
     std::string mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        return D("x<-", MemARPSI(xy, i), MemARPSI(xy, j),
+        return D("xy<-", MemARPSI(xy, i), MemARPSI(xy, j),
             PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
             Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign),
             dmodi ? "dmodi" : "", dmodj? "dmodj" : "");
+    }
+
+    std::string mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("x0<->x1, y0<-", MemARS(y, ys),
+            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    }
+
+    std::string mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("x0<->x1, y1<-", MemARS(y, ys),
+            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    }
+
+    std::string mma_my_my(ArRn1 x, ArStep1 xs, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("x<-", MemARS(x, xs),
+            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 };
 
