@@ -236,7 +236,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     // <<< Bitrev >>>
     INST(bitrev, 0x5EB8, At<Rn, 0>),
-    INST(bitrev_dbrv, 0xD7B8, At<Rn, 0>),
+    INST(bitrev_dbrv, 0xD7E8, At<Rn, 0>),
     INST(bitrev_ebrv, 0xD7E0, At<Rn, 0>),
 
     // <<< Branching >>>
@@ -595,6 +595,51 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mma, 0x8479, AtNamed<Ab, 8>, SX, SY, SX, UY, BAc, Sub, PP, Sub, PA),
     INST(mma, 0xD584, AtNamed<Ab, 0>, SX, SY, SX, UY, BAc, Add, PA, Add, PA),
     INST(mma, 0xD5A0, AtNamed<Ab, 0>, SX, SY, SX, UY, BAc, Add, PP, Sub, PP),
+
+    // [[[XXX_mm_XXX_mm_XXX]]]
+    INST(mma, 0xCA00, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, UX, SY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0xCA01, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, SX, UY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0xCA02, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, UX, SY, BAc, Sub, PA, Sub, PA),
+    INST(mma, 0xCA03, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, SX, UY, BAc, Sub, PA, Sub, PA),
+    INST(mma, 0xCA04, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, UX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0xCA05, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, SX, UY, BAc, Add, PP, Add, PA),
+    INST(mma, 0xCA06, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, UX, SY, BAc, Add, PA, Add, PA),
+    INST(mma, 0xCA07, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, UX, SY, SX, UY, BAc, Add, PA, Add, PA),
+    INST(mma, 0xCB00, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, UX, SY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0xCB01, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, UY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0xCB02, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, UX, SY, BAc, Sub, PA, Sub, PA),
+    INST(mma, 0xCB03, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, UY, BAc, Sub, PA, Sub, PA),
+    INST(mma, 0xCB04, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, UX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0xCB05, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+    INST(mma, 0xCB06, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, UX, SY, BAc, Add, PA, Add, PA),
+    INST(mma, 0xCB07, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, UY, BAc, Add, PA, Add, PA),
+
+    INST(mma, 0x0D20, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, DMod, EMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x0D30, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, EMod, DMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x4B50, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, DMod, DMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+
+    INST(mma, 0x9861, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, EMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma, 0x9862, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, EMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma, 0x9863, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+
+    INST(mma, 0x98E1, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, EMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x98E2, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, EMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x98E3, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+
+    INST(mma, 0x80C8, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, EMod, EMod, AtNamed<Ab, 10>, SX, SY, SX, SY, BAc, Add, PP, Sub, PP),
+    INST(mma, 0x81C8, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, EMod, EMod, AtNamed<Ab, 10>, SX, SY, SX, SY, BAc, Add, PP, Sub, PA),
+    INST(mma, 0x82C8, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, EMod, EMod, AtNamed<Ab, 10>, SX, SY, SX, SY, BZr, Add, PP, Add, PP),
+    INST(mma, 0x83C8, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, EMod, EMod, AtNamed<Ab, 10>, SX, SY, SX, SY, BZr, Add, PP, Add, PA),
+
+    INST(mma, 0x80C2, At<ArpRn1, 0>, At<ArpStep1, 8>, At<ArpStep1, 9>, EMod, EMod, AtNamed<Ab, 10>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x49C8, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, EMod, EMod, AtNamed<Ab, 4>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PA),
+    INST(mma, 0x00C0, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, EMod, EMod, AtNamed<Ab, 4>, SX, SY, SX, SY, BZr, Add, PP, Sub, PP),
+    INST(mma, 0x00C1, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, EMod, EMod, AtNamed<Ab, 4>, SX, SY, SX, SY, BZr, Add, PP, Sub, PA),
+    INST(mma, 0xD7A0, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, EMod, EMod, AtNamed<Ax, 4>, SX, SY, SX, SY, BSv, Add, PP, Add, PP),
+    INST(mma, 0xD7A1, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, EMod, EMod, AtNamed<Ax, 4>, SX, SY, SX, SY, BSr, Add, PP, Add, PP),
+
+    INST(mma, 0xC800, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma, 0xC900, At<ArpRn2, 4>, At<ArpStep2, 0>, At<ArpStep2, 2>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, SY, BAc, Sub, PP, Sub, PP),
     };
 }
 

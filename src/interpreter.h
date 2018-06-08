@@ -2778,6 +2778,25 @@ public:
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
     }
+
+    template<typename ArpRnX, typename ArpStepX>
+    void mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        auto [ui, uj] = GetArpRnUnit(xy);
+        auto [si, sj] = GetArpStep(i, j);
+        auto [oi, oj] = GetArpOffset(i, j);
+        u16 x = RnAddressAndModify(ui, si, dmodi);
+        u16 y = RnAddressAndModify(uj, sj, dmodj);
+        regs.x[0] = mem.DataRead(x);
+        regs.y[0] = mem.DataRead(y);
+        regs.x[1] = mem.DataRead(x + oi);
+        regs.y[1] = mem.DataRead(y + oj);
+        DoMultiplication(0, x0_sign, y0_sign);
+        DoMultiplication(1, x1_sign, y1_sign);
+    }
+
 private:
     RegisterState& regs;
     MemoryInterface& mem;

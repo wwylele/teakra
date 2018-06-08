@@ -87,6 +87,8 @@ using PA = Cn<bool, true>;
 using PP = Cn<bool, false>;
 using Sub = Cn<bool, true>;
 using Add = Cn<bool, false>;
+using EMod = Cn<bool, false>;
+using DMod = Cn<bool, true>;
 
 struct NoParam {
     static constexpr u16 Mask = 0;

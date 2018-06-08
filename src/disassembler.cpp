@@ -1573,6 +1573,16 @@ public:
         return D("x0<->x1", PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
             Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
+
+    template<typename ArpRnX, typename ArpStepX>
+    std::string mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
+             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("x<-", MemARPSI(xy, i), MemARPSI(xy, j),
+            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign),
+            dmodi ? "dmodi" : "", dmodj? "dmodj" : "");
+    }
 };
 
 bool NeedExpansion(std::uint16_t opcode) {
