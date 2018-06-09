@@ -7,6 +7,7 @@
 #include "common_types.h"
 #include "oprand.h"
 
+namespace Teakra {
 
 struct RegisterState {
     void Reset() {
@@ -108,19 +109,17 @@ struct RegisterState {
     std::array<u16, 2> ou{}; // user output pins
     std::array<u16, 2> iu{}; // user input pins
     u16 page = 0; // 8-bit, Higher part of MemImm8 address
-    u16 bankstep = 0; // 1 bit. If set, stepi/j0 will be exchanged along with cfgi/j in banke
-    u16 mod1_unk = 1; // 3-bit
+    u16 bankstep = 0; // 1 bit. If set, stepi/j0 will be exchanged along with cfgi/j in banke, and use stepi/j0 more for steping
+    u16 legacy_mod = 1; // 1-bit, step/mod method. 0 - TeakLiteII; 1 - legacy TeakLite
+    u16 r3z = 0; // 1-bit. If set, cause r3 = 0 when steping r3
+    u16 r7z = 0; // 1-bit. If set, cause r7 = 0 when steping r7
     u16 mod3_56 = 0;
     u16 mod3_D = 1;
     u16 pc_endian = 1;
     u16 mod3_F = 1;
 
-    // m=0, ms=0: use stepi/j (no modulo)
-    // m=1, ms=0: use stepi/j with modulo
-    // m=0, ms=1: use stepi0/j0 (no modulo)
-    // m=1, ms=1: use stepi/j  (no modulo)??
     std::array<u16, 8> m{};
-    std::array<u16, 8> ms{};
+    std::array<u16, 8> brv{};
 
     struct BlockRepeatFrame {
         u32 start = 0;
@@ -142,8 +141,8 @@ struct RegisterState {
     // 3: +s
     // 4: +2
     // 5: -2
-    // 6: +2 ?
-    // 7: -2 ?
+    // 6: +2 legacy
+    // 7: -2 legacy
     std::array<u16, 4> arstep{{1, 4, 5, 3}}, arpstepi{{1, 4, 5, 3}}, arpstepj{{1, 4, 5, 3}};
 
     // 2 bits each
@@ -246,9 +245,9 @@ struct RegisterState {
         ShadowSwapArrayRegister<2, &RegisterState::ps>,
         ShadowSwapRegister<&RegisterState::page>,
         ShadowSwapRegister<&RegisterState::bankstep>,
-        ShadowSwapRegister<&RegisterState::mod1_unk>,
+        ShadowSwapRegister<&RegisterState::legacy_mod>,
         ShadowSwapArrayRegister<8, &RegisterState::m>,
-        ShadowSwapArrayRegister<8, &RegisterState::ms>,
+        ShadowSwapArrayRegister<8, &RegisterState::brv>,
         ShadowSwapArrayRegister<3, &RegisterState::im>, // ?
         ShadowSwapRegister<&RegisterState::vim> // ?
     > shadow_swap_registers;
@@ -388,8 +387,8 @@ struct UnkRedirector {
         return self->*target;
     }
     static void Set(RegisterState* self, u16 value) {
-        if (value != Get(self))
-            printf("warning: Setting %s = 0x%X\n", str, value);
+        //if (value != Get(self))
+        //    printf("warning: Setting %s = 0x%X\n", str, value);
         self->*target = value;
     }
 };
@@ -508,12 +507,13 @@ using mod0 = PseudoRegister<
 
     ProxySlot<ArrayRedirector<2, &RegisterState::ps, 1>, 13, 2>
 >;
-inline const char mod1_unk_name[] = "mod1.unk";
 using mod1 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::page>, 0, 8>,
 
     ProxySlot<Redirector<&RegisterState::bankstep>, 12, 1>,
-    ProxySlot<UnkRedirector<&RegisterState::mod1_unk, mod1_unk_name>, 13, 3>
+    ProxySlot<Redirector<&RegisterState::legacy_mod>, 13, 1>,
+    ProxySlot<Redirector<&RegisterState::r3z>, 14, 1>,
+    ProxySlot<Redirector<&RegisterState::r7z>, 15, 1>
 >;
 using mod2 = PseudoRegister<
     ProxySlot<ArrayRedirector<8, &RegisterState::m, 0>, 0, 1>,
@@ -524,14 +524,14 @@ using mod2 = PseudoRegister<
     ProxySlot<ArrayRedirector<8, &RegisterState::m, 5>, 5, 1>,
     ProxySlot<ArrayRedirector<8, &RegisterState::m, 6>, 6, 1>,
     ProxySlot<ArrayRedirector<8, &RegisterState::m, 7>, 7, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 0>, 8, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 1>, 9, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 2>, 10, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 3>, 11, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 4>, 12, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 5>, 13, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 6>, 14, 1>,
-    ProxySlot<ArrayRedirector<8, &RegisterState::ms, 7>, 15, 1>
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 0>, 8, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 1>, 9, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 2>, 10, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 3>, 11, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 4>, 12, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 5>, 13, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 6>, 14, 1>,
+    ProxySlot<ArrayRedirector<8, &RegisterState::brv, 7>, 15, 1>
 >;
 inline const char mod3_vic_name[] = "mod3.vic";
 inline const char mod3_vim_name[] = "mod3.vim";
@@ -633,3 +633,5 @@ using arp0 = arp<0>;
 using arp1 = arp<1>;
 using arp2 = arp<2>;
 using arp3 = arp<3>;
+
+} // namespace Teakra

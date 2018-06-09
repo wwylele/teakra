@@ -21,6 +21,9 @@ add_library(teakra
     register.h
     shared_memory.h
     teakra.cpp
+    test.h
+    test_generator.cpp
+    test_generator.h
 )
 
 create_target_directory_groups(teakra)
@@ -41,3 +44,5 @@ target_include_directories(teakra_tests PRIVATE .)
 target_compile_options(teakra_tests PRIVATE ${TEAKRA_CXX_FLAGS})
 
 add_subdirectory(coff_reader)
+add_subdirectory(test_generator)
+add_subdirectory(test_verifier)

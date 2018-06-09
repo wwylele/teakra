@@ -32,3 +32,11 @@ constexpr T SignExtend(const T value) {
     static_assert(bit_count <= BitSize<T>(), "bit_count larger than bitsize of T");
     return SignExtend(value, bit_count);
 }
+
+inline constexpr u16 BitReverse(u16 value) {
+    u16 result = 0;
+    for (u32 i = 0; i < 16; ++i) {
+        result |= ((value >> i) & 1) << (15 - i);
+    }
+    return result;
+}

@@ -106,14 +106,14 @@ struct AtConst {
 
 //////////////////////////////////////////////////////////////////////////////
 
-constexpr unsigned log2(unsigned n) {
+constexpr unsigned intlog2(unsigned n) {
     if (n % 2 != 0)
         throw "wtf";
-    return (n == 2) ? 1 : 1 + log2(n / 2);
+    return (n == 2) ? 1 : 1 + intlog2(n / 2);
 }
 
 template <typename EnumT, EnumT ... names>
-struct EnumOprand : Oprand<log2(sizeof...(names))> {
+struct EnumOprand : Oprand<intlog2(sizeof...(names))> {
     static constexpr EnumT values[] = {names...};
     constexpr EnumT GetName() const {
         return values[this->storage];
@@ -121,7 +121,7 @@ struct EnumOprand : Oprand<log2(sizeof...(names))> {
 };
 
 template <typename EnumT>
-struct EnumAllOprand : Oprand<log2((unsigned)EnumT::EnumEnd)> {
+struct EnumAllOprand : Oprand<intlog2((unsigned)EnumT::EnumEnd)> {
     constexpr EnumT GetName() const {
         return (EnumT)this->storage;
     }
@@ -360,6 +360,8 @@ enum class StepValue {
     PlusStep,
     Increase2,
     Decrease2,
+    Increase2Legacy,
+    Decrease2Legacy,
 };
 
 using StepZIDS = EnumOprand<StepValue,

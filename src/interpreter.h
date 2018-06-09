@@ -126,10 +126,16 @@ public:
     void norm(Ax a, Rn b, StepZIDS bs) {
         if (regs.fn == 0) {
             u64 value = GetAcc(a.GetName());
-            value = ShiftBus40(value, 1);
+            regs.fv = value != SignExtend<39>(value);
+            if (regs.fv) {
+                regs.flv = 1;
+            }
+            value <<= 1;
+            regs.fc[0] = (value & ((u64)1 << 40)) != 0;
+            value = SignExtend<40>(value);
             SetAcc_NoSaturation(a.GetName(), value);
             u32 unit = GetRnUnit(b.GetName());
-            RnAddressAndModify(unit, bs.GetName());
+            RnAndModify(unit, bs.GetName());
             regs.fr = regs.r[unit] == 0;
         }
     }
@@ -225,9 +231,9 @@ public:
         // Am I doing it right?
         u32 x = regs.x[unit];
         u32 y = regs.y[unit];
-        if (regs.ym == 1 || regs.ym == 3) {
+        if (regs.ym == 1 || (regs.ym == 3 && unit == 0)) {
             y >>= 8; // no sign extension?
-        } else if (regs.ym == 2) {
+        } else if (regs.ym == 2 || (regs.ym == 3 && unit == 1)) {
             y &= 0xFF;
         }
         if (x_sign)
@@ -484,19 +490,23 @@ public:
         switch (op.GetName()) {
         case AlbOp::Set: {
             result = a | b;
+            regs.fm = result >> 15;
             break;
         }
         case AlbOp::Rst: {
             result = ~a & b;
+            regs.fm = result >> 15;
             break;
         }
         case AlbOp::Chng: {
             result = a ^ b;
+            regs.fm = result >> 15;
             break;
         }
         case AlbOp::Addv: {
             u32 r = a + b;
             regs.fc[0] = (r >> 16) != 0;
+            regs.fm = (SignExtend<16, u32>(b) + SignExtend<16, u32>(a)) >> 31; // !
             result = r & 0xFFFF;
             break;
         }
@@ -512,12 +522,12 @@ public:
         case AlbOp::Subv: {
             u32 r = b - a;
             regs.fc[0] = (r >> 16) != 0;
+            regs.fm = (SignExtend<16, u32>(b) - SignExtend<16, u32>(a)) >> 31; // !
             result = r & 0xFFFF;
             break;
         }
         default: throw "???";
         }
-        regs.fm = result >> 15;
         regs.fz = result == 0;
         return result;
     }
@@ -572,14 +582,14 @@ public:
             case RegName::a0: case RegName::a1:
                 throw "weird effect";
             // operation on accumulators doesn't go through regular bus with flag and saturation
-            case RegName::a0l: regs.a[0].value = (regs.a[0].value & 0xFF'FFFF'0000) | result; break;
-            case RegName::a1l: regs.a[1].value = (regs.a[1].value & 0xFF'FFFF'0000) | result; break;
-            case RegName::b0l: regs.b[0].value = (regs.b[0].value & 0xFF'FFFF'0000) | result; break;
-            case RegName::b1l: regs.b[1].value = (regs.b[1].value & 0xFF'FFFF'0000) | result; break;
-            case RegName::a0h: regs.a[0].value = (regs.a[0].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::a1h: regs.a[1].value = (regs.a[1].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::b0h: regs.b[0].value = (regs.b[0].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::b1h: regs.b[1].value = (regs.b[1].value & 0xFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::a0l: regs.a[0].value = (regs.a[0].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::a1l: regs.a[1].value = (regs.a[1].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::b0l: regs.b[0].value = (regs.b[0].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::b1l: regs.b[1].value = (regs.b[1].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::a0h: regs.a[0].value = (regs.a[0].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::a1h: regs.a[1].value = (regs.a[1].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::b0h: regs.b[0].value = (regs.b[0].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::b1h: regs.b[1].value = (regs.b[1].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
             default:
                 RegFromBus16(b.GetName(), result); // including RegName:p (p0h)
             }
@@ -697,9 +707,9 @@ public:
         auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(j) + mem.DataRead(i);
+        u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(j + oj) + mem.DataRead(i + oi);
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void add_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -708,20 +718,20 @@ public:
         auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(j) + mem.DataRead(i);
+        u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(j + oj) - mem.DataRead(i + oi);
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
-       auto [ui, uj] = GetArpRnUnit(a);
+        auto [ui, uj] = GetArpRnUnit(a);
         auto [si, sj] = GetArpStep(asi, asj);
         auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(j) - mem.DataRead(i);
+        u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(j + oj) + mem.DataRead(i + oi);
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -730,9 +740,9 @@ public:
         auto [oi, oj] = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(j) - mem.DataRead(i);
+        u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(j + oj) - mem.DataRead(i + oi);
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
@@ -740,9 +750,9 @@ public:
         auto s = GetArStep(as);
         u16 o = GetArOffset(as);
         u16 address = RnAddressAndModify(u, s);
-        u16 high = mem.DataRead(address) + regs.sv;
+        u64 high = SignExtend<16, u64>(mem.DataRead(address)) + SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(address + o) - regs.sv;
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
@@ -750,9 +760,9 @@ public:
         auto s = GetArStep(as);
         u16 o = GetArOffset(as);
         u16 address = RnAddressAndModify(u, s);
-        u16 high = mem.DataRead(address) - regs.sv;
+        u64 high = SignExtend<16, u64>(mem.DataRead(address)) - SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(address + o) + regs.sv;
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -762,9 +772,9 @@ public:
         std::tie(oi, std::ignore) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(i) - regs.sv;
+        u64 high = SignExtend<16, u64>(mem.DataRead(i)) - SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(i + oi) + regs.sv;
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
         regs.sv = mem.DataRead(j);
     }
@@ -775,9 +785,9 @@ public:
         std::tie(std::ignore, oj) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(j) - regs.sv;
+        u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(j + oj) + regs.sv;
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
         regs.sv = mem.DataRead(i);
     }
@@ -788,9 +798,9 @@ public:
         std::tie(oi, std::ignore) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(i) + regs.sv;
+        u64 high = SignExtend<16, u64>(mem.DataRead(i)) + SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(i + oi) - regs.sv;
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
         SetAcc_Simple(b.GetName(), result);
         mem.DataWrite(j, exchange);
@@ -802,9 +812,9 @@ public:
         std::tie(std::ignore, oj) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u16 high = mem.DataRead(j) + regs.sv;
+        u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(j + oj) - regs.sv;
-        u64 result = SignExtend<32>(((u64)high << 16) | low);
+        u64 result = (high << 16) | low;
         u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
         SetAcc_Simple(b.GetName(), result);
         mem.DataWrite(i, exchange);
@@ -814,23 +824,19 @@ public:
         if (regs.ConditionPass(cond)) {
             switch (op) {
             case ModaOp::Shr: {
-                u64 result = ShiftBus40(GetAcc(a), 0xFFFF);
-                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                ShiftBus40(GetAcc(a), 0xFFFF, a);
                 break;
             }
             case ModaOp::Shr4: {
-                u64 result = ShiftBus40(GetAcc(a), 0xFFFC);
-                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                ShiftBus40(GetAcc(a), 0xFFFC, a);
                 break;
             }
             case ModaOp::Shl: {
-                u64 result = ShiftBus40(GetAcc(a), 1);
-                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                ShiftBus40(GetAcc(a), 1, a);
                 break;
             }
             case ModaOp::Shl4: {
-                u64 result = ShiftBus40(GetAcc(a), 4);
-                SetAcc(a, result, /*No saturation if logic shift*/regs.s == 1);
+                ShiftBus40(GetAcc(a), 4, a);
                 break;
             }
             case ModaOp::Ror: {
@@ -925,15 +931,26 @@ public:
         u64 result = AddSub(value, 0x8000, false);
         SetAcc(a.GetName(), result);
     }
+
+    void FilterDoubleClr(Ab& a, Ab& b) {
+        if (a.storage == 0) {
+            b.storage = 1;
+        } else if (a.storage == 1) {
+            b.storage = 0;
+        } else if (a.storage == 2) {
+            if (b.storage == 2)
+                b.storage = 3;
+        } else
+            b.storage = b.storage == 1 ? 1 : 0;
+    }
+
     void clr(Ab a, Ab b) {
-        if (b.storage == a.storage)
-            b.storage = (b.storage + 1) % 4;
+        FilterDoubleClr(a, b);
         SetAcc(a.GetName(), 0);
         SetAcc(b.GetName(), 0);
     }
     void clrr(Ab a, Ab b) {
-        if (b.storage == a.storage)
-            b.storage = (b.storage + 1) % 4;
+        FilterDoubleClr(a, b);
         SetAcc(a.GetName(), 0x8000);
         SetAcc(b.GetName(), 0x8000);
     }
@@ -1054,27 +1071,19 @@ public:
         regs.SwapArp(a.storage);
     }
 
-    void BitReverse(u32 unit) {
-        u16 value = regs.r[unit];
-        u16 result = 0;
-        for (u32 i = 0; i < 16; ++i) {
-            result |= ((value >> i) & 1) << (15 - i);
-        }
-        regs.r[unit] = result;
-    }
     void bitrev(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
-        BitReverse(unit);
+        regs.r[unit] = BitReverse(regs.r[unit]);
     }
     void bitrev_dbrv(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
-        BitReverse(unit);
-        regs.ms[unit] = 0; // what does this do with bitrev, though?
+        regs.r[unit] = BitReverse(regs.r[unit]);
+        regs.brv[unit] = 0;
     }
     void bitrev_ebrv(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
-        BitReverse(unit);
-        regs.ms[unit] = 1;
+         regs.r[unit] = BitReverse(regs.r[unit]);
+        regs.brv[unit] = 1;
     }
 
     void br(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
@@ -1196,7 +1205,7 @@ public:
     }
     void load_ps01(Imm4 a) {
         regs.ps[0] = a.storage & 3;
-        regs.ps[0] = a.storage >> 2;
+        regs.ps[1] = a.storage >> 2;
     }
 
     void push(Imm16 a) {
@@ -1204,7 +1213,7 @@ public:
     }
     void push(Register a) {
         // need test: p0, aX
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         mem.DataWrite(--regs.sp, value);
     }
     void push(Abe a) {
@@ -1340,13 +1349,13 @@ public:
         if (regs.ConditionPass(cond)) {
             u64 value = GetAcc(a.GetName());
             u16 sv = regs.sv;
-            SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+            ShiftBus40(value, sv, b.GetName());
         }
     }
     void shfi(Ab a, Ab b, Imm6s s) {
         u64 value = GetAcc(a.GetName());
         u16 sv = SignExtend<6, u16>(s.storage);
-        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        ShiftBus40(value, sv, b.GetName());
     }
 
     void tst4b(ArRn2 b, ArStep2 bs) {
@@ -1357,9 +1366,24 @@ public:
         regs.fz = regs.fc[0] = (value >> bit) & 1;
     }
     void tst4b(ArRn2 b, ArStep2 bs, Ax c) {
-        tst4b(b, bs);
-        // why?
-        SetAcc_Simple(c.GetName(), GetAcc(RegName::a0));
+        u64 a = GetAcc(RegName::a0);
+        u64 bit = a & 0xF;
+        u16 fv = regs.fv;
+        u16 flv = regs.flv;
+        u16 fm = regs.fm;
+        u16 fn = regs.fn;
+        u16 fe = regs.fe;
+        u16 sv = regs.sv;
+        ShiftBus40(a, sv, c.GetName());
+        regs.fc[1] = regs.fc[0];
+        regs.fv = fv;
+        regs.flv = flv;
+        regs.fm = fm;
+        regs.fn = fn;
+        regs.fe = fe;
+        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
+        u16 value = mem.DataRead(address);
+        regs.fz = regs.fc[0] = (value >> bit) & 1;
     }
     void tstb(MemImm8 a, Imm4 b) {
         u16 value = LoadFromMemory(a);
@@ -1516,32 +1540,32 @@ public:
 
     void modr(Rn a, StepZIDS as) {
         u32 unit = GetRnUnit(a.GetName());
-        RnAddressAndModify(unit, as.GetName());
+        RnAndModify(unit, as.GetName());
         regs.fr = regs.r[unit] == 0;
     }
     void modr_dmod(Rn a, StepZIDS as) {
         u32 unit = GetRnUnit(a.GetName());
-        RnAddressAndModify(unit, as.GetName(), true);
+        RnAndModify(unit, as.GetName(), true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_i2(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
-        RnAddressAndModify(unit, StepValue::Increase2);
+        RnAndModify(unit, StepValue::Increase2);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_i2_dmod(Rn a)  {
         u32 unit = GetRnUnit(a.GetName());
-        RnAddressAndModify(unit, StepValue::Increase2, true);
+        RnAndModify(unit, StepValue::Increase2, true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_d2(Rn a)  {
         u32 unit = GetRnUnit(a.GetName());
-        RnAddressAndModify(unit, StepValue::Decrease2);
+        RnAndModify(unit, StepValue::Decrease2);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_d2_dmod(Rn a)  {
         u32 unit = GetRnUnit(a.GetName());
-        RnAddressAndModify(unit, StepValue::Decrease2, true);
+        RnAndModify(unit, StepValue::Decrease2, true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
@@ -1549,32 +1573,32 @@ public:
         StepValue stepi, stepj;
         std::tie(uniti, unitj) = GetArpRnUnit(a);
         std::tie(stepi, stepj) = GetArpStep(asi, asj);
-        RnAddressAndModify(uniti, stepi);
-        RnAddressAndModify(unitj, stepj);
+        RnAndModify(uniti, stepi);
+        RnAndModify(unitj, stepj);
     }
     void modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
         std::tie(uniti, unitj) = GetArpRnUnit(a);
         std::tie(stepi, stepj) = GetArpStep(asi, asj);
-        RnAddressAndModify(uniti, stepi);
-        RnAddressAndModify(unitj, stepj, true);
+        RnAndModify(uniti, stepi);
+        RnAndModify(unitj, stepj, true);
     }
     void modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
         std::tie(uniti, unitj) = GetArpRnUnit(a);
         std::tie(stepi, stepj) = GetArpStep(asi, asj);
-        RnAddressAndModify(uniti, stepi, true);
-        RnAddressAndModify(unitj, stepj);
+        RnAndModify(uniti, stepi, true);
+        RnAndModify(unitj, stepj);
     }
     void modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         u32 uniti, unitj;
         StepValue stepi, stepj;
         std::tie(uniti, unitj) = GetArpRnUnit(a);
         std::tie(stepi, stepj) = GetArpStep(asi, asj);
-        RnAddressAndModify(uniti, stepi, true);
-        RnAddressAndModify(unitj, stepj, true);
+        RnAndModify(uniti, stepi, true);
+        RnAndModify(unitj, stepj, true);
     }
 
     void movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
@@ -1616,15 +1640,15 @@ public:
         throw "unimplemented";
     }
     void mov_x0(Abl a) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         regs.x[0] = value16;
     }
     void mov_x1(Abl a) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         regs.x[1] = value16;
     }
     void mov_y1(Abl a) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         regs.y[1] = value16;
     }
 
@@ -1642,19 +1666,19 @@ public:
     }
 
     void mov(Ablh a, MemImm8 b) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         StoreToMemory(b, value16);
     }
     void mov(Axl a, MemImm16 b) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         StoreToMemory(b, value16);
     }
     void mov(Axl a, MemR7Imm16 b) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         StoreToMemory(b, value16);
     }
     void mov(Axl a, MemR7Imm7s b) {
-        u16 value16 = RegToBus16(a.GetName());
+        u16 value16 = RegToBus16(a.GetName(), true);
         StoreToMemory(b, value16);
     }
 
@@ -1759,17 +1783,17 @@ public:
         StoreToMemory(b, value);
     }
     void mov_icr(Register a) {
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         regs.Set<icr>(value);
     }
     void mov_mixp(Register a) {
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         regs.mixp = value;
     }
     void mov(Register a, Rn b, StepZIDS bs) {
         // a = a0 or a1 is overrided
         // a = p0 untested
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         mem.DataWrite(address, value);
     }
@@ -1782,7 +1806,7 @@ public:
             u64 value = GetAcc(a.GetName());
             SetAcc(b.GetName(), value);
         } else {
-            u16 value = RegToBus16(a.GetName());
+            u16 value = RegToBus16(a.GetName(), true);
             RegFromBus16(b.GetName(), value);
         }
     }
@@ -1790,7 +1814,7 @@ public:
         // a = a0 or a1 is overrided
         if (a.GetName() == RegName::p) {
             // b loses its typical meaning in this case
-            RegName b_name = (b.storage & 1) ? RegName::a0 : RegName::a1;
+            RegName b_name = (b.storage & 1) ? RegName::a1 : RegName::a0;
             u64 value = ProductToBus40(RegName::p0);
             SetAcc(b_name, value);
         } else if (a.GetName() == RegName::pc) {
@@ -1800,7 +1824,7 @@ public:
                 RegFromBus16(b.GetName(), regs.pc & 0xFFFF);
             }
         } else {
-            u16 value = RegToBus16(a.GetName());
+            u16 value = RegToBus16(a.GetName(), true);
             RegFromBus16(b.GetName(), value);
         }
     }
@@ -1853,11 +1877,11 @@ public:
     }
 
     void mov_a0h_stepi0() {
-        u16 value = RegToBus16(RegName::a0h);
+        u16 value = RegToBus16(RegName::a0h, true);
         regs.stepi0 = value;
     }
     void mov_a0h_stepj0() {
-        u16 value = RegToBus16(RegName::a0h);
+        u16 value = RegToBus16(RegName::a0h, true);
         regs.stepj0 = value;
     }
     void mov_stepi0_a0h() {
@@ -1873,15 +1897,15 @@ public:
         throw "unimplemented";
     }
     void mov_repc(Abl a) {
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         regs.repc = value;
     }
     void mov(Abl a, ArArp b) {
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         RegFromBus16(b.GetName(), value);
     }
     void mov(Abl a, SttMod b) {
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         RegFromBus16(b.GetName(), value);
     }
 
@@ -1986,7 +2010,7 @@ public:
         ProductFromBus32(RegName::p0, value);
     }
     void mov_p1_to(Ab b) {
-        u64 value = ProductToBus40(RegName::p0);
+        u64 value = ProductToBus40(RegName::p1);
         SetAcc(b.GetName(), value);
     }
 
@@ -2051,7 +2075,7 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_r6(Register a) {
-        u16 value = RegToBus16(a.GetName());
+        u16 value = RegToBus16(a.GetName(), true);
         regs.r[6] = value;
     }
     void mov_memsp_r6() {
@@ -2163,13 +2187,17 @@ public:
         SetAcc_Simple(a.GetName(), value);
     }
 
-    u64 ShiftBus40(u64 value, u16 sv) {
+    void ShiftBus40(u64 value, u16 sv, RegName dest) {
         value &= 0xFF'FFFF'FFFF;
-        if (sv < 0x8000) {
-            if (sv > 40) {
+        u16 original_sign = value >> 39;
+        if ((sv >> 15) == 0) {
+            // left shift
+            if (sv >= 40) {
                 if (regs.s == 0) {
-                    regs.fv = 1;
-                    regs.flv = 1;
+                    regs.fv = value != 0;
+                    if (regs.fv) {
+                        regs.flv = 1;
+                    }
                 }
                 value = 0;
                 regs.fc[0] = 0;
@@ -2184,11 +2212,12 @@ public:
                 regs.fc[0] = (value & ((u64)1 << 40)) != 0;
             }
         } else {
+            // right shift
             u16 nsv = ~sv + 1;
-            if (nsv > 40) {
+            if (nsv >= 40) {
                 if (regs.s == 0) {
-                    value = 0xFF'FFFF'FFFF;
-                    regs.fc[0] = 1;
+                    regs.fc[0] = (value >> 39) & 1;
+                    value = regs.fc[0] ? 0xFF'FFFF'FFFF : 0;
                 } else {
                     value = 0;
                     regs.fc[0] = 0;
@@ -2206,34 +2235,42 @@ public:
             }
         }
 
-        return SignExtend<40>(value);
+        value = SignExtend<40>(value);
+        SetAccFlag(value);
+        if (regs.s == 0 && regs.sar[1] == 0) {
+            if (regs.fv || SignExtend<32>(value) != value) {
+                regs.fls = 1;
+                value = original_sign == 1 ? 0xFFFF'FFFF'8000'0000 : 0x7FFF'FFFF;
+            }
+        }
+        SetAcc_Simple(dest, value);
     }
 
     void movs(MemImm8 a, Ab b) {
-        u16 value = LoadFromMemory(a);
+        u64 value = SignExtend<16, u64>(LoadFromMemory(a));
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        ShiftBus40(value, sv, b.GetName());
     }
     void movs(Rn a, StepZIDS as, Ab b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 value = mem.DataRead(address);
+        u64 value = SignExtend<16, u64>(mem.DataRead(address));
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        ShiftBus40(value, sv, b.GetName());
     }
     void movs(Register a, Ab b) {
         u64 value = SignExtend<16, u64>(RegToBus16(a.GetName()));
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        ShiftBus40(value, sv, b.GetName());
     }
     void movs_r6_to(Ax b) {
-        u16 value = regs.r[6];
+        u64 value = SignExtend<16, u64>(regs.r[6]);
         u16 sv = regs.sv;
-        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        ShiftBus40(value, sv, b.GetName());
     }
     void movsi(RnOld a, Ab b, Imm5s s) {
         u64 value = SignExtend<16, u64>(RegToBus16(a.GetName()));
         u16 sv = SignExtend<5, u16>(s.storage);
-        SetAcc(b.GetName(), ShiftBus40(value, sv), /*No saturation if logic shift*/regs.s == 1);
+        ShiftBus40(value, sv, b.GetName());
     }
 
     void movr(ArRn2 a, ArStep2 as, Abh b) {
@@ -2337,7 +2374,7 @@ public:
         regs.sv = Exp(value);
     }
     void exp_r6(Ax b) {
-        exp_r6({});
+        exp_r6();
         ExpStore(b);
     }
 
@@ -2387,7 +2424,7 @@ public:
         u64 u = GetAcc(a.GetName());
         u64 v = GetAcc(CounterAcc(a.GetName()));
         u64 d = v - u;
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u16 r0 = RnAndModify(0, bs.GetName());
         if (((d >> 63) & 1) == 0) {
             regs.fm = 1;
             regs.mixp = r0;
@@ -2400,7 +2437,7 @@ public:
         u64 u = GetAcc(a.GetName());
         u64 v = GetAcc(CounterAcc(a.GetName()));
         u64 d = v - u;
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u16 r0 = RnAndModify(0, bs.GetName());
         if (((d >> 63) & 1) == 0 && d != 0) {
             regs.fm = 1;
             regs.mixp = r0;
@@ -2413,7 +2450,7 @@ public:
         u64 u = GetAcc(a.GetName());
         u64 v = GetAcc(CounterAcc(a.GetName()));
         u64 d = v - u;
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u16 r0 = RnAndModify(0, bs.GetName());
         if (((d >> 63) & 1) == 1 || d == 0) {
             regs.fm = 1;
             regs.mixp = r0;
@@ -2426,7 +2463,7 @@ public:
         u64 u = GetAcc(a.GetName());
         u64 v = GetAcc(CounterAcc(a.GetName()));
         u64 d = v - u;
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
+        u16 r0 = RnAndModify(0, bs.GetName());
         if (((d >> 63) & 1) == 1) {
             regs.fm = 1;
             regs.mixp = r0;
@@ -2438,8 +2475,8 @@ public:
 
     void max_ge_r0(Ax a, StepZIDS bs) {
         u64 u = GetAcc(a.GetName());
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
-        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u16 r0 = RnAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(RnAddress(0, r0)));
         u64 d = v - u;
         if (((d >> 63) & 1) == 0) {
             regs.fm = 1;
@@ -2451,8 +2488,8 @@ public:
     }
     void max_gt_r0(Ax a, StepZIDS bs) {
         u64 u = GetAcc(a.GetName());
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
-        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u16 r0 = RnAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(RnAddress(0, r0)));
         u64 d = v - u;
         if (((d >> 63) & 1) == 0 && d != 0) {
             regs.fm = 1;
@@ -2464,8 +2501,8 @@ public:
     }
     void min_le_r0(Ax a, StepZIDS bs) {
         u64 u = GetAcc(a.GetName());
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
-        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u16 r0 = RnAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(RnAddress(0, r0)));
         u64 d = v - u;
         if (((d >> 63) & 1) == 1 || d == 0) {
             regs.fm = 1;
@@ -2477,8 +2514,8 @@ public:
     }
     void min_lt_r0(Ax a, StepZIDS bs) {
         u64 u = GetAcc(a.GetName());
-        u16 r0 = RnAddressAndModify(0, bs.GetName());
-        u64 v = SignExtend<16, u64>(mem.DataRead(r0));
+        u16 r0 = RnAndModify(0, bs.GetName());
+        u64 v = SignExtend<16, u64>(mem.DataRead(RnAddress(0, r0)));
         u64 d = v - u;
         if (((d >> 63) & 1) == 1) {
             regs.fm = 1;
@@ -2740,7 +2777,7 @@ public:
         }
         if (cond) {
             regs.mixp = r;
-            regs.x[0] = regs.y[1];
+            regs.x[0] = regs.y[1]; // this is likely incorrect. It involves hidden variable
             regs.x[1] = regs.y[0];
         }
         regs.y[1] = v;
@@ -2763,11 +2800,12 @@ public:
     void cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
         auto [ui, uj] = GetArpRnUnit(a);
         auto [si, sj] = GetArpStep(asi, asj);
-        u16 ai = RnAddressAndModify(ui, si);
+        u16 aip = RnAndModify(ui, si);
+        u16 ai = RnAddress(ui, aip);
         u16 aj = RnAddressAndModify(uj, sj);
         u16 u = mem.DataRead(ai);
         u16 v = mem.DataRead(aj);
-        u16 r = ai;
+        u16 r = aip;
         Cbs(u, v, r, c);
     }
 
@@ -2834,8 +2872,9 @@ public:
         u16 address = RnAddressAndModify(GetArRnUnit(w), GetArStep(ws));
         u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(u.GetName()), false) >> 16) & 0xFFFF);
         u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(v.GetName()), false) >> 16) & 0xFFFF);
-        mem.DataWrite(address, u_value);
+        // keep the order like this
         mem.DataWrite(address + GetArOffset(ws), v_value);
+        mem.DataWrite(address, u_value);
         ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
         std::swap(regs.x[0], regs.x[1]);
         DoMultiplication(0, x0_sign, y0_sign);
@@ -2862,7 +2901,7 @@ public:
         u64 value = SignExtend<32, u64>(((u64)mem.DataRead(address) << 16) | 0x8000);
         u64 p = ProductToBus40(b.GetName());
         u64 result = AddSub(value, p, false);
-        SetAcc_NoSaturation(c.GetName(), result);
+        SetAcc(c.GetName(), result);
     }
 
     void mov_ext0(Imm8s a) {
@@ -2928,18 +2967,24 @@ private:
         return value;
     }
 
-    u16 RegToBus16(RegName reg) {
+    u16 RegToBus16(RegName reg, bool enable_sat_for_mov = false) {
         switch(reg) {
         case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
             // get aXl, but unlike using RegName::aXl, this does never saturate.
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
-            // return GetAcc(reg) & 0xFFFF;
-            throw "uncomment above after developing";
+            return GetAcc(reg) & 0xFFFF;
+            // throw "uncomment above after developing";
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
-            return SaturateAcc(GetAcc(reg), false) & 0xFFFF;
+            if (enable_sat_for_mov) {
+                return SaturateAcc(GetAcc(reg), false) & 0xFFFF;
+            }
+            return GetAcc(reg) & 0xFFFF;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            return (SaturateAcc(GetAcc(reg), false) >> 16) & 0xFFFF;
+            if (enable_sat_for_mov) {
+                return (SaturateAcc(GetAcc(reg), false) >> 16) & 0xFFFF;
+            }
+            return (GetAcc(reg) >> 16) & 0xFFFF;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
             throw "?";
 
@@ -2963,8 +3008,8 @@ private:
         case RegName::p:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
-            // return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
-            throw "uncomment above after developing";
+            return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+            // throw "uncomment above after developing";
 
         case RegName::pc: throw "?";
         case RegName::sp: return regs.sp;
@@ -3141,8 +3186,10 @@ private:
         case 1: return StepValue::Increase;
         case 2: return StepValue::Decrease;
         case 3: return StepValue::PlusStep;
-        case 4: case 6: return StepValue::Increase2;
-        case 5: case 7: return StepValue::Decrease2;
+        case 4: return StepValue::Increase2;
+        case 5: return StepValue::Decrease2;
+        case 6: return StepValue::Increase2Legacy;
+        case 7: return StepValue::Decrease2Legacy;
         default: throw "???";
         }
     }
@@ -3186,57 +3233,125 @@ private:
             ConvertArOffset(regs.arpoffsetj[arpstepj.storage]));
     }
 
+    u16 RnAddress(unsigned unit, unsigned value) {
+        u16 ret = value;
+        if (regs.brv[unit] && !regs.m[unit]) {
+            ret = BitReverse(ret);
+        }
+        return ret;
+    }
+
     u16 RnAddressAndModify(unsigned unit, StepValue step, bool dmod = false) {
+        return RnAddress(unit, RnAndModify(unit, step, dmod));
+    }
+
+    u16 RnAndModify(unsigned unit, StepValue step, bool dmod = false) {
         u16 ret = regs.r[unit];
+        if ((unit == 3 && regs.r3z) || (unit == 7 && regs.r7z)) {
+            if (step != StepValue::Increase2 && step != StepValue::Decrease2
+                && step != StepValue::Increase2Legacy && step != StepValue::Decrease2Legacy) {
+                regs.r[unit] = 0;
+                return ret;
+            }
+        }
 
         u16 s;
+        bool legacy = regs.legacy_mod;
         switch(step) {
-            // TODO: weird effect when using ArStep with ms = true and m = false
+            // TODO: weird effect when using ArStep with brv = true and m = false
         case StepValue::Zero: s = 0; break;
         case StepValue::Increase: s = 1; break;
         case StepValue::Decrease: s = 0xFFFF; break;
+        case StepValue::Increase2Legacy: legacy = true; [[fallthrough]];
         case StepValue::Increase2: s = 2; break;
+        case StepValue::Decrease2Legacy: legacy = true; [[fallthrough]];
         case StepValue::Decrease2: s = 0xFFFE; break;
-        case StepValue::PlusStep:
-            if (regs.ms[unit] && !regs.m[unit]) {
+        case StepValue::PlusStep: {
+            if (regs.brv[unit] && !regs.m[unit]) {
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
             } else {
                 s = unit < 4 ? regs.stepi : regs.stepj;
                 s = SignExtend<7>(s);
             }
+            if (regs.m[unit] == 1 && regs.brv[unit] == 1 && regs.bankstep == 1 && legacy == 0) {
+                s = unit < 4 ? regs.stepi0 : regs.stepj0;
+                s = SignExtend<9>(s);
+            }
+            if (regs.brv[unit] == 0 && regs.bankstep == 1 && legacy == 0) {
+                s = unit < 4 ? regs.stepi0 : regs.stepj0;
+                if (dmod && regs.m[unit]) {
+                    s = SignExtend<9>(s);
+                }
+            }
             break;
+        }
         default: throw "?";
         }
 
         if (s == 0)
             return ret;
 
-        if (!dmod && !regs.ms[unit] && regs.m[unit]) {
+        if (!dmod && !regs.brv[unit] && regs.m[unit]) {
             // Do modular arithmatic
             // this part is tested but really weird
             u16 mod = unit < 4 ? regs.modi : regs.modj;
 
-            u16 mask = 0;
-            for (unsigned i = 0; i < 9; ++i) {
-                mask |= mod >> i;
+            if (mod == 0) {
+                return ret;
             }
 
-            u16 next;
-            if (s < 0x8000) {
-                next = (ret + s) & mask;
-                if (next == ((mod + 1) & mask)) {
-                    next = 0;
+            if (legacy) {
+                bool negative = false;
+                if (s >> 15) {
+                    negative = true;
+                    s = ~s + 1;
                 }
+
+                u16 mask = 0;
+                u16 m = mod | s;
+                for (unsigned i = 0; i < 9; ++i) {
+                    mask |= m >> i;
+                }
+
+                u16 next;
+                if (!negative) {
+                    if ((regs.r[unit] & mask) == mod) {
+                        next = 0;
+                    } else {
+                        next = (regs.r[unit] + s) & mask;
+                    }
+                } else {
+                    if ((regs.r[unit] & mask) == 0) {
+                        next = mod;
+                    } else {
+                        next = (regs.r[unit] + (~s + 1)) & mask;
+                    }
+                }
+                regs.r[unit] &= ~mask;
+                regs.r[unit] |= next;
             } else {
-                next = ret & mask;
-                if (next == 0) {
-                    next = mod + 1;
+                u16 mask = 0;
+                for (unsigned i = 0; i < 9; ++i) {
+                    mask |= mod >> i;
                 }
-                next += s;
-                next &= mask;
+
+                u16 next;
+                if (s < 0x8000) {
+                    next = (regs.r[unit] + s) & mask;
+                    if (next == ((mod + 1) & mask)) {
+                        next = 0;
+                    }
+                } else {
+                    next = regs.r[unit] & mask;
+                    if (next == 0) {
+                        next = mod + 1;
+                    }
+                    next += s;
+                    next &= mask;
+                }
+                regs.r[unit] &= ~mask;
+                regs.r[unit] |= next;
             }
-            regs.r[unit] &= ~mask;
-            regs.r[unit] |= next;
         } else {
             regs.r[unit] += s;
         }

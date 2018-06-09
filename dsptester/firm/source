@@ -34,17 +34,17 @@
 .p1000  signal handler & prologue
      0400 load 0x00, page
 
-     6201 mov  [page+1], b0l
-     5031 brr  +3, eq
-     3000 mov  b0l, [page+0]
-     6F60 clr  Implied ConstZero, b0, always
-     3001 mov  b0l, [page+1]
-
      6202 mov  [page+2], b0l
      5031 brr  +3, eq
      6F60 clr  Implied ConstZero, b0, always
      3000 mov  b0l, [page+0]
      3002 mov  b0l, [page+2]
+
+     6201 mov  [page+1], b0l
+     5031 brr  +3, eq
+     3000 mov  b0l, [page+0]
+     6F60 clr  Implied ConstZero, b0, always
+     3001 mov  b0l, [page+1]
 
      6200 mov  [page+0], b0l
 
@@ -56,7 +56,7 @@
 
      0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
      0003
-     
+
      0037   mov 0000, mod3  clear mod3 from E000 to 0000. Game does this at the beginning so let it be the default env
      0000
 
@@ -131,7 +131,7 @@
      D3D3         push arp1 2ff4
      D3D4         push arp2 2ff3
      D3D5         push arp3 2ff2
-     
+
      0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
      0003
 
@@ -167,6 +167,15 @@
      5E45         push r5 2fd2
      D4D7         push r6 2fd1
      5E46         push r7   // after all push, SP is at 2FD0
+
+     0400 load 0x00, page
+
+     6203 mov  [page+3], b0l
+     5031 brr  +3, eq
+     6F60 clr  Implied ConstZero, b0, always
+     3000 mov  b0l, [page+0]
+     3003 mov  b0l, [page+3]
+
      4180 br 1000
      1000
 
@@ -178,6 +187,7 @@
 3000 45C0 reti
 
 .d0000   signal area
-0000 0000
-0001 0000
-0002 0000
+0000 0000     current status
+0001 0000     start signal
+0002 0000     stop signal
+0003 0000     one shot signal

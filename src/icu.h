@@ -5,6 +5,8 @@
 #include <functional>
 #include <array>
 
+namespace Teakra {
+
 class ICU {
 public:
     using IrqBits = std::bitset<16>;
@@ -61,3 +63,5 @@ private:
     IrqBits vectored_enabled;
     std::array<u32, 16> vector;
 };
+
+} // namespace Teakra

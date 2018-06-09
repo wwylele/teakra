@@ -3,11 +3,19 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <malloc.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
 #include "cdc_bin.h"
+
+#define COMMON_TYPE_3DS
+#include "../../src/test.h"
+
+
+
+PrintConsole topScreen, bottomScreen;
 
 void MoveCursor(unsigned row, unsigned col) {
     printf("\x1b[%u;%uH", row + 1, col + 1);
@@ -126,11 +134,15 @@ u16* dstBase = &dspD[0x2FD0];
 
 constexpr u32 reg_region_size = 0x60;
 
+std::unordered_map<std::string, unsigned> reg_map;
+
 IReg* MakeHexReg(const std::string& name, unsigned offset) {
+    reg_map[name] = offset;
     return new HexReg(name, srcBase[offset], dstBase[offset]);
 }
 
 IReg* MakeBinReg(const std::string& name, unsigned offset, const std::string flags = "") {
+    reg_map[name] = offset;
     return new BinReg(name, srcBase[offset], dstBase[offset], flags);
 }
 
@@ -172,6 +184,165 @@ void StopDspProgram() {
     dspD[2] = 1;
     FlushCache(&dspD[2], 2);
     while(dspD[2])InvalidateCache(&dspD[2], 2);
+}
+
+void SetOnshotDspProgram() {
+    dspD[3] = 1;
+    FlushCache(&dspD[3], 2);
+}
+
+void PulseDspProgram() {
+    SetOnshotDspProgram();
+    StartDspProgram();
+    StopDspProgram();
+}
+
+void ExecuteTestCases() {
+    consoleSelect(&bottomScreen);
+    printf("--------\nExecuting test cases...!\n");
+
+    FILE *fi = fopen("teaklite2_tests", "rb");
+    if (!fi)
+        printf("failed to open input file\n");
+    FILE *fo = fopen("teaklite2_tests_result", "wb");
+    if (!fo)
+        printf("failed to open output file\n");
+
+    StopDspProgram();
+    int i = 0;
+    while(true) {
+        TestCase test_case;
+        if (!fread(&test_case, sizeof(test_case), 1, fi)) break;
+
+        srcBase[reg_map.at("a0l")] = test_case.before.a[0] & 0xFFFF;
+        srcBase[reg_map.at("a0h")] = (test_case.before.a[0] >> 16) & 0xFFFF;
+        srcBase[reg_map.at("a0e")] = (test_case.before.a[0] >> 32) & 0xFFFF;
+        srcBase[reg_map.at("a1l")] = test_case.before.a[1] & 0xFFFF;
+        srcBase[reg_map.at("a1h")] = (test_case.before.a[1] >> 16) & 0xFFFF;
+        srcBase[reg_map.at("a1e")] = (test_case.before.a[1] >> 32) & 0xFFFF;
+        srcBase[reg_map.at("b0l")] = test_case.before.b[0] & 0xFFFF;
+        srcBase[reg_map.at("b0h")] = (test_case.before.b[0] >> 16) & 0xFFFF;
+        srcBase[reg_map.at("b0e")] = (test_case.before.b[0] >> 32) & 0xFFFF;
+        srcBase[reg_map.at("b1l")] = test_case.before.b[1] & 0xFFFF;
+        srcBase[reg_map.at("b1h")] = (test_case.before.b[1] >> 16) & 0xFFFF;
+        srcBase[reg_map.at("b1e")] = (test_case.before.b[1] >> 32) & 0xFFFF;
+        srcBase[reg_map.at("p0l")] = test_case.before.p[0] & 0xFFFF;
+        srcBase[reg_map.at("p0h")] = (test_case.before.p[0] >> 16) & 0xFFFF;
+        srcBase[reg_map.at("p1l")] = test_case.before.p[1] & 0xFFFF;
+        srcBase[reg_map.at("p1h")] = (test_case.before.p[1] >> 16) & 0xFFFF;
+        srcBase[reg_map.at("r0")] = test_case.before.r[0];
+        srcBase[reg_map.at("r1")] = test_case.before.r[1];
+        srcBase[reg_map.at("r2")] = test_case.before.r[2];
+        srcBase[reg_map.at("r3")] = test_case.before.r[3];
+        srcBase[reg_map.at("r4")] = test_case.before.r[4];
+        srcBase[reg_map.at("r5")] = test_case.before.r[5];
+        srcBase[reg_map.at("r6")] = test_case.before.r[6];
+        srcBase[reg_map.at("r7")] = test_case.before.r[7];
+        srcBase[reg_map.at("x0")] = test_case.before.x[0];
+        srcBase[reg_map.at("y0")] = test_case.before.y[0];
+        srcBase[reg_map.at("x1")] = test_case.before.x[1];
+        srcBase[reg_map.at("y1")] = test_case.before.y[1];
+        srcBase[reg_map.at("sti0")] = test_case.before.stepi0;
+        srcBase[reg_map.at("stj0")] = test_case.before.stepj0;
+        srcBase[reg_map.at("mixp")] = test_case.before.mixp;
+        srcBase[reg_map.at("sv")] = test_case.before.sv;
+        srcBase[reg_map.at("repc")] = test_case.before.repc;
+        srcBase[reg_map.at("lc")] = test_case.before.lc;
+        srcBase[reg_map.at("cfgi")] = test_case.before.cfgi;
+        srcBase[reg_map.at("cfgj")] = test_case.before.cfgj;
+        srcBase[reg_map.at("stt0")] = test_case.before.stt0;
+        srcBase[reg_map.at("stt1")] = test_case.before.stt1;
+        srcBase[reg_map.at("stt2")] = test_case.before.stt2;
+        srcBase[reg_map.at("mod0")] = test_case.before.mod0;
+        srcBase[reg_map.at("mod1")] = test_case.before.mod1;
+        srcBase[reg_map.at("mod2")] = test_case.before.mod2;
+        srcBase[reg_map.at("ar0")] = test_case.before.ar[0];
+        srcBase[reg_map.at("ar1")] = test_case.before.ar[1];
+        srcBase[reg_map.at("arp0")] = test_case.before.arp[0];
+        srcBase[reg_map.at("arp1")] = test_case.before.arp[1];
+        srcBase[reg_map.at("arp2")] = test_case.before.arp[2];
+        srcBase[reg_map.at("arp3")] = test_case.before.arp[3];
+
+        for (u16 i = 0; i < TestSpaceSize; ++i) {
+            dspD[TestSpaceX + i] = test_case.before.test_space_x[i];
+            dspD[TestSpaceY + i] = test_case.before.test_space_y[i];
+        }
+
+        InvalidateCache(&dspP[0x2000], 0x2000);
+
+        dspP[0x2000] = test_case.opcode;
+        dspP[0x2001] = test_case.expand;
+        dspP[0x2002] = 0x0000; // nop
+        dspP[0x2003] = 0x0000; // nop
+        dspP[0x2004] = 0x0000; // nop
+        dspP[0x2005] = 0x4180; // br 0x1800
+        dspP[0x2006] = 0x1800;
+
+        FlushCache(&dspP[0x2000], 0x2000);
+
+        FlushCache(&dspD[0], 0x20000);
+        InvalidateCache(&dspD[0], 0x20000);
+
+        PulseDspProgram();
+
+        FlushCache(&dspD[0], 0x20000);
+        InvalidateCache(&dspD[0], 0x20000);
+
+        test_case.after.a[0] = dstBase[reg_map.at("a0l")] | ((u64)dstBase[reg_map.at("a0h")] << 16) | ((u64)dstBase[reg_map.at("a0e")] << 32);
+        test_case.after.a[1] = dstBase[reg_map.at("a1l")] | ((u64)dstBase[reg_map.at("a1h")] << 16) | ((u64)dstBase[reg_map.at("a1e")] << 32);
+        test_case.after.b[0] = dstBase[reg_map.at("b0l")] | ((u64)dstBase[reg_map.at("b0h")] << 16) | ((u64)dstBase[reg_map.at("b0e")] << 32);
+        test_case.after.b[1] = dstBase[reg_map.at("b1l")] | ((u64)dstBase[reg_map.at("b1h")] << 16) | ((u64)dstBase[reg_map.at("b1e")] << 32);
+        test_case.after.p[0] = dstBase[reg_map.at("p0l")] | ((u64)dstBase[reg_map.at("p0h")] << 16);
+        test_case.after.p[1] = dstBase[reg_map.at("p1l")] | ((u64)dstBase[reg_map.at("p1h")] << 16);
+        test_case.after.r[0] = dstBase[reg_map.at("r0")];
+        test_case.after.r[1] = dstBase[reg_map.at("r1")];
+        test_case.after.r[2] = dstBase[reg_map.at("r2")];
+        test_case.after.r[3] = dstBase[reg_map.at("r3")];
+        test_case.after.r[4] = dstBase[reg_map.at("r4")];
+        test_case.after.r[5] = dstBase[reg_map.at("r5")];
+        test_case.after.r[6] = dstBase[reg_map.at("r6")];
+        test_case.after.r[7] = dstBase[reg_map.at("r7")];
+        test_case.after.x[0] = dstBase[reg_map.at("x0")];
+        test_case.after.y[0] = dstBase[reg_map.at("y0")];
+        test_case.after.x[1] = dstBase[reg_map.at("x1")];
+        test_case.after.y[1] = dstBase[reg_map.at("y1")];
+        test_case.after.stepi0 = dstBase[reg_map.at("sti0")];
+        test_case.after.stepj0 = dstBase[reg_map.at("stj0")];
+        test_case.after.mixp = dstBase[reg_map.at("mixp")];
+        test_case.after.sv = dstBase[reg_map.at("sv")];
+        test_case.after.repc = dstBase[reg_map.at("repc")];
+        test_case.after.lc = dstBase[reg_map.at("lc")];
+        test_case.after.cfgi = dstBase[reg_map.at("cfgi")];
+        test_case.after.cfgj = dstBase[reg_map.at("cfgj")];
+        test_case.after.stt0 = dstBase[reg_map.at("stt0")];
+        test_case.after.stt1 = dstBase[reg_map.at("stt1")];
+        test_case.after.stt2 = dstBase[reg_map.at("stt2")];
+        test_case.after.mod0 = dstBase[reg_map.at("mod0")];
+        test_case.after.mod1 = dstBase[reg_map.at("mod1")];
+        test_case.after.mod2 = dstBase[reg_map.at("mod2")];
+        test_case.after.ar[0] = dstBase[reg_map.at("ar0")];
+        test_case.after.ar[1] = dstBase[reg_map.at("ar1")];
+        test_case.after.arp[0] = dstBase[reg_map.at("arp0")];
+        test_case.after.arp[1] = dstBase[reg_map.at("arp1")];
+        test_case.after.arp[2] = dstBase[reg_map.at("arp2")];
+        test_case.after.arp[3] = dstBase[reg_map.at("arp3")];
+
+        for (u16 i = 0; i < TestSpaceSize; ++i) {
+            test_case.after.test_space_x[i] = dspD[TestSpaceX + i];
+            test_case.after.test_space_y[i] = dspD[TestSpaceY + i];
+        }
+
+        fwrite(&test_case, sizeof(test_case), 1, fo);
+        ++i;
+        if (i % 100 == 0)
+            printf("case %d\n", i);
+    }
+
+    fclose(fi);
+    fclose(fo);
+
+    printf("Finished!\n");
+    consoleSelect(&topScreen);
 }
 
 void UploadDspProgram(const std::vector<u16>& code) {
@@ -238,8 +409,6 @@ void UdpInit() {
     }
 }
 
-
-PrintConsole topScreen, bottomScreen;
 
 void CheckPackage() {
     constexpr unsigned BUFLEN = 512;
@@ -362,6 +531,8 @@ int main() {
         u32 kDown = hidKeysDown();
 
         if (kDown & KEY_START) break;
+
+        if (kDown & KEY_SELECT) ExecuteTestCases();
 
         if (kDown & KEY_DOWN) {
             for (int next = (int)c_row + 1; next < (int)t_row; ++next) {

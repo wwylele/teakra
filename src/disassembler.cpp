@@ -936,16 +936,16 @@ public:
         return D("modr", R(a), "-2", "dmod");
     }
     std::string modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
-        return D("modr", MemARPSI(a, asi), MemARPSI(a, asj), "eemod");
+        return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "eemod");
     }
     std::string modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
-        return D("modr", MemARPSI(a, asi), MemARPSI(a, asj), "edmod");
+        return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "edmod");
     }
     std::string modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
-        return D("modr", MemARPSI(a, asi), MemARPSI(a, asj), "demod");
+        return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "demod");
     }
     std::string modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
-        return D("modr", MemARPSI(a, asi), MemARPSI(a, asj), "ddmod");
+        return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "ddmod");
     }
 
     std::string movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
@@ -1522,7 +1522,7 @@ public:
     std::string mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        return D("xy<-", MemARPSI(xy, i), MemARPSI(xy, j),
+        return D("xy<-", MemARPSI(xy, i), MemARPSJ(xy, j),
             PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
             Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign),
             dmodi ? "dmodi" : "", dmodj? "dmodj" : "");
@@ -1569,7 +1569,7 @@ public:
     }
 
     std::string addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
-        return D(MemARS(a, as), R(b), R(c));
+        return D("addhp", MemARS(a, as), R(b), R(c));
     }
 
     std::string mov_ext0(Imm8s a) {
