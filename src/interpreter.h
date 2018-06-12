@@ -1550,22 +1550,22 @@ public:
     }
     void modr_i2(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
-        RnAndModify(unit, StepValue::Increase2);
+        RnAndModify(unit, StepValue::Increase2Mode1);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_i2_dmod(Rn a)  {
         u32 unit = GetRnUnit(a.GetName());
-        RnAndModify(unit, StepValue::Increase2, true);
+        RnAndModify(unit, StepValue::Increase2Mode1, true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_d2(Rn a)  {
         u32 unit = GetRnUnit(a.GetName());
-        RnAndModify(unit, StepValue::Decrease2);
+        RnAndModify(unit, StepValue::Decrease2Mode1);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_d2_dmod(Rn a)  {
         u32 unit = GetRnUnit(a.GetName());
-        RnAndModify(unit, StepValue::Decrease2, true);
+        RnAndModify(unit, StepValue::Decrease2Mode1, true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
@@ -3186,10 +3186,10 @@ private:
         case 1: return StepValue::Increase;
         case 2: return StepValue::Decrease;
         case 3: return StepValue::PlusStep;
-        case 4: return StepValue::Increase2;
-        case 5: return StepValue::Decrease2;
-        case 6: return StepValue::Increase2Legacy;
-        case 7: return StepValue::Decrease2Legacy;
+        case 4: return StepValue::Increase2Mode1;
+        case 5: return StepValue::Decrease2Mode1;
+        case 6: return StepValue::Increase2Mode2;
+        case 7: return StepValue::Decrease2Mode2;
         default: throw "???";
         }
     }
@@ -3248,8 +3248,8 @@ private:
     u16 RnAndModify(unsigned unit, StepValue step, bool dmod = false) {
         u16 ret = regs.r[unit];
         if ((unit == 3 && regs.r3z) || (unit == 7 && regs.r7z)) {
-            if (step != StepValue::Increase2 && step != StepValue::Decrease2
-                && step != StepValue::Increase2Legacy && step != StepValue::Decrease2Legacy) {
+            if (step != StepValue::Increase2Mode1 && step != StepValue::Decrease2Mode1
+                && step != StepValue::Increase2Mode2 && step != StepValue::Decrease2Mode2) {
                 regs.r[unit] = 0;
                 return ret;
             }
@@ -3257,15 +3257,28 @@ private:
 
         u16 s;
         bool legacy = regs.legacy_mod;
-        bool break_step = false;
+        bool step2_mode1 = false;
+        bool step2_mode2 = false;
         switch(step) {
         case StepValue::Zero: s = 0; break;
         case StepValue::Increase: s = 1; break;
         case StepValue::Decrease: s = 0xFFFF; break;
-        case StepValue::Increase2Legacy: legacy = true; [[fallthrough]];
-        case StepValue::Increase2: s = 2; break_step = true; break;
-        case StepValue::Decrease2Legacy: legacy = true; [[fallthrough]];
-        case StepValue::Decrease2: s = 0xFFFE; break_step = true; break;
+        case StepValue::Increase2Mode1:
+            s = 2;
+            step2_mode1 = !legacy;
+            break;
+        case StepValue::Decrease2Mode1:
+            s = 0xFFFE;
+            step2_mode1 = !legacy;
+            break;
+        case StepValue::Increase2Mode2:
+            s = 2;
+            step2_mode2 = !legacy;
+            break;
+        case StepValue::Decrease2Mode2:
+            s = 0xFFFE;
+            step2_mode2 = !legacy;
+            break;
         case StepValue::PlusStep: {
             if (regs.brv[unit] && !regs.m[unit]) {
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
@@ -3294,14 +3307,18 @@ private:
                 return ret;
             }
 
+            if (mod == 1 && step2_mode2) {
+                return ret;
+            }
+
             unsigned iteration = 1;
-            if (!legacy  &&  break_step) {
+            if (step2_mode1) {
                 iteration = 2;
                 s = SignExtend<15, u16>(s >> 1);
             }
 
             for (unsigned i = 0; i < iteration; ++i) {
-                if (legacy) {
+                if (legacy || step2_mode2) {
                     bool negative = false;
                     u16 m = mod;
                     if (s >> 15) {
@@ -3318,13 +3335,13 @@ private:
 
                     u16 next;
                     if (!negative) {
-                        if ((regs.r[unit] & mask) == mod) {
+                        if ((regs.r[unit] & mask) == mod && (!step2_mode2 || mod != mask)) {
                             next = 0;
                         } else {
                             next = (regs.r[unit] + s) & mask;
                         }
                     } else {
-                        if ((regs.r[unit] & mask) == 0) {
+                        if ((regs.r[unit] & mask) == 0 && (!step2_mode2 || mod != mask)) {
                             next = mod;
                         } else {
                             next = (regs.r[unit] + s) & mask;

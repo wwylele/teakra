@@ -358,10 +358,10 @@ enum class StepValue {
     Increase,
     Decrease,
     PlusStep,
-    Increase2,
-    Decrease2,
-    Increase2Legacy,
-    Decrease2Legacy,
+    Increase2Mode1,
+    Decrease2Mode1,
+    Increase2Mode2,
+    Decrease2Mode2,
 };
 
 using StepZIDS = EnumOprand<StepValue,
