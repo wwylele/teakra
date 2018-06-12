@@ -3273,13 +3273,9 @@ private:
                 s = unit < 4 ? regs.stepi : regs.stepj;
                 s = SignExtend<7>(s);
             }
-            if (regs.m[unit] == 1 && regs.brv[unit] == 1 && regs.bankstep == 1 && legacy == 0) {
+            if (regs.bankstep == 1 && legacy == 0) {
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
-                s = SignExtend<9>(s);
-            }
-            if (regs.brv[unit] == 0 && regs.bankstep == 1 && legacy == 0) {
-                s = unit < 4 ? regs.stepi0 : regs.stepj0;
-                if (dmod && regs.m[unit]) {
+                if (regs.m[unit]) {
                     s = SignExtend<9>(s);
                 }
             }

@@ -618,16 +618,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mma, 0xCB06, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, UX, SY, BAc, Add, PP, Add, PA),
     INST(mma, 0xCB07, At<ArpRn1, 5>, At<ArpStep1, 3>, At<ArpStep1, 4>, EMod, EMod, AtNamed<Ab, 6>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
 
-    INST(mma, 0x0D20, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, DMod, EMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
     INST(mma, 0x0D30, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, EMod, DMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x0D20, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, DMod, EMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
     INST(mma, 0x4B50, At<ArpRn1, 3>, At<ArpStep1, 1>, At<ArpStep1, 2>, DMod, DMod, AtNamed<Ax, 0>, SX, SY, SX, UY, BAc, Add, PP, Add, PA),
 
-    INST(mma, 0x9861, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, EMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
-    INST(mma, 0x9862, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, EMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma, 0x9861, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, EMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
+    INST(mma, 0x9862, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, EMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
     INST(mma, 0x9863, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PP),
 
-    INST(mma, 0x98E1, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, EMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
-    INST(mma, 0x98E2, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, EMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x98E1, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, EMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
+    INST(mma, 0x98E2, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, EMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
     INST(mma, 0x98E3, At<ArpRn1, 4>, At<ArpStep1, 2>, At<ArpStep1, 3>, DMod, DMod, AtNamed<Ax, 8>, SX, SY, SX, SY, BAc, Add, PP, Add, PA),
 
     INST(mma, 0x80C8, At<ArpRn1, 2>, At<ArpStep1, 0>, At<ArpStep1, 1>, EMod, EMod, AtNamed<Ab, 10>, SX, SY, SX, SY, BAc, Add, PP, Sub, PP),
