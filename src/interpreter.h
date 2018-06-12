@@ -3257,15 +3257,15 @@ private:
 
         u16 s;
         bool legacy = regs.legacy_mod;
+        bool break_step = false;
         switch(step) {
-            // TODO: weird effect when using ArStep with brv = true and m = false
         case StepValue::Zero: s = 0; break;
         case StepValue::Increase: s = 1; break;
         case StepValue::Decrease: s = 0xFFFF; break;
         case StepValue::Increase2Legacy: legacy = true; [[fallthrough]];
-        case StepValue::Increase2: s = 2; break;
+        case StepValue::Increase2: s = 2; break_step = true; break;
         case StepValue::Decrease2Legacy: legacy = true; [[fallthrough]];
-        case StepValue::Decrease2: s = 0xFFFE; break;
+        case StepValue::Decrease2: s = 0xFFFE; break_step = true; break;
         case StepValue::PlusStep: {
             if (regs.brv[unit] && !regs.m[unit]) {
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
@@ -3273,7 +3273,7 @@ private:
                 s = unit < 4 ? regs.stepi : regs.stepj;
                 s = SignExtend<7>(s);
             }
-            if (regs.bankstep == 1 && legacy == 0) {
+            if (regs.bankstep == 1 && !legacy) {
                 s = unit < 4 ? regs.stepi0 : regs.stepj0;
                 if (regs.m[unit]) {
                     s = SignExtend<9>(s);
@@ -3288,67 +3288,73 @@ private:
             return ret;
 
         if (!dmod && !regs.brv[unit] && regs.m[unit]) {
-            // Do modular arithmatic
-            // this part is tested but really weird
             u16 mod = unit < 4 ? regs.modi : regs.modj;
 
             if (mod == 0) {
                 return ret;
             }
 
-            if (legacy) {
-                bool negative = false;
-                u16 m = mod;
-                if (s >> 15) {
-                    negative = true;
-                    m |= ~s;
-                } else {
-                    m |= s;
-                }
+            unsigned iteration = 1;
+            if (!legacy  &&  break_step) {
+                iteration = 2;
+                s = SignExtend<15, u16>(s >> 1);
+            }
 
-                u16 mask = 0;
-                for (unsigned i = 0; i < 9; ++i) {
-                    mask |= m >> i;
-                }
-
-                u16 next;
-                if (!negative) {
-                    if ((regs.r[unit] & mask) == mod) {
-                        next = 0;
+            for (unsigned i = 0; i < iteration; ++i) {
+                if (legacy) {
+                    bool negative = false;
+                    u16 m = mod;
+                    if (s >> 15) {
+                        negative = true;
+                        m |= ~s;
                     } else {
-                        next = (regs.r[unit] + s) & mask;
+                        m |= s;
                     }
-                } else {
-                    if ((regs.r[unit] & mask) == 0) {
-                        next = mod;
-                    } else {
-                        next = (regs.r[unit] + s) & mask;
-                    }
-                }
-                regs.r[unit] &= ~mask;
-                regs.r[unit] |= next;
-            } else {
-                u16 mask = 0;
-                for (unsigned i = 0; i < 9; ++i) {
-                    mask |= mod >> i;
-                }
 
-                u16 next;
-                if (s < 0x8000) {
-                    next = (regs.r[unit] + s) & mask;
-                    if (next == ((mod + 1) & mask)) {
-                        next = 0;
+                    u16 mask = 0;
+                    for (unsigned i = 0; i < 9; ++i) {
+                        mask |= m >> i;
                     }
+
+                    u16 next;
+                    if (!negative) {
+                        if ((regs.r[unit] & mask) == mod) {
+                            next = 0;
+                        } else {
+                            next = (regs.r[unit] + s) & mask;
+                        }
+                    } else {
+                        if ((regs.r[unit] & mask) == 0) {
+                            next = mod;
+                        } else {
+                            next = (regs.r[unit] + s) & mask;
+                        }
+                    }
+                    regs.r[unit] &= ~mask;
+                    regs.r[unit] |= next;
                 } else {
-                    next = regs.r[unit] & mask;
-                    if (next == 0) {
-                        next = mod + 1;
+                    u16 mask = 0;
+                    for (unsigned i = 0; i < 9; ++i) {
+                        mask |= mod >> i;
                     }
-                    next += s;
-                    next &= mask;
+
+                    u16 next;
+                    if (s < 0x8000) {
+                        next = (regs.r[unit] + s) & mask;
+                        if (next == ((mod + 1) & mask)) {
+                            next = 0;
+                        }
+                    } else {
+                        next = regs.r[unit] & mask;
+                        if (next == 0) {
+                            next = mod + 1;
+                        }
+                        next += s;
+                        next &= mask;
+                    }
+                    regs.r[unit] &= ~mask;
+                    regs.r[unit] |= next;
                 }
-                regs.r[unit] &= ~mask;
-                regs.r[unit] |= next;
             }
         } else {
             regs.r[unit] += s;
