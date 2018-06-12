@@ -146,10 +146,10 @@ int main(int argc, char** argv) {
         CheckFlag("mod2", test_case.after.mod2, regs.Get<Teakra::mod2>(), "7654321m7654321M");
         CheckFlag("ar0", test_case.after.ar[0], regs.Get<Teakra::ar0>(), "RRRRRRoosssoosss");
         CheckFlag("ar1", test_case.after.ar[1], regs.Get<Teakra::ar1>(), "RRRRRRoosssoosss");
-        CheckFlag("arp0", test_case.after.arp[0], regs.Get<Teakra::arp0>(), "#RR#RRiiiiijjjjj");
-        CheckFlag("arp1", test_case.after.arp[1], regs.Get<Teakra::arp1>(), "#RR#RRiiiiijjjjj");
-        CheckFlag("arp2", test_case.after.arp[2], regs.Get<Teakra::arp2>(), "#RR#RRiiiiijjjjj");
-        CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRiiiiijjjjj");
+        CheckFlag("arp0", test_case.after.arp[0], regs.Get<Teakra::arp0>(), "#RR#RRjjjjjiiiii");
+        CheckFlag("arp1", test_case.after.arp[1], regs.Get<Teakra::arp1>(), "#RR#RRjjjjjiiiii");
+        CheckFlag("arp2", test_case.after.arp[2], regs.Get<Teakra::arp2>(), "#RR#RRjjjjjiiiii");
+        CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRjjjjjiiiii");
 
         for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
             Check(("memory_x" + std::to_string(offset)).c_str(),
@@ -161,8 +161,11 @@ int main(int argc, char** argv) {
         if (pass) {
             ++passed;
         } else {
+            Teakra::Disassembler::ArArpSettings ar_arp;
+            ar_arp.ar = test_case.before.ar;
+            ar_arp.arp = test_case.before.arp;
             std::printf("Test case %d: %04X %04X %s\n", i, test_case.opcode, test_case.expand,
-                Teakra::Disassembler::Do(test_case.opcode, test_case.expand).c_str());
+                Teakra::Disassembler::Do(test_case.opcode, test_case.expand, ar_arp).c_str());
             std::printf("before:\n");
             std::printf("a0 = %010" PRIx64 "; a1 = %010" PRIx64 "\n",
                 test_case.before.a[0] & 0xFF'FFFF'FFFF,
