@@ -3298,13 +3298,15 @@ private:
 
             if (legacy) {
                 bool negative = false;
+                u16 m = mod;
                 if (s >> 15) {
                     negative = true;
-                    s = ~s + 1;
+                    m |= ~s;
+                } else {
+                    m |= s;
                 }
 
                 u16 mask = 0;
-                u16 m = mod | s;
                 for (unsigned i = 0; i < 9; ++i) {
                     mask |= m >> i;
                 }
@@ -3320,7 +3322,7 @@ private:
                     if ((regs.r[unit] & mask) == 0) {
                         next = mod;
                     } else {
-                        next = (regs.r[unit] + (~s + 1)) & mask;
+                        next = (regs.r[unit] + s) & mask;
                     }
                 }
                 regs.r[unit] &= ~mask;
