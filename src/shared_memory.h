@@ -5,7 +5,7 @@
 
 namespace Teakra {
 struct SharedMemory {
-    std::array<u8, 0x80000> raw;
+    std::array<u8, 0x80000> raw{};
     SharedMemory() {
         printf("SharedMemory address %p\n", (void*)raw.data());
     }

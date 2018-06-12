@@ -3245,16 +3245,7 @@ private:
         return RnAddress(unit, RnAndModify(unit, step, dmod));
     }
 
-    u16 RnAndModify(unsigned unit, StepValue step, bool dmod = false) {
-        u16 ret = regs.r[unit];
-        if ((unit == 3 && regs.r3z) || (unit == 7 && regs.r7z)) {
-            if (step != StepValue::Increase2Mode1 && step != StepValue::Decrease2Mode1
-                && step != StepValue::Increase2Mode2 && step != StepValue::Decrease2Mode2) {
-                regs.r[unit] = 0;
-                return ret;
-            }
-        }
-
+    u16 StepAddress(unsigned unit, u16 address, StepValue step, bool dmod) {
         u16 s;
         bool legacy = regs.legacy_mod;
         bool step2_mode1 = false;
@@ -3298,17 +3289,17 @@ private:
         }
 
         if (s == 0)
-            return ret;
+            return address;
 
         if (!dmod && !regs.brv[unit] && regs.m[unit]) {
             u16 mod = unit < 4 ? regs.modi : regs.modj;
 
             if (mod == 0) {
-                return ret;
+                return address;
             }
 
             if (mod == 1 && step2_mode2) {
-                return ret;
+                return address;
             }
 
             unsigned iteration = 1;
@@ -3335,20 +3326,20 @@ private:
 
                     u16 next;
                     if (!negative) {
-                        if ((regs.r[unit] & mask) == mod && (!step2_mode2 || mod != mask)) {
+                        if ((address & mask) == mod && (!step2_mode2 || mod != mask)) {
                             next = 0;
                         } else {
-                            next = (regs.r[unit] + s) & mask;
+                            next = (address + s) & mask;
                         }
                     } else {
-                        if ((regs.r[unit] & mask) == 0 && (!step2_mode2 || mod != mask)) {
+                        if ((address & mask) == 0 && (!step2_mode2 || mod != mask)) {
                             next = mod;
                         } else {
-                            next = (regs.r[unit] + s) & mask;
+                            next = (address + s) & mask;
                         }
                     }
-                    regs.r[unit] &= ~mask;
-                    regs.r[unit] |= next;
+                    address &= ~mask;
+                    address |= next;
                 } else {
                     u16 mask = 0;
                     for (unsigned i = 0; i < 9; ++i) {
@@ -3357,25 +3348,38 @@ private:
 
                     u16 next;
                     if (s < 0x8000) {
-                        next = (regs.r[unit] + s) & mask;
+                        next = (address + s) & mask;
                         if (next == ((mod + 1) & mask)) {
                             next = 0;
                         }
                     } else {
-                        next = regs.r[unit] & mask;
+                        next = address & mask;
                         if (next == 0) {
                             next = mod + 1;
                         }
                         next += s;
                         next &= mask;
                     }
-                    regs.r[unit] &= ~mask;
-                    regs.r[unit] |= next;
+                    address &= ~mask;
+                    address |= next;
                 }
             }
         } else {
-            regs.r[unit] += s;
+            address += s;
         }
+        return address;
+    }
+
+    u16 RnAndModify(unsigned unit, StepValue step, bool dmod = false) {
+        u16 ret = regs.r[unit];
+        if ((unit == 3 && regs.r3z) || (unit == 7 && regs.r7z)) {
+            if (step != StepValue::Increase2Mode1 && step != StepValue::Decrease2Mode1
+                && step != StepValue::Increase2Mode2 && step != StepValue::Decrease2Mode2) {
+                regs.r[unit] = 0;
+                return ret;
+            }
+        }
+        regs.r[unit] = StepAddress(unit, regs.r[unit], step, dmod);
         return ret;
     }
 
