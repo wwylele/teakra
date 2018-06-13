@@ -462,10 +462,17 @@ public:
     }
     void alu(Alu op, Imm8 a, Ax b) {
         u16 value = a.storage;
+        u64 and_backup = 0;
         if (op.GetName() == AlmOp::And) {
-            value &= 0xFF00; // for And operation, value is 1-extended to 16-bit.
+            // AND instruction has a special treatment:
+            // bit 8~15 are unaffected in the accumulator, but the flags are set as if they are affected
+            and_backup = GetAcc(b.GetName()) & 0xFF00;
         }
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        if (op.GetName() == AlmOp::And) {
+            u64 and_new = GetAcc(b.GetName()) & 0xFFFF'FFFF'FFFF'00FF;
+            SetAcc_Simple(b.GetName(), and_backup | and_new);
+        }
     }
     void alu(Alu op, MemR7Imm7s a, Ax b) {
         u16 value = LoadFromMemory(a);
@@ -2538,9 +2545,9 @@ public:
         u64 db = GetAcc(b.GetName());
         u64 value = db - ((u64)da << 15);
         if (value >> 63) {
-            SetAcc_NoSaturation(b.GetName(), db << 1);
+            SetAcc_NoSaturation(b.GetName(), SignExtend<40>(db << 1));
         } else {
-            SetAcc_NoSaturation(b.GetName(), (value << 1) + 1);
+            SetAcc_NoSaturation(b.GetName(), SignExtend<40>((value << 1) + 1));
         }
     }
 
