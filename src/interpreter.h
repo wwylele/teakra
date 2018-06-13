@@ -708,7 +708,7 @@ public:
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(mem.DataRead(i));
-        u16 low = mem.DataRead(j + oj) + mem.DataRead(i + oi);
+        u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) + mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
@@ -719,7 +719,7 @@ public:
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(mem.DataRead(i));
-        u16 low = mem.DataRead(j + oj) - mem.DataRead(i + oi);
+        u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) - mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
@@ -730,7 +730,7 @@ public:
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(mem.DataRead(i));
-        u16 low = mem.DataRead(j + oj) + mem.DataRead(i + oi);
+        u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) + mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
@@ -741,39 +741,39 @@ public:
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(mem.DataRead(i));
-        u16 low = mem.DataRead(j + oj) - mem.DataRead(i + oi);
+        u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) - mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
         u16 u = GetArRnUnit(a);
         auto s = GetArStep(as);
-        u16 o = GetArOffset(as);
+        auto o = GetArOffset(as);
         u16 address = RnAddressAndModify(u, s);
         u64 high = SignExtend<16, u64>(mem.DataRead(address)) + SignExtend<16, u64>(regs.sv);
-        u16 low = mem.DataRead(address + o) - regs.sv;
+        u16 low = mem.DataRead(OffsetAddress(u, address, o)) - regs.sv;
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
         u16 u = GetArRnUnit(a);
         auto s = GetArStep(as);
-        u16 o = GetArOffset(as);
+        auto o = GetArOffset(as);
         u16 address = RnAddressAndModify(u, s);
         u64 high = SignExtend<16, u64>(mem.DataRead(address)) - SignExtend<16, u64>(regs.sv);
-        u16 low = mem.DataRead(address + o) + regs.sv;
+        u16 low = mem.DataRead(OffsetAddress(u, address, o)) + regs.sv;
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
     }
     void sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
         auto [si, sj] = GetArpStep(asi, asj);
-        u16 oi;
+        OffsetValue oi;
         std::tie(oi, std::ignore) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(i)) - SignExtend<16, u64>(regs.sv);
-        u16 low = mem.DataRead(i + oi) + regs.sv;
+        u16 low = mem.DataRead(OffsetAddress(ui, i, oi)) + regs.sv;
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
         regs.sv = mem.DataRead(j);
@@ -781,12 +781,12 @@ public:
     void sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
         auto [si, sj] = GetArpStep(asi, asj);
-        u16 oj;
+        OffsetValue oj;
         std::tie(std::ignore, oj) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(regs.sv);
-        u16 low = mem.DataRead(j + oj) + regs.sv;
+        u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) + regs.sv;
         u64 result = (high << 16) | low;
         SetAcc_Simple(b.GetName(), result);
         regs.sv = mem.DataRead(i);
@@ -794,12 +794,12 @@ public:
     void add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
         auto [si, sj] = GetArpStep(asi, asj);
-        u16 oi;
+        OffsetValue oi;
         std::tie(oi, std::ignore) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(i)) + SignExtend<16, u64>(regs.sv);
-        u16 low = mem.DataRead(i + oi) - regs.sv;
+        u16 low = mem.DataRead(OffsetAddress(ui, i, oi)) - regs.sv;
         u64 result = (high << 16) | low;
         u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
         SetAcc_Simple(b.GetName(), result);
@@ -808,12 +808,12 @@ public:
     void add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
         auto [si, sj] = GetArpStep(asi, asj);
-        u16 oj;
+        OffsetValue oj;
         std::tie(std::ignore, oj) = GetArpOffset(asi, asj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(regs.sv);
-        u16 low = mem.DataRead(j + oj) - regs.sv;
+        u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) - regs.sv;
         u64 result = (high << 16) | low;
         u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
         SetAcc_Simple(b.GetName(), result);
@@ -2018,8 +2018,9 @@ public:
         u32 value = ProductToBus32_NoShift(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
-        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
-        u16 address2 = address + GetArOffset(bs);
+        u16 unit = GetArRnUnit(b);
+        u16 address = RnAddressAndModify(unit, GetArStep(bs));
+        u16 address2 = OffsetAddress(unit, address, GetArOffset(bs));
         // NOTE: keep the write order exactly like this.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
@@ -2028,15 +2029,17 @@ public:
         u64 value = ProductToBus40(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
-        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
-        u16 address2 = address + GetArOffset(bs);
+        u16 unit = GetArRnUnit(b);
+        u16 address = RnAddressAndModify(unit, GetArStep(bs));
+        u16 address2 = OffsetAddress(unit, address, GetArOffset(bs));
         // NOTE: keep the write order exactly like this.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
     }
     void mov2(ArRn2 a, ArStep2 as, Px b) {
-        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
-        u16 address2 = address + GetArOffset(as);
+        u16 unit = GetArRnUnit(a);
+        u16 address = RnAddressAndModify(unit, GetArStep(as));
+        u16 address2 = OffsetAddress(unit, address, GetArOffset(as));
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
@@ -2046,16 +2049,18 @@ public:
         u64 value = SaturateAcc(GetAcc(a.GetName()), false);
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
-        u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
-        u16 address2 = address + GetArOffset(bs);
+        u16 unit = GetArRnUnit(b);
+        u16 address = RnAddressAndModify(unit, GetArStep(bs));
+        u16 address2 = OffsetAddress(unit, address, GetArOffset(bs));
         // NOTE: keep the write order exactly like this. The second one overrides the first one if
         // the offset is zero.
         mem.DataWrite(address2, l);
         mem.DataWrite(address, h);
     }
     void mova(ArRn2 a, ArStep2 as, Ab b) {
-        u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
-        u16 address2 = address + GetArOffset(as);
+        u16 unit = GetArRnUnit(a);
+        u16 address = RnAddressAndModify(unit, GetArStep(as));
+        u16 address2 = OffsetAddress(unit, address, GetArOffset(as));
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
@@ -2096,8 +2101,9 @@ public:
     void mov2_axh_m_y0_m(Axh a, ArRn2 b, ArStep2 bs) {
         u16 u = (u16)((SaturateAcc_NoFlag(GetAcc(a.GetName()), false) >> 16) & 0xFFFF);
         u16 v = regs.y[0];
-        u16 ua = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
-        u16 va = ua + GetArOffset(bs);
+        u16 unit = GetArRnUnit(b);
+        u16 ua = RnAddressAndModify(unit, GetArStep(bs));
+        u16 va = OffsetAddress(unit, ua, GetArOffset(bs));
         // keep the order
         mem.DataWrite(va, v);
         mem.DataWrite(ua, u);
@@ -2140,8 +2146,9 @@ public:
     void mov2_abh_m(Abh ax, Abh ay, ArRn1 b, ArStep1 bs) {
         u16 u = (u16)((SaturateAcc_NoFlag(GetAcc(ax.GetName()), false) >> 16) & 0xFFFF);
         u16 v = (u16)((SaturateAcc_NoFlag(GetAcc(ay.GetName()), false) >> 16) & 0xFFFF);
-        u16 ua = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
-        u16 va = ua + GetArOffset(bs);
+        u16 unit = GetArRnUnit(b);
+        u16 ua = RnAddressAndModify(unit, GetArStep(bs));
+        u16 va = OffsetAddress(unit, ua, GetArOffset(bs));
         // keep the order
         mem.DataWrite(va, v);
         mem.DataWrite(ua, u);
@@ -2548,8 +2555,9 @@ public:
 
     void sqr_sqr_add3(ArRn2 a, ArStep2 as, Ab b) {
         add3_p0_p1(b);
-        u16 address0 = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
-        u16 address1 = address0 + GetArOffset(as);
+        u16 unit = GetArRnUnit(a);
+        u16 address0 = RnAddressAndModify(unit, GetArStep(as));
+        u16 address1 = OffsetAddress(unit, address0, GetArOffset(as));
         regs.x[0] = regs.y[0] = mem.DataRead(address0);
         regs.x[1] = regs.y[1] = mem.DataRead(address1);
         DoMultiplication(0, true, true);
@@ -2829,8 +2837,8 @@ public:
         u16 y = RnAddressAndModify(uj, sj, dmodj);
         regs.x[0] = mem.DataRead(x);
         regs.y[0] = mem.DataRead(y);
-        regs.x[1] = mem.DataRead(x + oi);
-        regs.y[1] = mem.DataRead(y + oj);
+        regs.x[1] = mem.DataRead(OffsetAddress(ui, x, oi, dmodi));
+        regs.y[1] = mem.DataRead(OffsetAddress(uj, y, oj, dmodj));
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
     }
@@ -2859,9 +2867,10 @@ public:
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
-        u16 address = RnAddressAndModify(GetArRnUnit(x), GetArStep(xs));
+        u16 unit = GetArRnUnit(x);
+        u16 address = RnAddressAndModify(unit, GetArStep(xs));
         regs.x[0] = mem.DataRead(address);
-        regs.x[1] = mem.DataRead(address + GetArOffset(xs));
+        regs.x[1] = mem.DataRead(OffsetAddress(unit, address, GetArOffset(xs)));
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
     }
@@ -2869,11 +2878,12 @@ public:
     void mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        u16 address = RnAddressAndModify(GetArRnUnit(w), GetArStep(ws));
+        u16 unit = GetArRnUnit(w);
+        u16 address = RnAddressAndModify(unit, GetArStep(ws));
         u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(u.GetName()), false) >> 16) & 0xFFFF);
         u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(v.GetName()), false) >> 16) & 0xFFFF);
         // keep the order like this
-        mem.DataWrite(address + GetArOffset(ws), v_value);
+        mem.DataWrite(OffsetAddress(unit, address, GetArOffset(ws)), v_value);
         mem.DataWrite(address, u_value);
         ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
         std::swap(regs.x[0], regs.x[1]);
@@ -2884,11 +2894,12 @@ public:
     void mma_mov(ArRn2 w, ArStep1 ws, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        u16 address = RnAddressAndModify(GetArRnUnit(w), GetArStep(ws));
+        u16 unit = GetArRnUnit(w);
+        u16 address = RnAddressAndModify(unit, GetArStep(ws));
         u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(a), false) >> 16) & 0xFFFF);
         u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(CounterAcc(a)), false) >> 16) & 0xFFFF);
         // keep the order like this
-        mem.DataWrite(address + GetArOffset(ws), v_value);
+        mem.DataWrite(OffsetAddress(unit, address, GetArOffset(ws)), v_value);
         mem.DataWrite(address, u_value);
         ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
         std::swap(regs.x[0], regs.x[1]);
@@ -3211,26 +3222,24 @@ private:
             ConvertArStep(regs.arpstepj[arpstepj.storage]));
     }
 
-    static u16 ConvertArOffset(u16 arvalue) {
-        switch(arvalue) {
-        case 0: return 0;
-        case 1: return 1;
-        case 2: case 3: return 0xFFFF;
-        default: throw "???";
-        }
-    }
+    enum class OffsetValue : u16 {
+        Zero = 0,
+        PlusOne = 1,
+        MinusOne = 2,
+        MinusOneDmod = 3,
+    };
 
     template <typename ArStepX>
-    u16 GetArOffset(ArStepX arstep) const {
+    OffsetValue GetArOffset(ArStepX arstep) const {
         static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
-        return ConvertArOffset(regs.aroffset[arstep.storage]);
+        return (OffsetValue)regs.aroffset[arstep.storage];
     }
 
     template <typename ArpStepX>
-    std::tuple<u16, u16> GetArpOffset(ArpStepX arpstepi, ArpStepX arpstepj) const {
+    std::tuple<OffsetValue, OffsetValue> GetArpOffset(ArpStepX arpstepi, ArpStepX arpstepj) const {
         static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
-        return std::make_tuple(ConvertArOffset(regs.arpoffseti[arpstepi.storage]),
-            ConvertArOffset(regs.arpoffsetj[arpstepj.storage]));
+        return std::make_tuple((OffsetValue)regs.arpoffseti[arpstepi.storage],
+            (OffsetValue)regs.arpoffsetj[arpstepj.storage]);
     }
 
     u16 RnAddress(unsigned unit, unsigned value) {
@@ -3245,7 +3254,34 @@ private:
         return RnAddress(unit, RnAndModify(unit, step, dmod));
     }
 
-    u16 StepAddress(unsigned unit, u16 address, StepValue step, bool dmod) {
+    u16 OffsetAddress(unsigned unit, u16 address, OffsetValue offset, bool dmod = false) {
+        if (offset == OffsetValue::Zero)
+            return address;
+        if (offset == OffsetValue::MinusOneDmod) {
+            return address - 1;
+        }
+        bool emod = regs.m[unit] & !regs.brv[unit] & !dmod;
+        u16 mod = unit < 4 ? regs.modi : regs.modj;
+        u16 mask = 1; // mod = 0 still have one bit mask
+        for (unsigned i = 0; i < 9; ++i) {
+            mask |= mod >> i;
+        }
+        if (offset == OffsetValue::PlusOne) {
+            if (!emod)
+                return address + 1;
+            if ((address & mask) == mod)
+                return address & ~mask;
+            return address + 1;
+        } else { // OffsetValue::MinusOne
+            if (!emod)
+                return address - 1;
+            if ((address & mask) == 0)
+                return address | mod;
+            return address - 1;
+        }
+    }
+
+    u16 StepAddress(unsigned unit, u16 address, StepValue step, bool dmod = false) {
         u16 s;
         bool legacy = regs.legacy_mod;
         bool step2_mode1 = false;

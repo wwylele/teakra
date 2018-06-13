@@ -601,7 +601,7 @@ int main() {
         if (kDown & KEY_Y) {
            FlushCache(&dspD[0x3000], 0x40000 - 0x6000);
            for (u32 i = 0x3000; i < 0x20000; ++i) {
-               dspD[i] = i >> 4;
+               dspD[i] = i;//i >> 4;
            }
            InvalidateCache(&dspD[0x3000], 0x40000 - 0x6000);
         }
