@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
 
     TestCase test_case{};
     u16 r0base = 0x4839;
-    test_case.opcode = 0xD294; // modr r0+arps0
+    test_case.opcode = 0xDFE9; // modr r0+arps0
     test_case.expand = 0;
     test_case.before.mod2 = 1; // enable mod for r0;
     std::FILE* f = std::fopen(argv[1], "wb");
@@ -23,7 +23,6 @@ int main(int argc, char** argv) {
                 }
             }
         }
-
     }
     std::fclose(f);
 }

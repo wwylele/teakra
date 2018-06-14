@@ -3282,6 +3282,10 @@ private:
         } else { // OffsetValue::MinusOne
             if (!emod)
                 return address - 1;
+            // TODO: sometimes this would return two addresses,
+            // neither of which is the original Rn value.
+            // This only happens for memory writing, but not for memory reading.
+            // Might be some undefined behaviour.
             if ((address & mask) == 0)
                 return address | mod;
             return address - 1;
@@ -3297,6 +3301,9 @@ private:
         case StepValue::Zero: s = 0; break;
         case StepValue::Increase: s = 1; break;
         case StepValue::Decrease: s = 0xFFFF; break;
+        // TODO: Increase/Decrease2Mode1/2 sometimes have wrong result if Step=+/-1.
+        // This however never happens with modr instruction.
+        // Might be undefined behaviour.
         case StepValue::Increase2Mode1:
             s = 2;
             step2_mode1 = !legacy;

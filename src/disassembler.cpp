@@ -1556,7 +1556,7 @@ private:
             "+0",
             "+1",
             "-1",
-            "+0*",
+            "-1*",
         }};
 
         return offset_names[v >> 3] + step_names[v & 7];

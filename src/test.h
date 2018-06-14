@@ -5,11 +5,9 @@
 #include "common_types.h"
 #endif
 
-constexpr u16 TestSpaceX = 0x6789;
-constexpr u16 TestSpaceY = 0xCDEF;
-constexpr u16 TestSpaceSize = 0x0006;
-constexpr u16 TestAddressX = TestSpaceX + 2;
-constexpr u16 TestAddressY = TestSpaceY + 2;
+constexpr u16 TestSpaceX = 0x6400;
+constexpr u16 TestSpaceY = 0xCC00;
+constexpr u16 TestSpaceSize = 0x0200;
 
 struct State {
     std::array<u64, 2> a, b;
@@ -32,4 +30,4 @@ struct TestCase {
     u16 opcode, expand;
 };
 
-static_assert(sizeof(TestCase) == 264, "!");
+static_assert(sizeof(TestCase) == 4312);

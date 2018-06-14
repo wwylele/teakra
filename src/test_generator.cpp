@@ -16,7 +16,7 @@ enum class RegConfig {
 };
 
 enum class ExpandConfig {
-    None = 0,
+    None = 0, // or Zero
     Any = 1,
     Memory = 2,
 };
@@ -24,6 +24,11 @@ enum class ExpandConfig {
 namespace Random {
 
 static std::mt19937 gen(std::random_device{}());
+
+u64 uniform(u64 a, u64 b) {
+    std::uniform_int_distribution<u64> dist(a, b);
+    return dist(gen);
+}
 
 u64 bit40() {
     static std::uniform_int_distribution<u64> dist(0, 0xFF'FFFF'FFFF);
@@ -63,6 +68,8 @@ u16 bit16() {
 
 struct Config {
     bool enable = false;
+    bool lock_page = false;
+    bool lock_r7 = false;
     std::array<RegConfig, 8> r{};
     std::array<RegConfig, 4> ar{};
     std::array<RegConfig, 4> arp{};
@@ -89,6 +96,10 @@ struct Config {
         state.stepj0 = Random::bit16();
         state.mixp = Random::bit16();
         state.sv = Random::bit16();
+        if (Random::uniform(0, 1) == 1) {
+            state.sv &= 128;
+            state.sv = SignExtend<7>(state.sv);
+        }
         state.repc = Random::bit16();
         state.lc = Random::bit16();
         state.cfgi = Random::bit16();
@@ -99,6 +110,10 @@ struct Config {
         state.mod0 = Random::bit16();
         state.mod1 = Random::bit16();
         state.mod2 = Random::bit16();
+        if (lock_page) {
+            state.mod1 &= 0xFF00;
+            state.mod1 |= TestSpaceX >> 8;
+        }
         std::generate(state.ar.begin(), state.ar.end(), Random::bit16);
         std::generate(state.arp.begin(), state.arp.end(), Random::bit16);
         std::generate(state.x.begin(), state.x.end(), Random::bit16);
@@ -124,11 +139,14 @@ struct Config {
         }
         for (std::size_t i = 0; i < rp.size(); ++i) {
             if (rp[i] == RegConfig::Memory) {
-                state.r[i] = i < 4 ? TestAddressX : TestAddressY;
+                state.r[i] = (i < 4 ? TestSpaceX : TestSpaceY) + Random::uniform(10, TestSpaceSize - 10);
                 if (!((state.mod2 >> i) & 1) && (((state.mod2 >> (i + 8)) & 1))) {
                     state.r[i] = BitReverse(state.r[i]);
                 }
             }
+        }
+        if (lock_r7) {
+            state.r[7] = TestSpaceY + Random::uniform(10, TestSpaceSize - 10);
         }
         return state;
     }
@@ -136,6 +154,7 @@ struct Config {
 
 Config DisabledConfig{false};
 Config AnyConfig{true};
+
 Config ConfigWithAddress(Rn r) {
     Config config{true};
     config.r[r.storage] = RegConfig::Memory;
@@ -156,6 +175,49 @@ Config ConfigWithArpAddress(ArpRnX r) {
     Config config{true};
     config.arp[r.storage] = RegConfig::Memory;
     return config;
+}
+
+Config ConfigWithImm8(Imm8 imm) {
+    std::unordered_set<u16> random_pos = {
+        0, 35, 0xE3,
+    };
+    if (random_pos.count(imm.storage)) {
+        return AnyConfig;
+    } else {
+        return DisabledConfig;
+    }
+}
+
+Config ConfigWithMemImm8(MemImm8 mem) {
+    std::unordered_set<u16> random_pos = {
+        0, 0x88, 0xFF,
+    };
+    if (random_pos.count(mem.storage)) {
+        Config c = AnyConfig;
+        c.lock_page = true;
+        return c;
+    } else {
+        return DisabledConfig;
+    }
+}
+
+Config ConfigWithMemR7Imm16() {
+    Config c = AnyConfig;
+    c.lock_r7 = true;
+    return c;
+}
+
+Config ConfigWithMemR7Imm7s(MemR7Imm7s mem) {
+    std::unordered_set<u16> random_pos = {
+        0, 4, 0x7E,
+    };
+    if (random_pos.count(mem.storage)) {
+        Config c = AnyConfig;
+        c.lock_r7 = true;
+        return c;
+    } else {
+        return DisabledConfig;
+    }
 }
 
 class TestGenerator {
@@ -192,7 +254,10 @@ public:
     }
 
     Config alm(Alm op, MemImm8 a, Ax b) {
-        return DisabledConfig;
+        if (op.GetName() == AlmOp::Sqr && b.GetName() != RegName::a0) {
+            return DisabledConfig;
+        }
+        return ConfigWithMemImm8(a);
     }
     Config alm(Alm op, Rn a, StepZIDS as, Ax b) {
         if (op.GetName() == AlmOp::Sqr && b.GetName() != RegName::a0) {
@@ -238,16 +303,16 @@ public:
         return AnyConfig.WithMemoryExpand();
     }
     Config alu(Alu op, MemR7Imm16 a, Ax b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm16();
     }
     Config alu(Alu op, Imm16 a, Ax b) {
         return AnyConfig.WithAnyExpand();
     }
     Config alu(Alu op, Imm8 a, Ax b) {
-        return DisabledConfig;
+        return ConfigWithImm8(a);
     }
     Config alu(Alu op, MemR7Imm7s a, Ax b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm7s(a);
     }
 
     Config or_(Ab a, Ax b, Ax c) {
@@ -261,7 +326,7 @@ public:
     }
 
     Config alb(Alb op, Imm16 a, MemImm8 b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(b).WithAnyExpand();
     }
     Config alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
         return ConfigWithAddress(b).WithAnyExpand();
@@ -545,9 +610,6 @@ public:
         return DisabledConfig;
     }
     Config push(ArArpSttMod a) {
-        if (IsUnimplementedRegister(a.GetName())) {
-            return DisabledConfig;
-        }
         return DisabledConfig;
     }
     Config push_prpage() {
@@ -585,9 +647,6 @@ public:
         return DisabledConfig;
     }
     Config pop(ArArpSttMod a) {
-        if (IsUnimplementedRegister(a.GetName())) {
-            return DisabledConfig;
-        }
         return DisabledConfig;
     }
     Config pop(Bx a) {
@@ -642,7 +701,7 @@ public:
         return ConfigWithArAddress(b);
     }
     Config tstb(MemImm8 a, Imm4 b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
     Config tstb(Rn a, StepZIDS as, Imm4 b) {
         return ConfigWithAddress(a);
@@ -689,7 +748,7 @@ public:
         return AnyConfig;
     }
     Config mul_y0(Mul2 op, MemImm8 x, Ax a) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(x);
     }
 
     Config mpyi(Imm8s x) {
@@ -775,34 +834,34 @@ public:
         return AnyConfig;
     }
     Config mov(Ablh a, MemImm8 b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(b);
     }
     Config mov(Axl a, MemImm16 b) {
         return AnyConfig.WithMemoryExpand();
     }
     Config mov(Axl a, MemR7Imm16 b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm16();
     }
     Config mov(Axl a, MemR7Imm7s b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm7s(b);
     }
     Config mov(MemImm16 a, Ax b) {
          return AnyConfig.WithMemoryExpand();
     }
     Config mov(MemImm8 a, Ab b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
     Config mov(MemImm8 a, Ablh b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
     Config mov_eu(MemImm8 a, Axh b) {
         return DisabledConfig;
     }
     Config mov(MemImm8 a, RnOld b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
     Config mov_sv(MemImm8 a) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
     Config mov_dvm_to(Ab b) {
         return DisabledConfig;
@@ -834,10 +893,10 @@ public:
         return AnyConfig;
     }
     Config mov(MemR7Imm16 a, Ax b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm16();
     }
     Config mov(MemR7Imm7s a, Ax b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm7s(a);
     }
     Config mov(Rn a, StepZIDS as, Bx b) {
         return ConfigWithAddress(a);
@@ -856,7 +915,7 @@ public:
         return AnyConfig;
     }
     Config mov(RnOld a, MemImm8 b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(b);
     }
     Config mov_icr(Register a) {
         return DisabledConfig;
@@ -887,7 +946,7 @@ public:
         return AnyConfig;
     }
     Config mov_sv_to(MemImm8 b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(b);
     }
     Config mov_x0_to(Ab b) {
         return AnyConfig;
@@ -1010,17 +1069,23 @@ public:
     }
 
     Config mov_repc_to(MemR7Imm16 b) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm16();
     }
     Config mov(ArArpSttMod a, MemR7Imm16 b) {
-        return DisabledConfig;
+        if (IsUnimplementedRegister(a.GetName())) {
+            return DisabledConfig;
+        }
+        return ConfigWithMemR7Imm16();
     }
 
     Config mov_repc(MemR7Imm16 a) {
-        return DisabledConfig;
+        return ConfigWithMemR7Imm16();
     }
     Config mov(MemR7Imm16 a, ArArpSttMod b) {
-        return DisabledConfig;
+        if (IsUnimplementedRegister(b.GetName())) {
+            return DisabledConfig;
+        }
+        return ConfigWithMemR7Imm16();
     }
 
     Config mov_pc(Ax a) {
@@ -1097,7 +1162,7 @@ public:
     }
 
     Config movs(MemImm8 a, Ab b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
     Config movs(Rn a, StepZIDS as, Ab b) {
         return ConfigWithAddress(a);
@@ -1254,7 +1319,7 @@ public:
         return ConfigWithAddress(Rn{0});
     }
     Config divs(MemImm8 a, Ax b) {
-        return DisabledConfig;
+        return ConfigWithMemImm8(a);
     }
 
     Config sqr_sqr_add3(Ab a, Ab b) {
@@ -1451,7 +1516,7 @@ void GenerateTestCasesToFile(const char* path) {
                 test_case.expand = Random::bit16();
                 break;
             case ExpandConfig::Memory:
-                test_case.expand = TestAddressX;
+                test_case.expand = TestSpaceX + Random::uniform(10, TestSpaceSize - 10);
                 break;
             }
             std::fwrite(&test_case, sizeof(test_case), 1, f);

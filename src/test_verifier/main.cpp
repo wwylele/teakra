@@ -8,6 +8,8 @@
 #include <teakra/disassembler.h>
 #include <cstdio>
 #include <cinttypes>
+#include <iomanip>
+#include <sstream>
 
 std::string Flag16ToString(u16 value, const char* symbols) {
     std::string result = symbols;
@@ -16,6 +18,17 @@ std::string Flag16ToString(u16 value, const char* symbols) {
             result[15 - i] = '-';
     }
     return result;
+}
+
+template<typename T>
+std::string ToHex(T i)
+{
+  u64 v = i;
+  std::stringstream stream;
+  stream << "0x"
+         << std::setfill ('0') << std::setw(sizeof(T) * 2)
+         << std::hex << v;
+  return stream.str();
 }
 
 int main(int argc, char** argv) {
@@ -152,9 +165,9 @@ int main(int argc, char** argv) {
         CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRjjjjjiiiii");
 
         for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
-            Check(("memory_x" + std::to_string(offset)).c_str(),
+            Check(("memory_" + ToHex<u16>(TestSpaceX + offset)).c_str(),
                 test_case.after.test_space_x[offset], memory_interface.DataRead(TestSpaceX + offset));
-            Check(("memory_y" + std::to_string(offset)).c_str(),
+            Check(("memory_" + ToHex<u16>(TestSpaceY + offset)).c_str(),
                 test_case.after.test_space_y[offset], memory_interface.DataRead(TestSpaceY + offset));
         }
 
