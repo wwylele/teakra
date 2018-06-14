@@ -51,12 +51,9 @@ int main(int argc, char** argv) {
         TestCase test_case;
         if (!fread(&test_case, sizeof(test_case), 1, file)) break;
         regs.Reset();
-        regs.a[0].value = test_case.before.a[0];
-        regs.a[1].value = test_case.before.a[1];
-        regs.b[0].value = test_case.before.b[0];
-        regs.b[1].value = test_case.before.b[1];
-        regs.p[0].value = test_case.before.p[0];
-        regs.p[1].value = test_case.before.p[1];
+        regs.a = test_case.before.a;
+        regs.b = test_case.before.b;
+        regs.p = test_case.before.p;
         regs.r = test_case.before.r;
         regs.x = test_case.before.x;
         regs.y = test_case.before.y;
@@ -125,12 +122,12 @@ int main(int argc, char** argv) {
             }
         };
 
-        Check40("a0", SignExtend<40>(test_case.after.a[0]), regs.a[0].value);
-        Check40("a1", SignExtend<40>(test_case.after.a[1]), regs.a[1].value);
-        Check40("b0", SignExtend<40>(test_case.after.b[0]), regs.b[0].value);
-        Check40("b1", SignExtend<40>(test_case.after.b[1]), regs.b[1].value);
-        Check32("p0", test_case.after.p[0], regs.p[0].value);
-        Check32("p1", test_case.after.p[1], regs.p[1].value);
+        Check40("a0", SignExtend<40>(test_case.after.a[0]), regs.a[0]);
+        Check40("a1", SignExtend<40>(test_case.after.a[1]), regs.a[1]);
+        Check40("b0", SignExtend<40>(test_case.after.b[0]), regs.b[0]);
+        Check40("b1", SignExtend<40>(test_case.after.b[1]), regs.b[1]);
+        Check32("p0", test_case.after.p[0], regs.p[0]);
+        Check32("p1", test_case.after.p[1], regs.p[1]);
         Check("r0", test_case.after.r[0], regs.r[0]);
         Check("r1", test_case.after.r[1], regs.r[1]);
         Check("r2", test_case.after.r[2], regs.r[2]);

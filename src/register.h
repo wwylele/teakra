@@ -41,22 +41,15 @@ struct RegisterState {
     // shadows for bank exchange;
     u16 r0b = 0, r1b = 0, r4b = 0, r7b = 0;
 
-    // accumulators
-    struct Accumulator {
-        // 40-bit 2's comp on real TeakLite.
-        // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
-        u64 value = 0;
-    };
-    std::array<Accumulator, 2> a;
-    std::array<Accumulator, 2> b;
+    // 40-bit 2's comp on real TeakLite.
+    // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
+    std::array<u64, 2> a;
+    std::array<u64, 2> b;
 
     // multiplication unit
-    struct Product {
-        u32 value = 0;
-    };
     std::array<u16, 2> x{}; // factor
     std::array<u16, 2> y{}; // factor
-    std::array<Product, 2> p; // product
+    std::array<u32, 2> p; // product
 
     // step/modulo
     u16 stepi = 0, stepj = 0; // 7 bit 2's comp
@@ -426,12 +419,12 @@ struct ArrayRORedirector {
 template<unsigned index>
 struct AccEProxy {
     static u16 Get(const RegisterState* self) {
-        return (u16)((self->a[index].value >> 32) & 0xF);
+        return (u16)((self->a[index] >> 32) & 0xF);
     }
     static void Set(RegisterState* self, u16 value) {
         u32 value32 = SignExtend<4>((u32)value);
-        self->a[index].value &= 0xFFFFFFFF;
-        self->a[index].value |= (u64)value32 << 32;
+        self->a[index] &= 0xFFFFFFFF;
+        self->a[index] |= (u64)value32 << 32;
     }
 };
 

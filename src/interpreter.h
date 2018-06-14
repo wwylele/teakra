@@ -240,9 +240,9 @@ public:
             x = SignExtend<16>(x);
         if (y_sign)
             y = SignExtend<16>(y);
-        regs.p[unit].value = x * y;
+        regs.p[unit] = x * y;
         if (x_sign || y_sign)
-            regs.psign[unit] = regs.p[unit].value >> 31;
+            regs.psign[unit] = regs.p[unit] >> 31;
         else
             regs.psign[unit] = 0;
     }
@@ -589,14 +589,14 @@ public:
             case RegName::a0: case RegName::a1:
                 throw "weird effect";
             // operation on accumulators doesn't go through regular bus with flag and saturation
-            case RegName::a0l: regs.a[0].value = (regs.a[0].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::a1l: regs.a[1].value = (regs.a[1].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::b0l: regs.b[0].value = (regs.b[0].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::b1l: regs.b[1].value = (regs.b[1].value & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::a0h: regs.a[0].value = (regs.a[0].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::a1h: regs.a[1].value = (regs.a[1].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::b0h: regs.b[0].value = (regs.b[0].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::b1h: regs.b[1].value = (regs.b[1].value & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::a0l: regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::a1l: regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::b0l: regs.b[0] = (regs.b[0] & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::b1l: regs.b[1] = (regs.b[1] & 0xFFFF'FFFF'FFFF'0000) | result; break;
+            case RegName::a0h: regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::a1h: regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::b0h: regs.b[0] = (regs.b[0] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::b1h: regs.b[1] = (regs.b[1] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
             default:
                 RegFromBus16(b.GetName(), result); // including RegName:p (p0h)
             }
@@ -1138,16 +1138,16 @@ public:
     void ContextStore() {
         regs.ShadowStore();
         regs.ShadowSwap();
-        u64 a = regs.a[1].value;
-        u64 b = regs.b[1].value;
-        regs.b[1].value = a;
+        u64 a = regs.a[1];
+        u64 b = regs.b[1];
+        regs.b[1] = a;
         SetAcc_NoSaturation(RegName::a1, b); // Flag set on b1->a1
     }
 
     void ContextRestore() {
         regs.ShadowRestore();
         regs.ShadowSwap();
-        std::swap(regs.a[1].value, regs.b[1].value);
+        std::swap(regs.a[1], regs.b[1]);
     }
 
     void cntx_s() {
@@ -1283,7 +1283,7 @@ public:
     }
     void pop(Abe a) {
         u32 value32 = SignExtend<8, u32>(mem.DataRead(regs.sp++) & 0xFF);
-        RegisterState::Accumulator* target;
+        u64* target;
         switch(a.GetName()) {
         case RegName::a0e: target = &regs.a[0]; break;
         case RegName::a1e: target = &regs.a[1]; break;
@@ -1291,7 +1291,7 @@ public:
         case RegName::b1e: target = &regs.b[1]; break;
         default: throw "???";
         }
-        SetAcc(a.GetName(), (target->value & 0xFFFFFFFF) | (u64)value32 << 32);
+        SetAcc(a.GetName(), (*target & 0xFFFFFFFF) | (u64)value32 << 32);
     }
     void pop(ArArpSttMod a) {
         u16 value = mem.DataRead(regs.sp++);
@@ -2941,10 +2941,10 @@ private:
 
     u64 GetAcc(RegName name) const {
         switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: return regs.a[0].value;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: return regs.a[1].value;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: return regs.b[0].value;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: return regs.b[1].value;
+        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: return regs.a[0];
+        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: return regs.a[1];
+        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: return regs.b[0];
+        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: return regs.b[1];
         default: throw "nope";
         }
     }
@@ -3088,10 +3088,10 @@ private:
 
     void SetAcc_Simple(RegName name, u64 value) {
         switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0].value = value; break;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1].value = value; break;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: regs.b[0].value = value; break;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: regs.b[1].value = value; break;
+        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0] = value; break;
+        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1] = value; break;
+        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: regs.b[0] = value; break;
+        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: regs.b[1] = value; break;
         default: throw "nope";
         }
     }
@@ -3132,7 +3132,7 @@ private:
         case RegName::p1: throw "?";
         case RegName::p: // p0h
             regs.psign[0] = value > 0x7FFF; // ?
-            regs.p[0].value = (regs.p[0].value & 0xFFFF) | (value << 16);
+            regs.p[0] = (regs.p[0] & 0xFFFF) | (value << 16);
             break;
 
         case RegName::pc: throw "?";
@@ -3443,7 +3443,7 @@ private:
         default:
             throw "???";
         }
-        return regs.p[unit].value;
+        return regs.p[unit];
     }
 
     u64 ProductToBus40(RegName reg) const {
@@ -3456,7 +3456,7 @@ private:
         default:
             throw "???";
         }
-        u64 value = regs.p[unit].value | ((u64)regs.psign[unit] << 32);
+        u64 value = regs.p[unit] | ((u64)regs.psign[unit] << 32);
         switch (regs.ps[unit]) {
         case 0:
             value = SignExtend<33>(value);
@@ -3487,7 +3487,7 @@ private:
         default:
             throw "???";
         }
-        regs.p[unit].value = value;
+        regs.p[unit] = value;
         regs.psign[unit] = value >> 31;
     }
 
