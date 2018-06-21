@@ -34,16 +34,8 @@ target_include_directories(teakra
                            PRIVATE .)
 target_compile_options(teakra PRIVATE ${TEAKRA_CXX_FLAGS})
 
-#####
-add_executable(teakra_tests
-    main.cpp
-)
-create_target_directory_groups(teakra_tests)
-target_link_libraries(teakra_tests PRIVATE teakra)
-target_include_directories(teakra_tests PRIVATE .)
-target_compile_options(teakra_tests PRIVATE ${TEAKRA_CXX_FLAGS})
-
 add_subdirectory(coff_reader)
+add_subdirectory(dsp1_reader)
 add_subdirectory(test_generator)
 add_subdirectory(test_verifier)
 add_subdirectory(mod_test_generator)
