@@ -225,11 +225,10 @@ public:
     }
 
     void DoMultiplication(u32 unit, bool x_sign, bool y_sign) {
-        // Am I doing it right?
         u32 x = regs.x[unit];
         u32 y = regs.y[unit];
         if (regs.hwm == 1 || (regs.hwm == 3 && unit == 0)) {
-            y >>= 8; // no sign extension?
+            y >>= 8;
         } else if (regs.hwm == 2 || (regs.hwm == 3 && unit == 1)) {
             y &= 0xFF;
         }
@@ -1951,7 +1950,6 @@ public:
         regs.repc = value;
     }
     void mov(ArRn1 a, ArStep1 as, ArArp b) {
-        // are you sure it is ok to both use and modify ar registers?
         u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
         u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
@@ -3128,7 +3126,7 @@ private:
         case RegName::p0:
         case RegName::p1: throw "?";
         case RegName::p: // p0h
-            regs.pe[0] = value > 0x7FFF; // ?
+            regs.pe[0] = value > 0x7FFF;
             regs.p[0] = (regs.p[0] & 0xFFFF) | (value << 16);
             break;
 
