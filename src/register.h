@@ -46,6 +46,9 @@ struct RegisterState {
     std::array<u64, 2> a{};
     std::array<u64, 2> b{};
 
+    // shadows for a1 and b1
+    u64 a1s = 0, b1s = 0;
+
     // multiplication unit
     std::array<u16, 2> x{}; // factor
     std::array<u16, 2> y{}; // factor
@@ -105,7 +108,7 @@ struct RegisterState {
     u16 cmd = 1; // 1-bit, step/mod method. 0 - TeakLiteII; 1 - legacy TeakLite
     u16 epi = 0; // 1-bit. If set, cause r3 = 0 when steping r3
     u16 epj = 0; // 1-bit. If set, cause r7 = 0 when steping r7
-    u16 ccnta = 1;
+    u16 ccnta = 1; // 1-bit. If clear, store/restore a1/b1 to shadows on context switch
     u16 cpc = 1; // 1-bit, change word order when push/pop pc
     u16 crep = 1;
 
@@ -459,10 +462,8 @@ using stt0 = PseudoRegister<
 >;
 using stt1 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
-
-    //ProxySlot<ArrayRORedirector<2, &RegisterState::iu, 0>, ?, 1>,
-    //ProxySlot<ArrayRORedirector<2, &RegisterState::iu, 1>, ?, 1>,
-
+    ProxySlot<ArrayRORedirector<2, &RegisterState::iu, 0>, 10, 1>,
+    ProxySlot<ArrayRORedirector<2, &RegisterState::iu, 1>, 11, 1>,
     ProxySlot<ArrayRedirector<2, &RegisterState::pe, 0>, 14, 1>,
     ProxySlot<ArrayRedirector<2, &RegisterState::pe, 1>, 15, 1>
 >;

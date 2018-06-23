@@ -1134,16 +1134,26 @@ public:
     void ContextStore() {
         regs.ShadowStore();
         regs.ShadowSwap();
-        u64 a = regs.a[1];
-        u64 b = regs.b[1];
-        regs.b[1] = a;
-        SetAcc_NoSaturation(RegName::a1, b); // Flag set on b1->a1
+        if (!regs.ccnta) {
+            regs.a1s = regs.a[1];
+            regs.b1s = regs.b[1];
+        } else {
+            u64 a = regs.a[1];
+            u64 b = regs.b[1];
+            regs.b[1] = a;
+            SetAcc_NoSaturation(RegName::a1, b); // Flag set on b1->a1
+        }
     }
 
     void ContextRestore() {
         regs.ShadowRestore();
         regs.ShadowSwap();
-        std::swap(regs.a[1], regs.b[1]);
+        if (!regs.ccnta) {
+            regs.a[1] = regs.a1s;
+            regs.b[1] = regs.b1s;
+        } else {
+            std::swap(regs.a[1], regs.b[1]);
+        }
     }
 
     void cntx_s() {
