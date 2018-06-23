@@ -993,7 +993,7 @@ public:
                 regs.bkrep_stack.begin() + 1);
             ++regs.bcn;
         }
-        u32 flag = mem.DataRead(++address_reg);
+        u32 flag = mem.DataRead(address_reg++);
         u16 valid = flag >> 15;
         if (regs.lp) {
             if (!valid)
@@ -1002,18 +1002,18 @@ public:
             if (valid)
                 regs.lp = regs.bcn = 1;
         }
-        regs.bkrep_stack[0].end = mem.DataRead(++address_reg) | (((flag >> 8) & 3) << 16);
-        regs.bkrep_stack[0].start = mem.DataRead(++address_reg) | ((flag & 3) << 16);
-        regs.bkrep_stack[0].lc = mem.DataRead(++address_reg);
+        regs.bkrep_stack[0].end = mem.DataRead(address_reg++) | (((flag >> 8) & 3) << 16);
+        regs.bkrep_stack[0].start = mem.DataRead(address_reg++) | ((flag & 3) << 16);
+        regs.bkrep_stack[0].lc = mem.DataRead(address_reg++);
     }
     void StoreBlockRepeat(u16& address_reg) {
-        mem.DataWrite(address_reg--, regs.bkrep_stack[0].lc);
-        mem.DataWrite(address_reg--, regs.bkrep_stack[0].start & 0xFFFF);
-        mem.DataWrite(address_reg--, regs.bkrep_stack[0].end & 0xFFFF);
+        mem.DataWrite(--address_reg, regs.bkrep_stack[0].lc);
+        mem.DataWrite(--address_reg, regs.bkrep_stack[0].start & 0xFFFF);
+        mem.DataWrite(--address_reg, regs.bkrep_stack[0].end & 0xFFFF);
         u16 flag = regs.lp << 15;
         flag |= regs.bkrep_stack[0].start >> 16;
-        flag |= (regs.bkrep_stack[0].start >> 16) << 8;
-        mem.DataWrite(address_reg--, flag);
+        flag |= (regs.bkrep_stack[0].end >> 16) << 8;
+        mem.DataWrite(--address_reg, flag);
         if (regs.lp) {
             std::copy(regs.bkrep_stack.begin() + 1, regs.bkrep_stack.begin() + regs.bcn,
                 regs.bkrep_stack.begin());
