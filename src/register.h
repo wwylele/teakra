@@ -43,13 +43,13 @@ struct RegisterState {
 
     // 40-bit 2's comp on real TeakLite.
     // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
-    std::array<u64, 2> a;
-    std::array<u64, 2> b;
+    std::array<u64, 2> a{};
+    std::array<u64, 2> b{};
 
     // multiplication unit
     std::array<u16, 2> x{}; // factor
     std::array<u16, 2> y{}; // factor
-    std::array<u32, 2> p; // product
+    std::array<u32, 2> p{}; // product
 
     // step/modulo
     u16 stepi = 0, stepj = 0; // 7 bit 2's comp
