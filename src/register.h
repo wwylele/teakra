@@ -55,6 +55,8 @@ struct RegisterState {
     std::array<u16, 2> y{}; // factor
     std::array<u32, 2> p{}; // product
 
+    u16 p0h_cbs = 0; // A hidden state for codebook search (CBS) opcode
+
     // step/modulo
     u16 stepi = 0, stepj = 0; // 7 bit 2's comp
     u16 modi = 0, modj = 0; // 9 bit

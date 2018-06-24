@@ -2783,13 +2783,8 @@ public:
         ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_sub);
     }
 
-    void Cbs(u16 u, u16 v, u16 r, CbsCond c) {
-        u16 x0 = std::exchange(regs.x[0], u);
+    void CodebookSearch(u16 u, u16 v, u16 r, CbsCond c) {
         u64 diff = ProductToBus40(RegName::p0) - ProductToBus40(RegName::p1);
-        regs.y[0] = u;
-        DoMultiplication(0, true, true);
-        regs.y[0] = (u16)((ProductToBus40(RegName::p0) >> 16) & 0xFFFF);
-        regs.x[0] = x0;
         bool cond;
         switch(c.GetName()) {
         case CbsCondValue::Ge:
@@ -2802,10 +2797,15 @@ public:
             throw "???";
         }
         if (cond) {
+            regs.x[1] = regs.p0h_cbs;
+            regs.x[0] = regs.y[1];
             regs.mixp = r;
-            regs.x[0] = regs.y[1]; // this is likely incorrect. It involves hidden variable
-            regs.x[1] = regs.y[0];
         }
+        regs.y[0] = u;
+        u16 x0 = std::exchange(regs.x[0], regs.y[0]);
+        DoMultiplication(0, true, true);
+        regs.p0h_cbs = regs.y[0] = (u16)((ProductToBus40(RegName::p0) >> 16) & 0xFFFF);
+        regs.x[0] = x0;
         regs.y[1] = v;
         DoMultiplication(0, true, true);
         DoMultiplication(1, true, true);
@@ -2815,13 +2815,13 @@ public:
         u16 u = (u16)((GetAcc(a.GetName()) >> 16) & 0xFFFF);
         u16 v = (u16)((GetAcc(CounterAcc(a.GetName())) >> 16) & 0xFFFF);
         u16 r = regs.r[0];
-        Cbs(u, v, r, c);
+        CodebookSearch(u, v, r, c);
     }
     void cbs(Axh a, Bxh b, CbsCond c) {
         u16 u = (u16)((GetAcc(a.GetName()) >> 16) & 0xFFFF);
         u16 v = (u16)((GetAcc(b.GetName()) >> 16) & 0xFFFF);
         u16 r = regs.r[0];
-        Cbs(u, v, r, c);
+        CodebookSearch(u, v, r, c);
     }
     void cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
         auto [ui, uj] = GetArpRnUnit(a);
@@ -2832,7 +2832,7 @@ public:
         u16 u = mem.DataRead(ai);
         u16 v = mem.DataRead(aj);
         u16 r = aip;
-        Cbs(u, v, r, c);
+        CodebookSearch(u, v, r, c);
     }
 
     void mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
