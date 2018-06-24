@@ -3,6 +3,7 @@
 #include "memory_interface.h"
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace Teakra {
 
@@ -12,6 +13,13 @@ auto NoSet(const std::string& debug_string) {
 auto NoGet(const std::string& debug_string) {
     return [debug_string]()->u16 {printf("Warning: NoGet on %s\n", debug_string.data()); return 0;};
 }
+
+struct BitFieldSlot {
+    unsigned pos;
+    unsigned length;
+    std::function<void(u16)> set;
+    std::function<u16(void)> get;
+};
 
 struct Cell {
     std::function<void(u16)> set;
@@ -28,6 +36,28 @@ struct Cell {
     Cell(Cell* mirror) {
         set = [mirror](u16 value){mirror->set(value);};
         get = [mirror]()->u16 {return mirror->get();};
+    }
+
+    Cell(const std::vector<BitFieldSlot>& slots) {
+        std::shared_ptr<u16> storage = std::make_shared<u16>(0);
+        set = [storage, slots](u16 value) {
+            for (const auto& slot : slots) {
+                if (slot.set) {
+                    slot.set((value >> slot.pos) & ((1 << slot.length) - 1));
+                }
+            }
+            *storage = value;
+        };
+        get = [storage, slots]() -> u16 {
+            u16 value = *storage;
+            for (const auto& slot : slots) {
+                if (slot.get) {
+                    value &= ~(((1 << slot.length) - 1) << slot.pos);
+                    value |= slot.get() << slot.pos;
+                }
+            }
+            return value;
+        };
     }
 };
 
@@ -51,6 +81,31 @@ MMIORegion::MMIORegion(
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell(0xC902); // chip detect
+
+    // Timer
+    for (unsigned i = 0; i < 1; ++i) {
+        impl->cells[0x20 + i * 0x10] = Cell({ // TIMERx_CFG
+            BitFieldSlot{0, 2, {}, {}}, // TS
+            BitFieldSlot{2, 3, {}, {}}, // CM
+            BitFieldSlot{6, 1, {}, {}}, // TP
+            BitFieldSlot{7, 1, {}, {}}, // CT
+            BitFieldSlot{8, 1, {}, {}}, // PC
+            BitFieldSlot{9, 1, {}, {}}, // MU
+            BitFieldSlot{10, 1, {}, {}}, // RES
+            BitFieldSlot{11, 1, {}, {}}, // BP
+            BitFieldSlot{12, 1, {}, {}}, // CS
+            BitFieldSlot{13, 1, {}, {}}, // GP
+            BitFieldSlot{14, 2, {}, {}}, // TM
+        });
+
+        impl->cells[0x22 + i * 0x10] = Cell(); // TIMERx_EW
+        impl->cells[0x24 + i * 0x10] = Cell(); // TIMERx_SCL
+        impl->cells[0x26 + i * 0x10] = Cell(); // TIMERx_SCH
+        impl->cells[0x28 + i * 0x10] = Cell(); // TIMERx_CCL
+        impl->cells[0x2A + i * 0x10] = Cell(); // TIMERx_CCH
+        impl->cells[0x2C + i * 0x10] = Cell(); // TIMERx_SPWMCL
+        impl->cells[0x2E + i * 0x10] = Cell(); // TIMERx_SPWMCH
+    }
 
     // APBP
     for (unsigned i = 0; i < 3; ++i) {
