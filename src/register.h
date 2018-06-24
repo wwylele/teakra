@@ -31,6 +31,7 @@ struct RegisterState {
 
     u16 dvm = 0; // data value match for breakpoints and trap
     u16 repc = 0; // rep loop counter
+    u16 repcs = 0; // repc shadow
     bool rep = false; // true when in rep loop
     u16 mixp = 0;
     u16 sv = 0; // 16-bit two's complement shift value
@@ -110,7 +111,7 @@ struct RegisterState {
     u16 epj = 0; // 1-bit. If set, cause r7 = 0 when steping r7
     u16 ccnta = 1; // 1-bit. If clear, store/restore a1/b1 to shadows on context switch
     u16 cpc = 1; // 1-bit, change word order when push/pop pc
-    u16 crep = 1;
+    u16 crep = 1; // 1-bit. If clear, store/restore repc to shadows on context switch
 
     std::array<u16, 8> m{}; // 1-bit each, enable modulo arithmetic for Rn
     std::array<u16, 8> br{}; // 1-bit each, use bit-reversed value from Rn as address

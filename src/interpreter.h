@@ -1134,6 +1134,9 @@ public:
     void ContextStore() {
         regs.ShadowStore();
         regs.ShadowSwap();
+        if (!regs.crep) {
+            regs.repcs = regs.repc;
+        }
         if (!regs.ccnta) {
             regs.a1s = regs.a[1];
             regs.b1s = regs.b[1];
@@ -1148,6 +1151,9 @@ public:
     void ContextRestore() {
         regs.ShadowRestore();
         regs.ShadowSwap();
+        if (!regs.crep) {
+            regs.repc = regs.repcs;
+        }
         if (!regs.ccnta) {
             regs.a[1] = regs.a1s;
             regs.b[1] = regs.b1s;
