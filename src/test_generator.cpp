@@ -364,21 +364,6 @@ public:
     Config add(Px a, Bx b) {
         return AnyConfig;
     }
-    Config add_p0_p1(Ab c) {
-        return AnyConfig;
-    }
-    Config add_p0_p1a(Ab c) {
-        return AnyConfig;
-    }
-    Config add3_p0_p1(Ab c) {
-        return AnyConfig;
-    }
-    Config add3_p0_p1a(Ab c) {
-        return AnyConfig;
-    }
-    Config add3_p0a_p1a(Ab c) {
-        return AnyConfig;
-    }
 
     Config sub(Ab a, Bx b) {
         return AnyConfig;
@@ -392,32 +377,8 @@ public:
     Config sub(Px a, Bx b) {
         return AnyConfig;
     }
-    Config sub_p0_p1(Ab c) {
-        return AnyConfig;
-    }
-    Config sub_p0_p1a(Ab c) {
-        return AnyConfig;
-    }
-    Config sub3_p0_p1(Ab c) {
-        return AnyConfig;
-    }
-    Config sub3_p0_p1a(Ab c) {
-        return AnyConfig;
-    }
-    Config sub3_p0a_p1a(Ab c) {
-        return AnyConfig;
-    }
 
-    Config addsub_p0_p1(Ab c) {
-        return AnyConfig;
-    }
-    Config addsub_p1_p0(Ab c) {
-        return AnyConfig;
-    }
-    Config addsub_p0_p1a(Ab c) {
-        return AnyConfig;
-    }
-    Config addsub_p1a_p0(Ab c) {
+    Config app(Ab c, SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         return AnyConfig;
     }
 
@@ -1397,28 +1358,9 @@ public:
         return ConfigWithArpAddress(c);
     }
 
-    Config mov_addsubsv(ArRn1 a, ArStep1 as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_addsubsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_addsubrndsv(ArRn1 a, ArStep1 as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_addsubrndsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_sub3sv(ArRn1 a, ArStep1 as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_sub3sv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_sub3rndsv(ArRn1 a, ArStep1 as, Bx b) {
-        return ConfigWithArAddress(a);
-    }
-    Config mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
+    template<typename ArpStepX>
+    Config mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base,
+                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         return ConfigWithArAddress(a);
     }
 

@@ -257,23 +257,13 @@ public:
         return SignExtend<40>(result);
     }
 
-    struct ProductSumConfig {
-        bool align;
-        bool sub;
-    };
-
-    static constexpr ProductSumConfig p_add{false, false};
-    static constexpr ProductSumConfig p_adda{true, false};
-    static constexpr ProductSumConfig p_sub{false, true};
-    static constexpr ProductSumConfig p_suba{true, true};
-
-    void ProductSum(SumBase base, RegName acc, const ProductSumConfig& p0, const ProductSumConfig& p1) {
+    void ProductSum(SumBase base, RegName acc, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         u64 value_a = ProductToBus40(RegName::p0);
         u64 value_b = ProductToBus40(RegName::p1);
-        if (p0.align) {
+        if (p0_align) {
             value_a = SignExtend<24>(value_a >> 16);
         }
-        if (p1.align) {
+        if (p1_align) {
             value_b = SignExtend<24>(value_b >> 16);
         }
         u64 value_c;
@@ -293,12 +283,12 @@ public:
         default:
             throw "?";
         }
-        u64 result = AddSub(value_c, value_a, p0.sub);
+        u64 result = AddSub(value_c, value_a, sub_p0);
         u16 temp_c = regs.fc[0];
         u16 temp_v = regs.fv;
-        result = AddSub(result, value_b, p1.sub);
+        result = AddSub(result, value_b, sub_p1);
         // Is this correct?
-        if (p0.sub == p1.sub) {
+        if (sub_p0 == sub_p1) {
             regs.fc[0] |= temp_c;
             regs.fv |= temp_v;
         } else {
@@ -635,21 +625,6 @@ public:
         u64 result = AddSub(value_b, value_a, false);
         SatAndSetAccAndFlag(b.GetName(), result);
     }
-    void add_p0_p1(Ab c) {
-        ProductSum(SumBase::Zero, c.GetName(), p_add, p_add);
-    }
-    void add_p0_p1a(Ab c) {
-        ProductSum(SumBase::Zero, c.GetName(), p_add, p_adda);
-    }
-    void add3_p0_p1(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_add, p_add);
-    }
-    void add3_p0_p1a(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_add, p_adda);
-    }
-    void add3_p0a_p1a(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_adda, p_adda);
-    }
 
     void sub(Ab a, Bx b) {
         u64 value_a = GetAcc(a.GetName());
@@ -675,33 +650,9 @@ public:
         u64 result = AddSub(value_b, value_a, true);
         SatAndSetAccAndFlag(b.GetName(), result);
     }
-    void sub_p0_p1(Ab c) {
-        ProductSum(SumBase::Zero, c.GetName(), p_add, p_sub);
-    }
-    void sub_p0_p1a(Ab c) {
-        ProductSum(SumBase::Zero, c.GetName(), p_add, p_suba);
-    }
-    void sub3_p0_p1(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_sub);
-    }
-    void sub3_p0_p1a(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_suba);
-    }
-    void sub3_p0a_p1a(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_suba, p_suba);
-    }
 
-    void addsub_p0_p1(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_add, p_sub);
-    }
-    void addsub_p1_p0(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_add);
-    }
-    void addsub_p0_p1a(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_add, p_suba);
-    }
-    void addsub_p1a_p0(Ab c) {
-        ProductSum(SumBase::Acc, c.GetName(), p_sub, p_adda);
+    void app(Ab c, SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        ProductSum(base, c.GetName(), sub_p0, p0_align, sub_p1, p1_align);
     }
 
     void add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -2564,7 +2515,7 @@ public:
 
     void sqr_sqr_add3(Ab a, Ab b) {
         u64 value = GetAcc(a.GetName());
-        add3_p0_p1(b);
+        app(b, SumBase::Acc, false, false, false, false);
         regs.x[0] = regs.y[0] = (u16)((value >> 16) & 0xFFFF);
         regs.x[1] = regs.y[1] = (u16)(value & 0xFFFF);
         DoMultiplication(0, true, true);
@@ -2572,7 +2523,7 @@ public:
     }
 
     void sqr_sqr_add3(ArRn2 a, ArStep2 as, Ab b) {
-        add3_p0_p1(b);
+        app(b, SumBase::Acc, false, false, false, false);
         u16 unit = GetArRnUnit(a);
         u16 address0 = RnAddressAndModify(unit, GetArStep(as));
         u16 address1 = OffsetAddress(unit, address0, GetArOffset(as));
@@ -2584,7 +2535,7 @@ public:
 
     void sqr_mpysu_add3a(Ab a, Ab b) {
         u64 value = GetAcc(a.GetName());
-        add3_p0_p1a(b);
+        app(b, SumBase::Acc, false, false, false, true);
         regs.x[0] = regs.y[0] = regs.y[1] = (u16)((value >> 16) & 0xFFFF);
         regs.x[1] = (u16)(value & 0xFFFF);
         DoMultiplication(0, true, true);
@@ -2750,37 +2701,11 @@ public:
         mem.DataWrite(j, h);
     }
 
-    void mov_addsubsv(ArRn1 a, ArStep1 as, Bx b) {
+    template<typename ArpStepX>
+    void mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base,
+                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_add);
-    }
-    void mov_addsubsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_add);
-    }
-    void mov_addsubrndsv(ArRn1 a, ArStep1 as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_add);
-    }
-    void mov_addsubrndsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_add);
-    }
-    void mov_sub3sv(ArRn1 a, ArStep1 as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_sub);
-    }
-    void mov_sub3sv(ArRn1 a, ArStep1Alt as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        ProductSum(SumBase::Sv, b.GetName(), p_sub, p_sub);
-    }
-    void mov_sub3rndsv(ArRn1 a, ArStep1 as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
-        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_sub);
-    }
-    void mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStepAlt(as)));
-        ProductSum(SumBase::SvRnd, b.GetName(), p_sub, p_sub);
+        ProductSum(base, b.GetName(), sub_p0, p0_align, sub_p1, p1_align);
     }
 
     void CodebookSearch(u16 u, u16 v, u16 r, CbsCond c) {
@@ -2837,7 +2762,7 @@ public:
 
     void mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
@@ -2847,7 +2772,7 @@ public:
     void mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         auto [ui, uj] = GetArpRnUnit(xy);
         auto [si, sj] = GetArpStep(i, j);
         auto [oi, oj] = GetArpOffset(i, j);
@@ -2864,7 +2789,7 @@ public:
     void mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         regs.y[0] = mem.DataRead(RnAddressAndModify(GetArRnUnit(y), GetArStep(ys)));
         DoMultiplication(0, x0_sign, y0_sign);
@@ -2874,7 +2799,7 @@ public:
     void mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         regs.y[1] = mem.DataRead(RnAddressAndModify(GetArRnUnit(y), GetArStep(ys)));
         DoMultiplication(0, x0_sign, y0_sign);
@@ -2884,7 +2809,7 @@ public:
     void mma_my_my(ArRn1 x, ArStep1 xs, RegName a,
              bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         u16 unit = GetArRnUnit(x);
         u16 address = RnAddressAndModify(unit, GetArStep(xs));
         regs.x[0] = mem.DataRead(address);
@@ -2903,7 +2828,7 @@ public:
         // keep the order like this
         mem.DataWrite(OffsetAddress(unit, address, GetArOffset(ws)), v_value);
         mem.DataWrite(address, u_value);
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
@@ -2919,7 +2844,7 @@ public:
         // keep the order like this
         mem.DataWrite(OffsetAddress(unit, address, GetArOffset(ws)), v_value);
         mem.DataWrite(address, u_value);
-        ProductSum(base, a, {p0_align, sub_p0}, {p1_align, sub_p1});
+        ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
@@ -3222,12 +3147,12 @@ private:
 
     template <typename ArStepX>
     StepValue GetArStep(ArStepX arstep) const {
-        static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
-        return ConvertArStep(regs.arstep[arstep.storage]);
-    }
-
-    StepValue GetArStepAlt(ArStep1Alt arstep) const {
-        return ConvertArStep(regs.arstep[arstep.storage + 2]);
+        if constexpr (std::is_same_v<ArStepX, ArStep1Alt>) {
+            return ConvertArStep(regs.arstep[arstep.storage + 2]);
+        } else {
+            static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
+            return ConvertArStep(regs.arstep[arstep.storage]);
+        }
     }
 
     template <typename ArpStepX>

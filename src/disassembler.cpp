@@ -450,21 +450,6 @@ public:
     std::string add(Px a, Bx b) {
         return D("add", R(a), R(b));
     }
-    std::string add_p0_p1(Ab c) {
-        return D("add", "p0", "p1", R(c));
-    }
-    std::string add_p0_p1a(Ab c) {
-        return D("add", "p0", "p1a", R(c));
-    }
-    std::string add3_p0_p1(Ab c) {
-        return D("add3", "p0", "p1", R(c));
-    }
-    std::string add3_p0_p1a(Ab c) {
-        return D("add3", "p0", "p1a", R(c));
-    }
-    std::string add3_p0a_p1a(Ab c) {
-        return D("add3", "p0a", "p1a", R(c));
-    }
 
     std::string sub(Ab a, Bx b) {
         return D("sub", R(a), R(b));
@@ -478,33 +463,9 @@ public:
     std::string sub(Px a, Bx b) {
         return D("sub", R(a), R(b));
     }
-    std::string sub_p0_p1(Ab c) {
-        return D("sub", "p0", "p1", R(c));
-    }
-    std::string sub_p0_p1a(Ab c) {
-        return D("sub", "p0", "p1a", R(c));
-    }
-    std::string sub3_p0_p1(Ab c) {
-        return D("sub3", "p0", "p1", R(c));
-    }
-    std::string sub3_p0_p1a(Ab c) {
-        return D("sub3", "p0", "p1a", R(c));
-    }
-    std::string sub3_p0a_p1a(Ab c) {
-        return D("sub3", "p0a", "p1a", R(c));
-    }
 
-    std::string addsub_p0_p1(Ab c) {
-        return D("addsub", "p0", "p1", R(c));
-    }
-    std::string addsub_p1_p0(Ab c) {
-        return D("addsub", "p1", "p0", R(c));
-    }
-    std::string addsub_p0_p1a(Ab c) {
-        return D("addsub", "p0", "p1a", R(c));
-    }
-    std::string addsub_p1a_p0(Ab c) {
-        return D("addsub", "p1a", "p0", R(c));
+    std::string app(Ab c, SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D(PA(base, sub_p0, p0_align, sub_p1, p1_align), R(c));
     }
 
     std::string add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -1418,29 +1379,10 @@ public:
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
     }
 
-    std::string mov_addsubsv(ArRn1 a, ArStep1 as, Bx b) {
-        return D("mov", MemARS(a, as), "sv", "->addsubsv", "p1", "p0", R(b));
-    }
-    std::string mov_addsubsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return D("mov", MemARSAlt(a, as), "sv", "->addsubsv", "p1", "p0", R(b));
-    }
-    std::string mov_addsubrndsv(ArRn1 a, ArStep1 as, Bx b) {
-        return D("mov", MemARS(a, as), "sv", "->addsubrndsv", "p1", "p0", R(b));
-    }
-    std::string mov_addsubrndsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return D("mov", MemARSAlt(a, as), "sv", "->addsubrndsv", "p1", "p0", R(b));
-    }
-    std::string mov_sub3sv(ArRn1 a, ArStep1 as, Bx b) {
-        return D("mov", MemARS(a, as), "sv", "->sub3sv", "p0", "p1", R(b));
-    }
-    std::string mov_sub3sv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return D("mov", MemARSAlt(a, as), "sv", "->sub3sv", "p0", "p1", R(b));
-    }
-    std::string mov_sub3rndsv(ArRn1 a, ArStep1 as, Bx b) {
-        return D("mov", MemARS(a, as), "sv", "->sub3rndsv", "p0", "p1", R(b));
-    }
-    std::string mov_sub3rndsv(ArRn1 a, ArStep1Alt as, Bx b) {
-        return D("mov", MemARSAlt(a, as), "sv", "->sub3rndsv", "p0", "p1", R(b));
+    template<typename ArpStepX>
+    std::string mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base,
+                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+        return D("mov", MemARS(a, as), "sv", PA(base, sub_p0, p0_align, sub_p1, p1_align), R(b));
     }
 
     std::string cbs(Axh a, CbsCond c) {
