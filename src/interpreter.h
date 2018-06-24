@@ -130,7 +130,7 @@ public:
             value <<= 1;
             regs.fc[0] = (value & ((u64)1 << 40)) != 0;
             value = SignExtend<40>(value);
-            SetAcc_NoSaturation(a.GetName(), value);
+            SetAccAndFlag(a.GetName(), value);
             u32 unit = GetRnUnit(b.GetName());
             RnAndModify(unit, bs.GetName());
             regs.fr = regs.r[unit] == 0;
@@ -159,16 +159,16 @@ public:
         case SwapTypeValue::a0b0a1b1:
             u = GetAcc(RegName::a1);
             v = GetAcc(RegName::b1);
-            SetAcc(RegName::a1, v);
-            SetAcc(RegName::b1, u);
+            SatAndSetAccAndFlag(RegName::a1, v);
+            SatAndSetAccAndFlag(RegName::b1, u);
             s0 = d1 = RegName::a0;
             s1 = d0 = RegName::b0;
             break;
         case SwapTypeValue::a0b1a1b0:
             u = GetAcc(RegName::a1);
             v = GetAcc(RegName::b0);
-            SetAcc(RegName::a1, v);
-            SetAcc(RegName::b0, u);
+            SatAndSetAccAndFlag(RegName::a1, v);
+            SatAndSetAccAndFlag(RegName::b0, u);
             s0 = d1 = RegName::a0;
             s1 = d0 = RegName::b1;
             break;
@@ -217,8 +217,8 @@ public:
         }
         u = GetAcc(s0);
         v = GetAcc(s1);
-        SetAcc(d0, u);
-        SetAcc(d1, v); // only this one affects flags (except for fl)
+        SatAndSetAccAndFlag(d0, u);
+        SatAndSetAccAndFlag(d1, v); // only this one affects flags (except for fl)
     }
     void trap() {
         throw "unimplemented";
@@ -305,7 +305,7 @@ public:
             regs.fc[0] ^= temp_c;
             regs.fv ^= temp_v;
         }
-        SetAcc(acc, result);
+        SatAndSetAccAndFlag(acc, result);
     }
 
     void AlmGeneric(AlmOp op, u64 a, Ax b) {
@@ -314,21 +314,21 @@ public:
             u64 value = GetAcc(b.GetName());
             value |= a;
             value = SignExtend<40>(value);
-            SetAcc_NoSaturation(b.GetName(), value);
+            SetAccAndFlag(b.GetName(), value);
             break;
         }
         case AlmOp::And: {
             u64 value = GetAcc(b.GetName());
             value &= a;
             value = SignExtend<40>(value);
-            SetAcc_NoSaturation(b.GetName(), value);
+            SetAccAndFlag(b.GetName(), value);
             break;
         }
         case AlmOp::Xor: {
             u64 value = GetAcc(b.GetName());
             value ^= a;
             value = SignExtend<40>(value);
-            SetAcc_NoSaturation(b.GetName(), value);
+            SetAccAndFlag(b.GetName(), value);
             break;
         }
         case AlmOp::Tst0: {
@@ -355,7 +355,7 @@ public:
             if (op == AlmOp::Cmp || op == AlmOp::Cmpu) {
                 SetAccFlag(result);
             } else {
-                SetAcc(b.GetName(), result);
+                SatAndSetAccAndFlag(b.GetName(), result);
             }
             break;
         }
@@ -363,7 +363,7 @@ public:
             u64 value = GetAcc(b.GetName());
             u64 product = ProductToBus40(RegName::p0);
             u64 result = AddSub(value, product, true);
-            SetAcc(b.GetName(), result);
+            SatAndSetAccAndFlag(b.GetName(), result);
 
             regs.x[0] = a & 0xFFFF;
             DoMultiplication(0, true, true);
@@ -373,7 +373,7 @@ public:
             u64 value = GetAcc(b.GetName());
             u64 product = ProductToBus40(RegName::p0);
             u64 result = AddSub(value, product, false);
-            SetAcc(b.GetName(), result);
+            SatAndSetAccAndFlag(b.GetName(), result);
         }
         [[fallthrough]];
         case AlmOp::Sqr: {
@@ -467,7 +467,7 @@ public:
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
         if (op.GetName() == AlmOp::And) {
             u64 and_new = GetAcc(b.GetName()) & 0xFFFF'FFFF'FFFF'00FF;
-            SetAcc_Simple(b.GetName(), and_backup | and_new);
+            SetAcc(b.GetName(), and_backup | and_new);
         }
     }
     void alu(Alu op, MemR7Imm7s a, Ax b) {
@@ -477,15 +477,15 @@ public:
 
     void or_(Ab a, Ax b, Ax c) {
         u64 value = GetAcc(a.GetName()) | GetAcc(b.GetName());
-        SetAcc_NoSaturation(c.GetName(), value);
+        SetAccAndFlag(c.GetName(), value);
     }
     void or_(Ax a, Bx b, Ax c) {
         u64 value = GetAcc(a.GetName()) | GetAcc(b.GetName());
-        SetAcc_NoSaturation(c.GetName(), value);
+        SetAccAndFlag(c.GetName(), value);
     }
     void or_(Bx a, Bx b, Ax c) {
         u64 value = GetAcc(a.GetName()) | GetAcc(b.GetName());
-        SetAcc_NoSaturation(c.GetName(), value);
+        SetAccAndFlag(c.GetName(), value);
     }
 
     u16 GenericAlb(Alb op, u16 a, u16 b) {
@@ -615,25 +615,25 @@ public:
         u64 value_a = GetAcc(a.GetName());
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, false);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void add(Bx a, Ax b) {
         u64 value_a = GetAcc(a.GetName());
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, false);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void add_p1(Ax b) {
         u64 value_a = ProductToBus40(RegName::p1);
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, false);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void add(Px a, Bx b) {
         u64 value_a = ProductToBus40(a.GetName());
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, false);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void add_p0_p1(Ab c) {
         ProductSum(SumBase::Zero, c.GetName(), p_add, p_add);
@@ -655,25 +655,25 @@ public:
         u64 value_a = GetAcc(a.GetName());
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, true);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void sub(Bx a, Ax b) {
         u64 value_a = GetAcc(a.GetName());
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, true);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void sub_p1(Ax b) {
         u64 value_a = ProductToBus40(RegName::p1);
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, true);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void sub(Px a, Bx b) {
         u64 value_a = ProductToBus40(a.GetName());
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, true);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void sub_p0_p1(Ab c) {
         ProductSum(SumBase::Zero, c.GetName(), p_add, p_sub);
@@ -713,7 +713,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) + mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
     }
     void add_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
@@ -724,7 +724,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) - mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
     }
     void sub_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
@@ -735,7 +735,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) + mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
     }
     void sub_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
@@ -746,7 +746,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(mem.DataRead(i));
         u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) - mem.DataRead(OffsetAddress(ui, i, oi));
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
     }
     void add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
         u16 u = GetArRnUnit(a);
@@ -756,7 +756,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(address)) + SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(OffsetAddress(u, address, o)) - regs.sv;
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
     }
     void sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
         u16 u = GetArRnUnit(a);
@@ -766,7 +766,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(address)) - SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(OffsetAddress(u, address, o)) + regs.sv;
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
     }
     void sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
@@ -778,7 +778,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(i)) - SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(OffsetAddress(ui, i, oi)) + regs.sv;
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
         regs.sv = mem.DataRead(j);
     }
     void sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -791,7 +791,7 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) - SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) + regs.sv;
         u64 result = (high << 16) | low;
-        SetAcc_Simple(b.GetName(), result);
+        SetAcc(b.GetName(), result);
         regs.sv = mem.DataRead(i);
     }
     void add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -804,8 +804,8 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(i)) + SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(OffsetAddress(ui, i, oi)) - regs.sv;
         u64 result = (high << 16) | low;
-        u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
-        SetAcc_Simple(b.GetName(), result);
+        u16 exchange = (u16)(GetAndSatAccNoFlag(b.GetName()) & 0xFFFF);
+        SetAcc(b.GetName(), result);
         mem.DataWrite(j, exchange);
     }
     void add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
@@ -818,8 +818,8 @@ public:
         u64 high = SignExtend<16, u64>(mem.DataRead(j)) + SignExtend<16, u64>(regs.sv);
         u16 low = mem.DataRead(OffsetAddress(uj, j, oj)) - regs.sv;
         u64 result = (high << 16) | low;
-        u16 exchange = (u16)(SaturateAcc_NoFlag(GetAcc(b.GetName()), false) & 0xFFFF);
-        SetAcc_Simple(b.GetName(), result);
+        u16 exchange = (u16)(GetAndSatAccNoFlag(b.GetName()) & 0xFFFF);
+        SetAcc(b.GetName(), result);
         mem.DataWrite(i, exchange);
     }
 
@@ -849,7 +849,7 @@ public:
                 value >>= 1;
                 value |= (u64)old_fc << 39;
                 value = SignExtend<40>(value);
-                SetAcc_NoSaturation(a, value);
+                SetAccAndFlag(a, value);
                 break;
             }
             case ModaOp::Rol: {
@@ -859,16 +859,16 @@ public:
                 value <<= 1;
                 value |= old_fc;
                 value = SignExtend<40>(value);
-                SetAcc_NoSaturation(a, value);
+                SetAccAndFlag(a, value);
                 break;
             }
             case ModaOp::Clr: {
-                SetAcc(a, 0);
+                SatAndSetAccAndFlag(a, 0);
                 break;
             }
             case ModaOp::Not: {
                 u64 result = ~GetAcc(a);
-                SetAcc_NoSaturation(a, result);
+                SetAccAndFlag(a, result);
                 break;
             }
             case ModaOp::Neg: {
@@ -878,41 +878,41 @@ public:
                 if (regs.fv)
                     regs.fvl = 1;
                 u64 result = SignExtend<40, u64>(~GetAcc(a) + 1);
-                SetAcc(a, result);
+                SatAndSetAccAndFlag(a, result);
                 break;
             }
             case ModaOp::Rnd: {
                 u64 value = GetAcc(a);
                 u64 result = AddSub(value, 0x8000, false);
-                SetAcc(a, result);
+                SatAndSetAccAndFlag(a, result);
                 break;
             }
             case ModaOp::Pacr: {
                 u64 value = ProductToBus40(RegName::p0);
                 u64 result = AddSub(value, 0x8000, false);
-                SetAcc(a, result);
+                SatAndSetAccAndFlag(a, result);
                 break;
             }
             case ModaOp::Clrr: {
-                SetAcc(a, 0x8000);
+                SatAndSetAccAndFlag(a, 0x8000);
                 break;
             }
             case ModaOp::Inc: {
                 u64 value = GetAcc(a);
                 u64 result = AddSub(value, 1, false);
-                SetAcc(a, result);
+                SatAndSetAccAndFlag(a, result);
                 break;
             }
             case ModaOp::Dec: {
                 u64 value = GetAcc(a);
                 u64 result = AddSub(value, 1, true);
-                SetAcc(a, result);
+                SatAndSetAccAndFlag(a, result);
                 break;
             }
             case ModaOp::Copy: {
                 // note: bX doesn't support
                 u64 value = GetAcc(a == RegName::a0 ? RegName::a1 : RegName::a0);
-                SetAcc(a, value);
+                SatAndSetAccAndFlag(a, value);
                 break;
             }
             default:
@@ -932,7 +932,7 @@ public:
     void pacr1(Ax a) {
         u64 value = ProductToBus40(RegName::p1);
         u64 result = AddSub(value, 0x8000, false);
-        SetAcc(a.GetName(), result);
+        SatAndSetAccAndFlag(a.GetName(), result);
     }
 
     void FilterDoubleClr(Ab& a, Ab& b) {
@@ -949,13 +949,13 @@ public:
 
     void clr(Ab a, Ab b) {
         FilterDoubleClr(a, b);
-        SetAcc(a.GetName(), 0);
-        SetAcc(b.GetName(), 0);
+        SatAndSetAccAndFlag(a.GetName(), 0);
+        SatAndSetAccAndFlag(b.GetName(), 0);
     }
     void clrr(Ab a, Ab b) {
         FilterDoubleClr(a, b);
-        SetAcc(a.GetName(), 0x8000);
-        SetAcc(b.GetName(), 0x8000);
+        SatAndSetAccAndFlag(a.GetName(), 0x8000);
+        SatAndSetAccAndFlag(b.GetName(), 0x8000);
     }
 
     void BlockRepeat(u16 lc, u32 address) {
@@ -1144,7 +1144,7 @@ public:
             u64 a = regs.a[1];
             u64 b = regs.b[1];
             regs.b[1] = a;
-            SetAcc_NoSaturation(RegName::a1, b); // Flag set on b1->a1
+            SetAccAndFlag(RegName::a1, b); // Flag set on b1->a1
         }
     }
 
@@ -1236,7 +1236,7 @@ public:
         mem.DataWrite(--regs.sp, value);
     }
     void push(Abe a) {
-        u16 value = (SaturateAcc(GetAcc(a.GetName()), false) >> 32) & 0xFFFF;
+        u16 value = (GetAndSatAcc(a.GetName()) >> 32) & 0xFFFF;
         mem.DataWrite(--regs.sp, value);
     }
     void push(ArArpSttMod a) {
@@ -1274,14 +1274,14 @@ public:
         mem.DataWrite(--regs.sp, value);
     }
     void pusha(Ax a) {
-        u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFF'FFFF;
+        u32 value = GetAndSatAcc(a.GetName()) & 0xFFFF'FFFF;
         u16 h = value >> 16;
         u16 l = value & 0xFFFF;
         mem.DataWrite(--regs.sp, l);
         mem.DataWrite(--regs.sp, h);
     }
     void pusha(Bx a) {
-        u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFF'FFFF;
+        u32 value = GetAndSatAcc(a.GetName()) & 0xFFFF'FFFF;
         u16 h = value >> 16;
         u16 l = value & 0xFFFF;
         mem.DataWrite(--regs.sp, l);
@@ -1303,7 +1303,7 @@ public:
         case RegName::b1e: target = &regs.b[1]; break;
         default: throw "???";
         }
-        SetAcc(a.GetName(), (*target & 0xFFFFFFFF) | (u64)value32 << 32);
+        SatAndSetAccAndFlag(a.GetName(), (*target & 0xFFFFFFFF) | (u64)value32 << 32);
     }
     void pop(ArArpSttMod a) {
         u16 value = mem.DataRead(regs.sp++);
@@ -1346,7 +1346,7 @@ public:
         u16 h = mem.DataRead(regs.sp++);
         u16 l = mem.DataRead(regs.sp++);
         u64 value = SignExtend<32, u64>((h << 16) | l);
-        SetAcc(a.GetName(), value);
+        SatAndSetAccAndFlag(a.GetName(), value);
     }
 
     void Repeat(u16 repc) {
@@ -1429,7 +1429,7 @@ public:
 
     void and_(Ab a, Ab b, Ax c) {
         u64 value = GetAcc(a.GetName()) & GetAcc(b.GetName());
-        SetAcc_NoSaturation(c.GetName(), value);
+        SetAccAndFlag(c.GetName(), value);
     }
 
     void dint() {
@@ -1448,7 +1448,7 @@ public:
                 product = SignExtend<24>(product);
             }
             u64 result = AddSub(value, product, false);
-            SetAcc(a.GetName(), result);
+            SatAndSetAccAndFlag(a.GetName(), result);
         }
 
         switch(op) {
@@ -1511,7 +1511,7 @@ public:
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p0);
         u64 result = AddSub(value, product, true);
-        SetAcc(a.GetName(), result);
+        SatAndSetAccAndFlag(a.GetName(), result);
         regs.y[0] = mem.DataRead(yi);
         regs.x[0] = mem.DataRead(xi);
         DoMultiplication(0, true, true);
@@ -1521,7 +1521,7 @@ public:
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p0);
         u64 result = AddSub(value, product, true);
-        SetAcc(a.GetName(), result);
+        SatAndSetAccAndFlag(a.GetName(), result);
         regs.y[0] = mem.DataRead(yi);
         regs.x[0] = x.storage;
         DoMultiplication(0, true, true);
@@ -1531,7 +1531,7 @@ public:
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p0);
         u64 result = AddSub(value, product, true);
-        SetAcc(a.GetName(), result);
+        SatAndSetAccAndFlag(a.GetName(), result);
         regs.x[0] = mem.DataRead(xi);
         DoMultiplication(0, false, true);
     }
@@ -1539,7 +1539,7 @@ public:
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p0);
         u64 result = AddSub(value, product, false);
-        SetAcc(a.GetName(), result);
+        SatAndSetAccAndFlag(a.GetName(), result);
         regs.x[0] = regs.x[1];
         DoMultiplication(0, true, true);
     }
@@ -1551,7 +1551,7 @@ public:
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p1);
         u64 result = AddSub(value, product, false);
-        SetAcc(a.GetName(), result);
+        SatAndSetAccAndFlag(a.GetName(), result);
         regs.x[1] = mem.DataRead(i);
         regs.y[1] = mem.DataRead(j);
         DoMultiplication(1, true, true);
@@ -1653,7 +1653,7 @@ public:
 
     void mov(Ab a, Ab b) {
         u64 value = GetAcc(a.GetName());
-        SetAcc(b.GetName(), value);
+        SatAndSetAccAndFlag(b.GetName(), value);
     }
     void mov_dvm(Abl a) {
         throw "unimplemented";
@@ -1819,11 +1819,11 @@ public:
     void mov(Register a, Bx b) {
         if (a.GetName() == RegName::p) {
             u64 value = ProductToBus40(RegName::p0);
-            SetAcc(b.GetName(), value);
+            SatAndSetAccAndFlag(b.GetName(), value);
         } else if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
             // Is there any difference from the mov(Ab, Ab) instruction?
             u64 value = GetAcc(a.GetName());
-            SetAcc(b.GetName(), value);
+            SatAndSetAccAndFlag(b.GetName(), value);
         } else {
             u16 value = RegToBus16(a.GetName(), true);
             RegFromBus16(b.GetName(), value);
@@ -1835,10 +1835,10 @@ public:
             // b loses its typical meaning in this case
             RegName b_name = (b.storage & 1) ? RegName::a1 : RegName::a0;
             u64 value = ProductToBus40(RegName::p0);
-            SetAcc(b_name, value);
+            SatAndSetAccAndFlag(b_name, value);
         } else if (a.GetName() == RegName::pc) {
             if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
-                SetAcc(b.GetName(), regs.pc);
+                SatAndSetAccAndFlag(b.GetName(), regs.pc);
             } else {
                 RegFromBus16(b.GetName(), regs.pc & 0xFFFF);
             }
@@ -2024,12 +2024,12 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_p0(Ab a) {
-        u32 value = SaturateAcc(GetAcc(a.GetName()), false) & 0xFFFFFFFF;
+        u32 value = GetAndSatAcc(a.GetName()) & 0xFFFFFFFF;
         ProductFromBus32(RegName::p0, value);
     }
     void mov_p1_to(Ab b) {
         u64 value = ProductToBus40(RegName::p1);
-        SetAcc(b.GetName(), value);
+        SatAndSetAccAndFlag(b.GetName(), value);
     }
 
     void mov2(Px a, ArRn2 b, ArStep2 bs) {
@@ -2064,7 +2064,7 @@ public:
         ProductFromBus32(b.GetName(), value);
     }
     void mova(Ab a, ArRn2 b, ArStep2 bs) {
-        u64 value = SaturateAcc(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAcc(a.GetName());
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
         u16 unit = GetArRnUnit(b);
@@ -2082,7 +2082,7 @@ public:
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
-        SetAcc(b.GetName(), value);
+        SatAndSetAccAndFlag(b.GetName(), value);
     }
 
     void mov_r6_to(Bx b) {
@@ -2117,7 +2117,7 @@ public:
     }
 
     void mov2_axh_m_y0_m(Axh a, ArRn2 b, ArStep2 bs) {
-        u16 u = (u16)((SaturateAcc_NoFlag(GetAcc(a.GetName()), false) >> 16) & 0xFFFF);
+        u16 u = (u16)((GetAndSatAccNoFlag(a.GetName()) >> 16) & 0xFFFF);
         u16 v = regs.y[0];
         u16 unit = GetArRnUnit(b);
         u16 ua = RnAddressAndModify(unit, GetArStep(bs));
@@ -2132,7 +2132,7 @@ public:
         auto [si, sj] = GetArpStep(bsi, bsj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAccNoFlag(a.GetName());
         mem.DataWrite(i, (u16)((value >> 16) & 0xFFFF));
         mem.DataWrite(j, (u16)(value & 0xFFFF));
     }
@@ -2141,7 +2141,7 @@ public:
         auto [si, sj] = GetArpStep(bsi, bsj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAccNoFlag(a.GetName());
         mem.DataWrite(j, (u16)((value >> 16) & 0xFFFF));
         mem.DataWrite(i, (u16)(value & 0xFFFF));
     }
@@ -2151,7 +2151,7 @@ public:
         u16 h = mem.DataRead(RnAddressAndModify(ui, si));
         u16 l = mem.DataRead(RnAddressAndModify(uj, sj));
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
-        SetAcc_Simple(b.GetName(), value);
+        SetAcc(b.GetName(), value);
     }
     void mov2_mji_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         auto [ui, uj] = GetArpRnUnit(a);
@@ -2159,11 +2159,11 @@ public:
         u16 l = mem.DataRead(RnAddressAndModify(ui, si));
         u16 h = mem.DataRead(RnAddressAndModify(uj, sj));
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
-        SetAcc_Simple(b.GetName(), value);
+        SetAcc(b.GetName(), value);
     }
     void mov2_abh_m(Abh ax, Abh ay, ArRn1 b, ArStep1 bs) {
-        u16 u = (u16)((SaturateAcc_NoFlag(GetAcc(ax.GetName()), false) >> 16) & 0xFFFF);
-        u16 v = (u16)((SaturateAcc_NoFlag(GetAcc(ay.GetName()), false) >> 16) & 0xFFFF);
+        u16 u = (u16)((GetAndSatAccNoFlag(ax.GetName()) >> 16) & 0xFFFF);
+        u16 v = (u16)((GetAndSatAccNoFlag(ay.GetName()) >> 16) & 0xFFFF);
         u16 unit = GetArRnUnit(b);
         u16 ua = RnAddressAndModify(unit, GetArStep(bs));
         u16 va = OffsetAddress(unit, ua, GetArOffset(bs));
@@ -2176,40 +2176,40 @@ public:
         auto [si, sj] = GetArpStep(bsi, bsj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAccNoFlag(a.GetName());
         mem.DataWrite(j, (u16)((value >> 16) & 0xFFFF));
         value = SignExtend<32, u64>((u64)mem.DataRead(i) << 16);
-        SetAcc_Simple(a.GetName(), value);
+        SetAcc(a.GetName(), value);
     }
     void exchange_riaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         auto [ui, uj] = GetArpRnUnit(b);
         auto [si, sj] = GetArpStep(bsi, bsj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAccNoFlag(a.GetName());
         mem.DataWrite(j, (u16)((value >> 16) & 0xFFFF));
         value = SignExtend<32, u64>(((u64)mem.DataRead(i) << 16) | 0x8000);
-        SetAcc_Simple(a.GetName(), value);
+        SetAcc(a.GetName(), value);
     }
     void exchange_jai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         auto [ui, uj] = GetArpRnUnit(b);
         auto [si, sj] = GetArpStep(bsi, bsj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAccNoFlag(a.GetName());
         mem.DataWrite(i, (u16)((value >> 16) & 0xFFFF));
         value = SignExtend<32, u64>((u64)mem.DataRead(j) << 16);
-        SetAcc_Simple(a.GetName(), value);
+        SetAcc(a.GetName(), value);
     }
     void exchange_rjai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         auto [ui, uj] = GetArpRnUnit(b);
         auto [si, sj] = GetArpStep(bsi, bsj);
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
-        u64 value = SaturateAcc_NoFlag(GetAcc(a.GetName()), false);
+        u64 value = GetAndSatAccNoFlag(a.GetName());
         mem.DataWrite(i, (u16)((value >> 16) & 0xFFFF));
         value = SignExtend<32, u64>(((u64)mem.DataRead(j) << 16) | 0x8000);
-        SetAcc_Simple(a.GetName(), value);
+        SetAcc(a.GetName(), value);
     }
 
     void ShiftBus40(u64 value, u16 sv, RegName dest) {
@@ -2262,13 +2262,13 @@ public:
 
         value = SignExtend<40>(value);
         SetAccFlag(value);
-        if (regs.s == 0 && regs.sat[1] == 0) {
+        if (regs.s == 0 && regs.sata == 0) {
             if (regs.fv || SignExtend<32>(value) != value) {
                 regs.flm = 1;
                 value = original_sign == 1 ? 0xFFFF'FFFF'8000'0000 : 0x7FFF'FFFF;
             }
         }
-        SetAcc_Simple(dest, value);
+        SetAcc(dest, value);
     }
 
     void movs(MemImm8 a, Ab b) {
@@ -2302,7 +2302,7 @@ public:
         u16 value16 = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
         u64 value = SignExtend<32, u64>((u64)value16 << 16);
         u64 result = AddSub(value, 0x8000, false);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void movr(Rn a, StepZIDS as, Ax b) {
         u16 value16 = mem.DataRead(RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName()));
@@ -2312,7 +2312,7 @@ public:
         regs.fc[0] = result >> 16;
         regs.fv = 0;
         result &= 0xFFFF;
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void movr(Register a, Ax b) {
         u64 result;
@@ -2329,12 +2329,12 @@ public:
             regs.fv = 0;
             result &= 0xFFFF;
         }
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void movr(Bx a, Ax b) {
         u64 value = GetAcc(a.GetName());
         u64 result = AddSub(value, 0x8000, false);
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
     void movr_r6_to(Ax b) {
         u16 value16 = regs.r[6];
@@ -2342,7 +2342,7 @@ public:
         regs.fc[0] = result >> 16;
         regs.fv = 0;
         result &= 0xFFFF;
-        SetAcc(b.GetName(), result);
+        SatAndSetAccAndFlag(b.GetName(), result);
     }
 
     u16 Exp(u64 value) {
@@ -2360,7 +2360,7 @@ public:
     }
 
     void ExpStore(Ax b) {
-        SetAcc_Simple(b.GetName(), SignExtend<16, u64>(regs.sv));
+        SetAcc(b.GetName(), SignExtend<16, u64>(regs.sv));
     }
 
     void exp(Bx a) {
@@ -2405,8 +2405,8 @@ public:
 
     void lim(Ax a, Ax b) {
         u64 value = GetAcc(a.GetName());
-        value = SaturateAcc_Unconditional(value);
-        SetAcc_NoSaturation(b.GetName(), value);
+        value = SaturateAcc(value);
+        SetAccAndFlag(b.GetName(), value);
     }
 
     void vtrclr0() {
@@ -2420,13 +2420,13 @@ public:
         regs.vtr[1] = 0;
     }
     void vtrmov0(Axl a) {
-        SetAcc(a.GetName(), regs.vtr[0]);
+        SatAndSetAccAndFlag(a.GetName(), regs.vtr[0]);
     }
     void vtrmov1(Axl a) {
-        SetAcc(a.GetName(), regs.vtr[1]);
+        SatAndSetAccAndFlag(a.GetName(), regs.vtr[1]);
     }
     void vtrmov(Axl a) {
-        SetAcc(a.GetName(), (regs.vtr[1] & 0xFF00) | (regs.vtr[0] >> 8));
+        SatAndSetAccAndFlag(a.GetName(), (regs.vtr[1] & 0xFF00) | (regs.vtr[0] >> 8));
     }
     void vtrshr() {
         // TODO: This instruction has one cycle delay on vtr0, but not on vtr1
@@ -2453,7 +2453,7 @@ public:
         if (((d >> 63) & 1) == 0) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2466,7 +2466,7 @@ public:
         if (((d >> 63) & 1) == 0 && d != 0) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2479,7 +2479,7 @@ public:
         if (((d >> 63) & 1) == 1 || d == 0) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2492,7 +2492,7 @@ public:
         if (((d >> 63) & 1) == 1) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2506,7 +2506,7 @@ public:
         if (((d >> 63) & 1) == 0) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2519,7 +2519,7 @@ public:
         if (((d >> 63) & 1) == 0 && d != 0) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2532,7 +2532,7 @@ public:
         if (((d >> 63) & 1) == 1 || d == 0) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2545,7 +2545,7 @@ public:
         if (((d >> 63) & 1) == 1) {
             regs.fm = 1;
             regs.mixp = r0;
-            SetAcc_Simple(a.GetName(), v);
+            SetAcc(a.GetName(), v);
         } else {
             regs.fm = 0;
         }
@@ -2556,9 +2556,9 @@ public:
         u64 db = GetAcc(b.GetName());
         u64 value = db - ((u64)da << 15);
         if (value >> 63) {
-            SetAcc_NoSaturation(b.GetName(), SignExtend<40>(db << 1));
+            SetAccAndFlag(b.GetName(), SignExtend<40>(db << 1));
         } else {
-            SetAcc_NoSaturation(b.GetName(), SignExtend<40>((value << 1) + 1));
+            SetAccAndFlag(b.GetName(), SignExtend<40>((value << 1) + 1));
         }
     }
 
@@ -2629,7 +2629,7 @@ public:
         wh = (regs.fc[0] = !(wh >> 63)) ? vh : uh;
         wl = (regs.fc[1] = !(wl >> 63)) ? vl : ul;
         u64 w = (wh << 16) | (wl & 0xFFFF);
-        SetAcc_Simple(a, w);
+        SetAcc(a, w);
         vtrshr();
     }
 
@@ -2647,63 +2647,63 @@ public:
     }
     void max2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), false);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)(value & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void max2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), false);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)((value >> 16) & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void max2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), false);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)(value & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void max2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), false);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)((value >> 16) & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void min2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), true);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)(value & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void min2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), true);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)((value >> 16) & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void min2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), true);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)(value & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void min2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         MinMaxVtr(a.GetName(), b.GetName(), true);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 address = RnAddressAndModify(GetArRnUnit(c), GetArStep(cs));
         u16 value16 = (u16)((value >> 16) & 0xFFFF);
         mem.DataWrite(address, value16);
     }
     void max2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         MinMaxVtr(a.GetName(), b.GetName(), false);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 h = (u16)((value >> 16) & 0xFFFF);
         u16 l = (u16)(value & 0xFFFF);
         auto [ui, uj] = GetArpRnUnit(c);
@@ -2715,7 +2715,7 @@ public:
     }
     void max2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         MinMaxVtr(a.GetName(), b.GetName(), false);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 h = (u16)((value >> 16) & 0xFFFF);
         u16 l = (u16)(value & 0xFFFF);
         auto [ui, uj] = GetArpRnUnit(c);
@@ -2727,7 +2727,7 @@ public:
     }
     void min2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         MinMaxVtr(a.GetName(), b.GetName(), true);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 h = (u16)((value >> 16) & 0xFFFF);
         u16 l = (u16)(value & 0xFFFF);
         auto [ui, uj] = GetArpRnUnit(c);
@@ -2739,7 +2739,7 @@ public:
     }
     void min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         MinMaxVtr(a.GetName(), b.GetName(), true);
-        u64 value = SaturateAcc_NoFlag(GetAcc(CounterAcc(a.GetName())), false);
+        u64 value = GetAndSatAccNoFlag(CounterAcc(a.GetName()));
         u16 h = (u16)((value >> 16) & 0xFFFF);
         u16 l = (u16)(value & 0xFFFF);
         auto [ui, uj] = GetArpRnUnit(c);
@@ -2898,8 +2898,8 @@ public:
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         u16 unit = GetArRnUnit(w);
         u16 address = RnAddressAndModify(unit, GetArStep(ws));
-        u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(u.GetName()), false) >> 16) & 0xFFFF);
-        u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(v.GetName()), false) >> 16) & 0xFFFF);
+        u16 u_value = (u16)((GetAndSatAccNoFlag(u.GetName()) >> 16) & 0xFFFF);
+        u16 v_value = (u16)((GetAndSatAccNoFlag(v.GetName()) >> 16) & 0xFFFF);
         // keep the order like this
         mem.DataWrite(OffsetAddress(unit, address, GetArOffset(ws)), v_value);
         mem.DataWrite(address, u_value);
@@ -2914,8 +2914,8 @@ public:
              SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         u16 unit = GetArRnUnit(w);
         u16 address = RnAddressAndModify(unit, GetArStep(ws));
-        u16 u_value = (u16)((SaturateAcc_NoFlag(GetAcc(a), false) >> 16) & 0xFFFF);
-        u16 v_value = (u16)((SaturateAcc_NoFlag(GetAcc(CounterAcc(a)), false) >> 16) & 0xFFFF);
+        u16 u_value = (u16)((GetAndSatAccNoFlag(a) >> 16) & 0xFFFF);
+        u16 v_value = (u16)((GetAndSatAccNoFlag(CounterAcc(a)) >> 16) & 0xFFFF);
         // keep the order like this
         mem.DataWrite(OffsetAddress(unit, address, GetArOffset(ws)), v_value);
         mem.DataWrite(address, u_value);
@@ -2930,7 +2930,7 @@ public:
         u64 value = SignExtend<32, u64>(((u64)mem.DataRead(address) << 16) | 0x8000);
         u64 p = ProductToBus40(b.GetName());
         u64 result = AddSub(value, p, false);
-        SetAcc(c.GetName(), result);
+        SatAndSetAccAndFlag(c.GetName(), result);
     }
 
     void mov_ext0(Imm8s a) {
@@ -2960,7 +2960,7 @@ private:
         }
     }
 
-    u64 SaturateAcc_Unconditional_NoFlag(u64 value) {
+    u64 SaturateAccNoFlag(u64 value) const {
         if (value != SignExtend<32>(value)) {
             if ((value >> 39) != 0)
                 return 0xFFFF'FFFF'8000'0000;
@@ -2970,7 +2970,7 @@ private:
         return value;
     }
 
-    u64 SaturateAcc_Unconditional(u64 value) {
+    u64 SaturateAcc(u64 value) {
         if (value != SignExtend<32>(value)) {
             regs.flm = 1;
             if ((value >> 39) != 0)
@@ -2982,16 +2982,18 @@ private:
         return value;
     }
 
-    u64 SaturateAcc(u64 value, bool storing) {
-        if (!regs.sat[storing]) {
-            return SaturateAcc_Unconditional(value);
+    u64 GetAndSatAcc(RegName name) {
+        u64 value = GetAcc(name);
+        if (!regs.sat) {
+            return SaturateAcc(value);
         }
         return value;
     }
 
-    u64 SaturateAcc_NoFlag(u64 value, bool storing) {
-        if (!regs.sat[storing]) {
-            return SaturateAcc_Unconditional_NoFlag(value);
+    u64 GetAndSatAccNoFlag(RegName name) const {
+        u64 value = GetAcc(name);
+        if (!regs.sat) {
+            return SaturateAccNoFlag(value);
         }
         return value;
     }
@@ -3006,12 +3008,12 @@ private:
             // throw "uncomment above after developing";
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
             if (enable_sat_for_mov) {
-                return SaturateAcc(GetAcc(reg), false) & 0xFFFF;
+                return GetAndSatAcc(reg) & 0xFFFF;
             }
             return GetAcc(reg) & 0xFFFF;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
             if (enable_sat_for_mov) {
-                return (SaturateAcc(GetAcc(reg), false) >> 16) & 0xFFFF;
+                return (GetAndSatAcc(reg) >> 16) & 0xFFFF;
             }
             return (GetAcc(reg) >> 16) & 0xFFFF;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
@@ -3032,8 +3034,6 @@ private:
         case RegName::y1: return regs.y[1];
         case RegName::p0:
         case RegName::p1:throw "?";
-
-
         case RegName::p:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
@@ -3078,8 +3078,6 @@ private:
     }
 
     void SetAccFlag(u64 value) {
-        if (value != SignExtend<40>(value))
-            throw "remove this check later";
         regs.fz = value == 0;
         regs.fm = (value >> 39) != 0;
         regs.fe = value != SignExtend<32>(value);
@@ -3088,16 +3086,7 @@ private:
         regs.fn = regs.fz || (!regs.fe && (bit31 ^ bit30) != 0);
     }
 
-    void SetAcc(RegName name, u64 value, bool no_saturation = false) {
-        SetAccFlag(value);
-
-        if (!no_saturation)
-            value = SaturateAcc(value, true);
-
-        SetAcc_Simple(name, value);
-    }
-
-    void SetAcc_Simple(RegName name, u64 value) {
+    void SetAcc(RegName name, u64 value) {
         switch(name) {
         case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0] = value; break;
         case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1] = value; break;
@@ -3107,21 +3096,29 @@ private:
         }
     }
 
-    void SetAcc_NoSaturation(RegName name, u64 value) {
-        SetAcc(name, value, true);
+    void SatAndSetAccAndFlag(RegName name, u64 value) {
+        SetAccFlag(value);
+        if (!regs.sata) {
+            value = SaturateAcc(value);
+        }
+        SetAcc(name, value);
     }
 
+    void SetAccAndFlag(RegName name, u64 value) {
+        SetAccFlag(value);
+        SetAcc(name, value);
+    }
 
     void RegFromBus16(RegName reg, u16 value) {
         switch(reg) {
         case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
-            SetAcc(reg, SignExtend<16, u64>(value));
+            SatAndSetAccAndFlag(reg, SignExtend<16, u64>(value));
             break;
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
-            SetAcc(reg, (u64)value);
+            SatAndSetAccAndFlag(reg, (u64)value);
             break;
         case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
-            SetAcc(reg, SignExtend<32, u64>(value << 16));
+            SatAndSetAccAndFlag(reg, SignExtend<32, u64>(value << 16));
             break;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
             throw "?";

@@ -96,7 +96,8 @@ struct RegisterState {
     u16 pcmhi = 0; // 2-bit, higher part of program address for movp/movd
     u16 bcn = 0; // 3-bit, nest loop counter
     u16 lp = 0; // 1-bit, set when in a loop
-    std::array<u16, 2> sat{{0, 1}}; // sat[0]=1 disable saturation when read from acc; sat[1]=1 disable saturation when write to acc?
+    u16 sat = 0; // 1-bit, disable saturation when moving from acc
+    u16 sata = 1; // 1-bit, disable saturation when moving to acc
     u16 hwm = 0; // 2-bit, half word mode, modify y on multiplication
     u16 mod0_unk_const = 1; // 3-bit
     std::array<u16, 2> ps{}; // 2-bit, product shift mode
@@ -236,7 +237,8 @@ struct RegisterState {
 
     ShadowSwapRegisterList<
         ShadowSwapRegister<&RegisterState::pcmhi>,
-        ShadowSwapArrayRegister<2, &RegisterState::sat>,
+        ShadowSwapRegister<&RegisterState::sat>,
+        ShadowSwapRegister<&RegisterState::sata>,
         ShadowSwapRegister<&RegisterState::hwm>,
         ShadowSwapRegister<&RegisterState::s>,
         ShadowSwapArrayRegister<2, &RegisterState::ps>,
@@ -482,8 +484,8 @@ using stt2 = PseudoRegister<
     ProxySlot<RORedirector<&RegisterState::lp>, 15, 1>
 >;
 using mod0 = PseudoRegister<
-    ProxySlot<ArrayRedirector<2, &RegisterState::sat, 0>, 0, 1>,
-    ProxySlot<ArrayRedirector<2, &RegisterState::sat, 1>, 1, 1>,
+    ProxySlot<Redirector<&RegisterState::sat>, 0, 1>,
+    ProxySlot<Redirector<&RegisterState::sata>, 1, 1>,
     ProxySlot<RORedirector<&RegisterState::mod0_unk_const>, 2, 3>,
     ProxySlot<Redirector<&RegisterState::hwm>, 5, 2>,
     ProxySlot<Redirector<&RegisterState::s>, 7, 1>,
@@ -539,7 +541,7 @@ using mod3 = PseudoRegister<
 >;
 
 using st0 = PseudoRegister<
-    ProxySlot<ArrayRedirector<2, &RegisterState::sat, 0>, 0, 1>,
+    ProxySlot<Redirector<&RegisterState::sat>, 0, 1>,
     ProxySlot<Redirector<&RegisterState::ie>, 1, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::im, 0>, 2, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::im, 1>, 3, 1>,
