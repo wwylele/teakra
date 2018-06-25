@@ -560,12 +560,6 @@ public:
             bv = ProductToBus40(RegName::p0) >> 16;
         } else if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
             UNREACHABLE(); // weird effect;
-        } else if (b.GetName() == RegName::a0l || b.GetName() == RegName::a1l
-            || b.GetName() == RegName::b0l || b.GetName() == RegName::b1l) {
-            bv = GetAcc(b.GetName()) & 0xFFFF;
-        } else if (b.GetName() == RegName::a0l || b.GetName() == RegName::a1l
-            || b.GetName() == RegName::b0l || b.GetName() == RegName::b1l) {
-            bv = (GetAcc(b.GetName()) >> 16) & 0xFFFF;
         } else {
             bv = RegToBus16(b.GetName());
         }
@@ -1360,7 +1354,6 @@ public:
         regs.fz = (value >> b.storage) & 1;
     }
     void tstb(Register a, Imm4 b) {
-        // a0, a1, p?
         u16 value = RegToBus16(a.GetName());
         regs.fz = (value >> b.storage) & 1;
     }
@@ -1426,7 +1419,6 @@ public:
         MulGeneric(op.GetName(), a);
     }
     void mul_y0(Mul3 op, Register x, Ax a) {
-        // a0, a1, p?
         regs.x[0] = RegToBus16(x.GetName());
         MulGeneric(op.GetName(), a);
     }
@@ -1764,7 +1756,6 @@ public:
     }
     void mov(Register a, Rn b, StepZIDS bs) {
         // a = a0 or a1 is overrided
-        // a = p0 untested
         u16 value = RegToBus16(a.GetName(), true);
         u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         mem.DataWrite(address, value);
