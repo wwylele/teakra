@@ -18,7 +18,6 @@ struct RegisterState {
     u32 pc = 0; // 18-bit, program counter
     u16 prpage = 0; // 4-bit, program page
 
-    u16 dvm = 0; // data value match for breakpoints and trap
     u16 repc = 0; // rep loop counter
     u16 repcs = 0; // repc shadow
     bool rep = false; // true when in rep loop

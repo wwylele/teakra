@@ -1235,15 +1235,8 @@ public:
     }
     void pop(Abe a) {
         u32 value32 = SignExtend<8, u32>(mem.DataRead(regs.sp++) & 0xFF);
-        u64* target;
-        switch(a.GetName()) {
-        case RegName::a0e: target = &regs.a[0]; break;
-        case RegName::a1e: target = &regs.a[1]; break;
-        case RegName::b0e: target = &regs.b[0]; break;
-        case RegName::b1e: target = &regs.b[1]; break;
-        default: UNREACHABLE();
-        }
-        SatAndSetAccAndFlag(a.GetName(), (*target & 0xFFFFFFFF) | (u64)value32 << 32);
+        u64 acc = GetAcc(a.GetName());
+        SatAndSetAccAndFlag(a.GetName(), (acc & 0xFFFFFFFF) | (u64)value32 << 32);
     }
     void pop(ArArpSttMod a) {
         u16 value = mem.DataRead(regs.sp++);
