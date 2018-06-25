@@ -1678,7 +1678,11 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_eu(MemImm8 a, Axh b) {
-        throw "unimplemented";
+        u16 value = LoadFromMemory(a);
+        u64 acc = GetAcc(b.GetName());
+        acc &= 0xFFFF'FFFF'0000'0000;
+        acc |= (u64)value << 16;
+        SetAccAndFlag(b.GetName(), acc); // ?
     }
     void mov(MemImm8 a, RnOld b) {
         u16 value = LoadFromMemory(a);
