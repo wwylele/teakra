@@ -16,8 +16,8 @@ public:
     Interpreter(RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
 
     void PushPC() {
-        u16 l = regs.GetPcL();
-        u16 h = regs.GetPcH();
+        u16 l = (u16)(regs.pc & 0xFFFF);
+        u16 h = (u16)(regs.pc >> 16);
         if (regs.cpc == 1) {
             mem.DataWrite(--regs.sp, h);
             mem.DataWrite(--regs.sp, l);
@@ -36,10 +36,10 @@ public:
             h = mem.DataRead(regs.sp++);
             l = mem.DataRead(regs.sp++);
         }
-        regs.SetPC(l, h);
+        SetPC(l | ((u32)h << 16));
     }
 
-    void SetPC_Save(u32 new_pc) {
+    void SetPC(u32 new_pc) {
         ASSERT(new_pc < 0x40000);
         regs.pc = new_pc;
     }
@@ -1039,7 +1039,7 @@ public:
 
     void br(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            regs.SetPC(addr_low.storage, addr_high.storage);
+            SetPC(addr_low.storage | ((u32)addr_high.storage << 16));
         }
     }
 
@@ -1059,16 +1059,16 @@ public:
     void call(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         if (regs.ConditionPass(cond)) {
             PushPC();
-            regs.SetPC(addr_low.storage, addr_high.storage);
+            SetPC(addr_low.storage | ((u32)addr_high.storage << 16));
         }
     }
     void calla(Axl a) {
         PushPC();
-        SetPC_Save(RegToBus16(a.GetName())); // use pcmhi?
+        SetPC(RegToBus16(a.GetName())); // use pcmhi?
     }
     void calla(Ax a) {
         PushPC();
-        SetPC_Save(GetAcc(a.GetName()) & 0x3FFFF); // no saturation ?
+        SetPC(GetAcc(a.GetName()) & 0x3FFFF); // no saturation ?
     }
     void callr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
@@ -1594,7 +1594,7 @@ public:
         // the endianess doesn't seem to be affected by regs.cpc
         u16 h = mem.ProgramRead(address);
         u16 l = mem.ProgramRead(address + 1);
-        regs.SetPC(l, h);
+        SetPC(l | ((u32)h << 16));
     }
 
     void mov(Ab a, Ab b) {
@@ -1949,11 +1949,11 @@ public:
 
     void mov_pc(Ax a) {
         u64 value = GetAcc(a.GetName());
-        SetPC_Save(value & 0xFFFFFFFF);
+        SetPC(value & 0xFFFFFFFF);
     }
     void mov_pc(Bx a) {
         u64 value = GetAcc(a.GetName());
-        SetPC_Save(value & 0xFFFFFFFF);
+        SetPC(value & 0xFFFFFFFF);
     }
 
     void mov_mixp_to(Bx b) {

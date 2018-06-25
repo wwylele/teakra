@@ -12,23 +12,11 @@ namespace Teakra {
 
 struct RegisterState {
     void Reset() {
-        pc = 0;
-
+        *this = RegisterState();
     }
 
     u32 pc = 0; // 18-bit, program counter
     u16 prpage = 0; // 4-bit, program page
-
-    u16 GetPcL() const {
-        return pc & 0xFFFF;
-    }
-    u16 GetPcH() const {
-        return (pc >> 16) & 0xFFFF;
-    }
-    void SetPC(u16 low, u16 high) {
-        pc = (u32)low | ((u32)high << 16);
-        ASSERT(pc < 0x40000);
-    }
 
     u16 dvm = 0; // data value match for breakpoints and trap
     u16 repc = 0; // rep loop counter
