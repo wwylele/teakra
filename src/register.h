@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "common_types.h"
+#include "crash.h"
 #include "oprand.h"
 
 namespace Teakra {
@@ -25,9 +26,8 @@ struct RegisterState {
         return (pc >> 16) & 0xFFFF;
     }
     void SetPC(u16 low, u16 high) {
-        if (((u32)low | ((u32)high << 16)) >= 0x40000)
-            throw "pc flies";
         pc = (u32)low | ((u32)high << 16);
+        ASSERT(pc < 0x40000);
     }
 
     u16 dvm = 0; // data value match for breakpoints and trap
@@ -347,7 +347,7 @@ struct RegisterState {
         case CondValue::Niu0: return iu[0] == 0;
         case CondValue::Iu0: return iu[0] == 1;
         case CondValue::Iu1: return iu[1] == 1;
-        default: throw "";
+        default: UNREACHABLE();
         }
     }
 

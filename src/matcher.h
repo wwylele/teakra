@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 #include "common_types.h"
+#include "crash.h"
 
 struct Rejector {
     u16 mask;
@@ -49,9 +50,7 @@ public:
     }
 
     handler_return_type call(Visitor& v, u16 instruction, u16 instruction_expansion = 0) const {
-        if (!Matches(instruction)) {
-            throw "excuse me";
-        }
+        ASSERT(Matches(instruction));
         return fn(v, instruction, instruction_expansion);
     }
 

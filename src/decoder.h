@@ -1,4 +1,5 @@
 #pragma once
+#include "crash.h"
 #include "matcher.h"
 #include "oprand.h"
 #include <type_traits>
@@ -695,12 +696,7 @@ Matcher<V> Decode(u16 instruction) {
         });
     } else {
         auto other = std::find_if(iter + 1, table.end(), matches_instruction);
-        if (other != table.end()) {
-            printf("!!!Decode Clash For %04X!!!\n", instruction);
-            printf("First = %s\n", iter->GetName());
-            printf("Second = %s\n", other->GetName());
-            throw "wtf";
-        }
+        ASSERT(other == table.end());
         return *iter;
     }
 }

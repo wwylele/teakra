@@ -3,6 +3,7 @@
 #include "oprand.h"
 #include "register.h"
 #include "memory_interface.h"
+#include "crash.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <tuple>
@@ -39,13 +40,12 @@ public:
     }
 
     void SetPC_Save(u32 new_pc) {
-        if (new_pc >= 0x40000)
-            throw "pc flies";
+        ASSERT(new_pc < 0x40000);
         regs.pc = new_pc;
     }
 
     void undefined(u16 opcode) {
-        throw "undefined code!";
+        UNREACHABLE();
     }
 
     void Run(unsigned cycles) {
@@ -213,7 +213,7 @@ public:
             s1 = RegName::b1;
             break;
         default:
-            throw "what";
+            UNREACHABLE();
         }
         u = GetAcc(s0);
         v = GetAcc(s1);
@@ -221,7 +221,7 @@ public:
         SatAndSetAccAndFlag(d1, v); // only this one affects flags (except for fl)
     }
     void trap() {
-        throw "unimplemented";
+        UNREACHABLE();
     }
 
     void DoMultiplication(u32 unit, bool x_sign, bool y_sign) {
@@ -281,7 +281,7 @@ public:
             value_c = SignExtend<32, u64>((u64)regs.sv << 16) | 0x8000;
             break;
         default:
-            throw "?";
+            UNREACHABLE();
         }
         u64 result = AddSub(value_c, value_a, sub_p0);
         u16 temp_c = regs.fc[0];
@@ -372,7 +372,7 @@ public:
             break;
         }
 
-        default:throw "???";
+        default: UNREACHABLE();
         }
     }
 
@@ -411,7 +411,7 @@ public:
                 AlmOp::Sub,
             };
             if (allowed_instruction.count(op.GetName()) == 0)
-                throw "weird effect. probably undefined";
+                UNREACHABLE(); // weird effect. probably undefined
         };
         switch (a.GetName()) {
         // need more test
@@ -519,7 +519,7 @@ public:
             result = r & 0xFFFF;
             break;
         }
-        default: throw "???";
+        default: UNREACHABLE();
         }
         regs.fz = result == 0;
         return result;
@@ -537,7 +537,7 @@ public:
         case AlbOp::Tst1:
         case AlbOp::Cmpv:
             return false;
-        default: throw "???";
+        default: UNREACHABLE();
         }
     }
 
@@ -559,7 +559,7 @@ public:
         if (b.GetName() == RegName::p) {
             bv = ProductToBus40(RegName::p0) >> 16;
         } else if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
-            throw "weird effect";
+            UNREACHABLE(); // weird effect;
         } else if (b.GetName() == RegName::a0l || b.GetName() == RegName::a1l
             || b.GetName() == RegName::b0l || b.GetName() == RegName::b1l) {
             bv = GetAcc(b.GetName()) & 0xFFFF;
@@ -573,7 +573,7 @@ public:
         if (IsAlbModifying(op)) {
             switch (b.GetName()) {
             case RegName::a0: case RegName::a1:
-                throw "weird effect";
+                UNREACHABLE();
             // operation on accumulators doesn't go through regular bus with flag and saturation
             case RegName::a0l: regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'FFFF'0000) | result; break;
             case RegName::a1l: regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'FFFF'0000) | result; break;
@@ -867,7 +867,7 @@ public:
                 break;
             }
             default:
-                throw "??";
+                UNREACHABLE();
             }
         }
     }
@@ -910,8 +910,7 @@ public:
     }
 
     void BlockRepeat(u16 lc, u32 address) {
-        if (regs.bcn > 3)
-            throw "stack overflow";
+        ASSERT(regs.bcn <= 3);
         regs.bkrep_stack[regs.bcn].start = regs.pc;
         regs.bkrep_stack[regs.bcn].end = address;
         regs.bkrep_stack[regs.bcn].lc = lc;
@@ -937,8 +936,7 @@ public:
 
     void RestoreBlockRepeat(u16& address_reg) {
         if (regs.lp) {
-            if (regs.bcn > 3)
-                throw "stack overflow";
+            ASSERT(regs.bcn <= 3);
             std::copy_backward(regs.bkrep_stack.begin(), regs.bkrep_stack.begin() + regs.bcn,
                 regs.bkrep_stack.begin() + 1);
             ++regs.bcn;
@@ -946,8 +944,7 @@ public:
         u32 flag = mem.DataRead(address_reg++);
         u16 valid = flag >> 15;
         if (regs.lp) {
-            if (!valid)
-                throw "pop invalid loop below valid loop";
+            ASSERT(valid);
         } else {
             if (valid)
                 regs.lp = regs.bcn = 1;
@@ -1053,9 +1050,7 @@ public:
     }
 
     void break_() {
-        if (!regs.lp) {
-            throw "not in a loop";
-        }
+        ASSERT(regs.lp);
         --regs.bcn;
         regs.lp = regs.bcn != 0;
         // Note: unlike one would expect, the "break" instruction doesn't jump out of the block
@@ -1126,7 +1121,7 @@ public:
         }
     }
     void retd() {
-        throw "unimplemented";
+        UNREACHABLE();
     }
     void reti(Cond c) {
         if (regs.ConditionPass(c)) {
@@ -1142,10 +1137,10 @@ public:
         }
     }
     void retid() {
-        throw "unimplemented";
+        UNREACHABLE();
     }
     void retidc() {
-        throw "unimplemented";
+        UNREACHABLE();
     }
     void rets(Imm8 a) {
         PopPC();
@@ -1252,7 +1247,7 @@ public:
         case RegName::a1e: target = &regs.a[1]; break;
         case RegName::b0e: target = &regs.b[0]; break;
         case RegName::b1e: target = &regs.b[1]; break;
-        default: throw "???";
+        default: UNREACHABLE();
         }
         SatAndSetAccAndFlag(a.GetName(), (*target & 0xFFFFFFFF) | (u64)value32 << 32);
     }
@@ -1607,7 +1602,7 @@ public:
         SatAndSetAccAndFlag(b.GetName(), value);
     }
     void mov_dvm(Abl a) {
-        throw "unimplemented";
+        UNREACHABLE();
     }
     void mov_x0(Abl a) {
         u16 value16 = RegToBus16(a.GetName(), true);
@@ -1693,7 +1688,7 @@ public:
         regs.sv = value;
     }
     void mov_dvm_to(Ab b) {
-        throw "unimplemented";
+        UNREACHABLE();
     }
     void mov_icr_to(Ab b) {
         u16 value = regs.Get<icr>();
@@ -2726,7 +2721,7 @@ public:
             cond = !(diff >> 63) && diff != 0;
             break;
         default:
-            throw "???";
+            UNREACHABLE();
         }
         if (cond) {
             regs.x[1] = regs.p0h_cbs;
@@ -2888,7 +2883,7 @@ private:
         case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: return regs.a[1];
         case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: return regs.b[0];
         case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: return regs.b[1];
-        default: throw "nope";
+        default: UNREACHABLE();
         }
     }
 
@@ -2937,7 +2932,6 @@ private:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
             return GetAcc(reg) & 0xFFFF;
-            // throw "uncomment above after developing";
         case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
             if (enable_sat_for_mov) {
                 return GetAndSatAcc(reg) & 0xFFFF;
@@ -2949,7 +2943,7 @@ private:
             }
             return (GetAcc(reg) >> 16) & 0xFFFF;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
-            throw "?";
+            UNREACHABLE();
 
         case RegName::r0: return regs.r[0];
         case RegName::r1: return regs.r[1];
@@ -2965,14 +2959,13 @@ private:
         case RegName::y0: return regs.y[0];
         case RegName::y1: return regs.y[1];
         case RegName::p0:
-        case RegName::p1:throw "?";
+        case RegName::p1: UNREACHABLE();
         case RegName::p:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
             return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
-            // throw "uncomment above after developing";
 
-        case RegName::pc: throw "?";
+        case RegName::pc: UNREACHABLE();
         case RegName::sp: return regs.sp;
         case RegName::sv: return regs.sv;
         case RegName::lc: return regs.Lc();
@@ -3005,7 +2998,7 @@ private:
         case RegName::mod1: return regs.Get<mod1>();
         case RegName::mod2: return regs.Get<mod2>();
         case RegName::mod3: return regs.Get<mod3>();
-        default: throw "?";
+        default: UNREACHABLE();
         }
     }
 
@@ -3024,7 +3017,7 @@ private:
         case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1] = value; break;
         case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: regs.b[0] = value; break;
         case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: regs.b[1] = value; break;
-        default: throw "nope";
+        default: UNREACHABLE();
         }
     }
 
@@ -3053,7 +3046,7 @@ private:
             SatAndSetAccAndFlag(reg, SignExtend<32, u64>(value << 16));
             break;
         case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
-            throw "?";
+            UNREACHABLE();
 
         case RegName::r0: regs.r[0] = value; break;
         case RegName::r1: regs.r[1] = value; break;
@@ -3069,13 +3062,13 @@ private:
         case RegName::y0: regs.y[0] = value; break;
         case RegName::y1: regs.y[1] = value; break;
         case RegName::p0:
-        case RegName::p1: throw "?";
+        case RegName::p1: UNREACHABLE();
         case RegName::p: // p0h
             regs.pe[0] = value > 0x7FFF;
             regs.p[0] = (regs.p[0] & 0xFFFF) | (value << 16);
             break;
 
-        case RegName::pc: throw "?";
+        case RegName::pc: UNREACHABLE();
         case RegName::sp: regs.sp = value; break;
         case RegName::sv: regs.sv = value; break;
         case RegName::lc: regs.Lc() = value; break;
@@ -3108,7 +3101,7 @@ private:
         case RegName::mod1: regs.Set<mod1>(value); break;
         case RegName::mod2: regs.Set<mod2>(value); break;
         case RegName::mod3: regs.Set<mod3>(value); break;
-        default: throw "?";
+        default: UNREACHABLE();
         }
     }
 
@@ -3122,7 +3115,7 @@ private:
         case RegName::r5: return 5; break;
         case RegName::r6: return 6; break;
         case RegName::r7: return 7; break;
-        default: throw "?";
+        default: UNREACHABLE();
         }
     }
 
@@ -3148,7 +3141,7 @@ private:
         case 5: return StepValue::Decrease2Mode1;
         case 6: return StepValue::Increase2Mode2;
         case 7: return StepValue::Decrease2Mode2;
-        default: throw "???";
+        default: UNREACHABLE();
         }
     }
 
@@ -3275,7 +3268,7 @@ private:
             }
             break;
         }
-        default: throw "?";
+        default: UNREACHABLE();
         }
 
         if (s == 0)
@@ -3381,7 +3374,7 @@ private:
         case RegName::p1:
             unit = 1; break;
         default:
-            throw "???";
+            UNREACHABLE();
         }
         return regs.p[unit];
     }
@@ -3394,7 +3387,7 @@ private:
         case RegName::p1:
             unit = 1; break;
         default:
-            throw "???";
+            UNREACHABLE();
         }
         u64 value = regs.p[unit] | ((u64)regs.pe[unit] << 32);
         switch (regs.ps[unit]) {
@@ -3425,7 +3418,7 @@ private:
         case RegName::p1:
             unit = 1; break;
         default:
-            throw "???";
+            UNREACHABLE();
         }
         regs.p[unit] = value;
         regs.pe[unit] = value >> 31;

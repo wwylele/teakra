@@ -5,6 +5,7 @@
 #include "oprand.h"
 #include "decoder.h"
 #include "teakra/disassembler.h"
+#include "crash.h"
 
 namespace Teakra::Disassembler {
 
@@ -136,7 +137,7 @@ std::string Dsm(Alm alm) {
     case AlmOp::Sqr: return "sqr";
     case AlmOp::Sqra: return "sqra";
     case AlmOp::Cmpu: return "cmpu";
-    default: throw "what";
+    default: return "[ERROR]";
     }
 }
 
@@ -148,7 +149,7 @@ std::string Dsm(Alu alu) {
     case AlmOp::Add: return "add";
     case AlmOp::Cmp: return "cmp";
     case AlmOp::Sub: return "sub";
-    default: throw "what";
+    default: return "[ERROR]";
     }
 }
 
@@ -162,7 +163,7 @@ std::string Dsm(Alb alb) {
     case AlbOp::Tst1: return "tst1";
     case AlbOp::Cmpv: return "cmpv";
     case AlbOp::Subv: return "subv";
-    default: throw "what";
+    default: return "[ERROR]";
     }
 }
 
@@ -244,7 +245,7 @@ std::string Dsm(Cond cond) {
     case CondValue::Niu0: return "niu0";
     case CondValue::Iu0: return "iu0";
     case CondValue::Iu1: return "iu1";
-    default: throw "what";
+    default: return "[ERROR]";
     }
 }
 
@@ -262,7 +263,7 @@ std::string Dsm(StepZIDS step) {
     case StepValue::Increase: return "++";
     case StepValue::Decrease: return "--";
     case StepValue::PlusStep: return "++s";
-    default: throw "what";
+    default: return "[ERROR]";
     }
 }
 
@@ -284,7 +285,7 @@ std::string Dsm(CbsCond c) {
     switch(c.GetName()) {
     case CbsCondValue::Ge: return "ge";
     case CbsCondValue::Gt: return "gt";
-    default: throw "?";
+    default: return "[ERROR]";
     }
 }
 

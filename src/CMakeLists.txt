@@ -8,6 +8,7 @@ add_library(teakra
     common_types.h
     core.cpp
     core.h
+    crash.h
     decoder.h
     disassembler.cpp
     icu.h
