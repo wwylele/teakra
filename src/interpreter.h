@@ -2859,16 +2859,16 @@ public:
     }
 
     void mov_ext0(Imm8s a) {
-        throw "unimplemented";
+        regs.ext[0] = SignExtend<8>(a.storage);
     }
     void mov_ext1(Imm8s a) {
-        throw "unimplemented";
+        regs.ext[1] = SignExtend<8>(a.storage);
     }
     void mov_ext2(Imm8s a) {
-        throw "unimplemented";
+        regs.ext[2] = SignExtend<8>(a.storage);
     }
     void mov_ext3(Imm8s a) {
-        throw "unimplemented";
+        regs.ext[3] = SignExtend<8>(a.storage);
     }
 
 private:
@@ -2978,10 +2978,10 @@ private:
         case RegName::arp2: return regs.Get<arp2>();
         case RegName::arp3: return regs.Get<arp3>();
 
-        case RegName::ext0:
-        case RegName::ext1:
-        case RegName::ext2:
-        case RegName::ext3: throw "?";
+        case RegName::ext0: return regs.ext[0];
+        case RegName::ext1: return regs.ext[1];
+        case RegName::ext2: return regs.ext[2];
+        case RegName::ext3: return regs.ext[3];
 
         case RegName::stt0: return regs.Get<stt0>();
         case RegName::stt1: return regs.Get<stt1>();
@@ -3081,10 +3081,10 @@ private:
         case RegName::arp2: regs.Set<arp2>(value); break;
         case RegName::arp3: regs.Set<arp3>(value); break;
 
-        case RegName::ext0:
-        case RegName::ext1:
-        case RegName::ext2:
-        case RegName::ext3: throw "?";
+        case RegName::ext0: regs.ext[0] = value; break;
+        case RegName::ext1: regs.ext[1] = value; break;
+        case RegName::ext2: regs.ext[2] = value; break;
+        case RegName::ext3: regs.ext[3] = value; break;
 
         case RegName::stt0: regs.Set<stt0>(value); break;
         case RegName::stt1: regs.Set<stt1>(value); break;
