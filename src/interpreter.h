@@ -50,11 +50,11 @@ public:
 
     void Run(unsigned cycles) {
         for (unsigned i  = 0; i < cycles; ++i) {
-            u16 opcode = mem.ProgramRead(regs.pc++);
+            u16 opcode = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
             auto& decoder = decoders[opcode];
             u16 expand_value = 0;
             if (decoder.NeedExpansion()) {
-                expand_value = mem.ProgramRead(regs.pc++);
+                expand_value = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
             }
 
             if (regs.rep) {
@@ -1195,7 +1195,7 @@ public:
         mem.DataWrite(--regs.sp, value);
     }
     void push_prpage() {
-        throw "unimplemented";
+        mem.DataWrite(--regs.sp, regs.prpage);
     }
     void push(Px a) {
         u32 value = (u32)ProductToBus40(a.GetName());
@@ -1265,7 +1265,7 @@ public:
         RegFromBus16(a.GetName(), value);
     }
     void pop_prpage() {
-        throw "unimplemented";
+        regs.prpage = mem.DataRead(regs.sp++);
     }
     void pop(Px a) {
         u16 h = mem.DataRead(regs.sp++);
@@ -1846,7 +1846,7 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_prpage(Imm4 a) {
-        throw "unimplemented";
+        regs.prpage = a.storage;
     }
 
     void mov_a0h_stepi0() {
@@ -1867,7 +1867,7 @@ public:
     }
 
     void mov_prpage(Abl a) {
-        throw "unimplemented";
+        regs.prpage = (u16)(GetAcc(a.GetName()) & 0xF); // ?
     }
     void mov_repc(Abl a) {
         u16 value = RegToBus16(a.GetName(), true);
@@ -1883,7 +1883,7 @@ public:
     }
 
     void mov_prpage_to(Abl b) {
-        throw "unimplemented";
+        RegFromBus16(b.GetName(), regs.prpage); // ?
     }
     void mov_repc_to(Abl b) {
         u16 value = regs.repc;

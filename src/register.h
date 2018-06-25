@@ -16,6 +16,7 @@ struct RegisterState {
     }
 
     u32 pc = 0; // 18-bit, program counter
+    u16 prpage = 0; // 4-bit, program page
 
     u16 GetPcL() const {
         return pc & 0xFFFF;
