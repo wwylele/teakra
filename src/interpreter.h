@@ -1704,7 +1704,10 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov_icr(Imm5 a) {
-        throw "unimplemented";
+        u16 value = regs.Get<icr>();
+        value &= ~0x1F;
+        value |= a.storage;
+        regs.Set<icr>(value);
     }
     void mov(Imm8s a, Axh b) {
         u16 value = SignExtend<8, u16>(a.storage);

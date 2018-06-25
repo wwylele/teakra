@@ -424,6 +424,18 @@ struct AccEProxy {
     }
 };
 
+struct LPRedirector {
+    static u16 Get(const RegisterState* self) {
+        return self->lp;
+    }
+    static void Set(RegisterState* self, u16 value) {
+        if (value != 0) {
+            self->lp = 0;
+            self->bcn = 0;
+        }
+    }
+};
+
 template<typename Proxy, unsigned position, unsigned length>
 struct ProxySlot {
     using proxy = Proxy;
@@ -483,7 +495,7 @@ using stt2 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::pcmhi>, 6, 2>,
 
     ProxySlot<RORedirector<&RegisterState::bcn>, 12, 3>,
-    ProxySlot<RORedirector<&RegisterState::lp>, 15, 1>
+    ProxySlot<LPRedirector, 15, 1>
 >;
 using mod0 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::sat>, 0, 1>,
@@ -586,7 +598,7 @@ using icr = PseudoRegister<
     ProxySlot<ArrayRedirector<3, &RegisterState::ic, 0>, 1, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::ic, 1>, 2, 1>,
     ProxySlot<ArrayRedirector<3, &RegisterState::ic, 2>, 3, 1>,
-    ProxySlot<RORedirector<&RegisterState::lp>, 4, 1>,
+    ProxySlot<LPRedirector, 4, 1>,
     ProxySlot<RORedirector<&RegisterState::bcn>, 5, 3>
 >;
 
