@@ -4,8 +4,8 @@
 
 namespace Teakra {
 MemoryInterface::MemoryInterface(SharedMemory& shared_memory,
-    DataMemoryController& data_memory_controller, MMIORegion& mmio) : shared_memory(shared_memory),
-    data_memory_controller(data_memory_controller), mmio(mmio) {
+    MemoryInterfaceUnit& memory_interface_unit, MMIORegion& mmio) : shared_memory(shared_memory),
+    memory_interface_unit(memory_interface_unit), mmio(mmio) {
 
 }
 u16 MemoryInterface::ProgramRead(u32 address) const {
@@ -15,19 +15,19 @@ void MemoryInterface::ProgramWrite(u32 address, u16 value) {
     shared_memory.WriteWord(address, value);
 }
 u16 MemoryInterface::DataRead(u16 address) {
-    if (data_memory_controller.InMMIO(address)) {
-        return mmio.Read(data_memory_controller.ToMMIO(address));
+    if (memory_interface_unit.InMMIO(address)) {
+        return mmio.Read(memory_interface_unit.ToMMIO(address));
     }
-    u32 converted = data_memory_controller.ConvertAddressByBank(address);
+    u32 converted = memory_interface_unit.ConvertDataAddress(address);
     u16 value = shared_memory.ReadWord(converted);
     //printf("READ @ %04X -> %04X\n", address, value);
     return value;
 }
 void MemoryInterface::DataWrite(u16 address, u16 value) {
-    if (data_memory_controller.InMMIO(address)) {
-        return mmio.Write(data_memory_controller.ToMMIO(address), value);
+    if (memory_interface_unit.InMMIO(address)) {
+        return mmio.Write(memory_interface_unit.ToMMIO(address), value);
     }
-    u32 converted = data_memory_controller.ConvertAddressByBank(address);
+    u32 converted = memory_interface_unit.ConvertDataAddress(address);
     //printf("READ @ %04X <- %04X\n", address, value);
     shared_memory.WriteWord(converted, value);
 }

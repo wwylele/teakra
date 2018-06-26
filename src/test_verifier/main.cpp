@@ -35,11 +35,11 @@ int main(int argc, char** argv) {
     if (argc < 2)
         throw;
     Teakra::SharedMemory shared_memory;
-    Teakra::DataMemoryController data_memory_controller;
+    Teakra::MemoryInterfaceUnit miu;
     Teakra::ICU icu;
     Teakra::Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
-    Teakra::MMIORegion mmio{data_memory_controller, icu, apbp_from_cpu, apbp_from_dsp};
-    Teakra::MemoryInterface memory_interface{shared_memory, data_memory_controller, mmio};
+    Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp};
+    Teakra::MemoryInterface memory_interface{shared_memory, miu, mmio};
     Teakra::RegisterState regs;
     Teakra::Interpreter interpreter(regs, memory_interface);
 

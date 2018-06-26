@@ -19,28 +19,50 @@ struct BitFieldSlot {
     unsigned length;
     std::function<void(u16)> set;
     std::function<u16(void)> get;
+
+    static BitFieldSlot RefSlot(unsigned pos, unsigned length, u16& var) {
+        BitFieldSlot slot {pos, length, {}, {}};
+        slot.set = [&var](u16 value) {var = value;};
+        slot.get = [&var]()->u16 {return var;};
+        return slot;
+    }
 };
 
 struct Cell {
     std::function<void(u16)> set;
     std::function<u16(void)> get;
+
+    Cell(std::function<void(u16)> set, std::function<u16(void)> get):
+        set(std::move(set)), get(std::move(get)) {}
     Cell() {
         std::shared_ptr<u16> storage = std::make_shared<u16>(0);
         set = [storage](u16 value) {*storage = value;};
         get = [storage]() ->u16 {return *storage;};
     }
-    Cell(u16 constant) {
-        set = NoSet("");
-        get = [constant]()->u16 {return constant;};
+    static Cell ConstCell(u16 constant) {
+        Cell cell({}, {});
+        cell.set = NoSet("");
+        cell.get = [constant]()->u16 {return constant;};
+        return cell;
     }
-    Cell(Cell* mirror) {
-        set = [mirror](u16 value){mirror->set(value);};
-        get = [mirror]()->u16 {return mirror->get();};
+    static Cell RefCell(u16& var) {
+        Cell cell({}, {});
+        cell.set = [&var](u16 value) {var = value;};
+        cell.get = [&var]()->u16 {return var;};
+        return cell;
     }
 
-    Cell(const std::vector<BitFieldSlot>& slots) {
+    static Cell MirrorCell(Cell* mirror) {
+        Cell cell({}, {});
+        cell.set = [mirror](u16 value){mirror->set(value);};
+        cell.get = [mirror]()->u16 {return mirror->get();};
+        return cell;
+    }
+
+    static Cell BitFieldCell(const std::vector<BitFieldSlot>& slots) {
+        Cell cell({}, {});
         std::shared_ptr<u16> storage = std::make_shared<u16>(0);
-        set = [storage, slots](u16 value) {
+        cell.set = [storage, slots](u16 value) {
             for (const auto& slot : slots) {
                 if (slot.set) {
                     slot.set((value >> slot.pos) & ((1 << slot.length) - 1));
@@ -48,7 +70,7 @@ struct Cell {
             }
             *storage = value;
         };
-        get = [storage, slots]() -> u16 {
+        cell.get = [storage, slots]() -> u16 {
             u16 value = *storage;
             for (const auto& slot : slots) {
                 if (slot.get) {
@@ -58,6 +80,7 @@ struct Cell {
             }
             return value;
         };
+        return cell;
     }
 };
 
@@ -67,7 +90,7 @@ public:
 };
 
 MMIORegion::MMIORegion(
-    DataMemoryController& miu,
+    MemoryInterfaceUnit& miu,
     ICU& icu,
     Apbp& apbp_from_cpu,
     Apbp& apbp_from_dsp
@@ -80,11 +103,11 @@ MMIORegion::MMIORegion(
 {
     using namespace std::placeholders;
 
-    impl->cells[0x01A] = Cell(0xC902); // chip detect
+    impl->cells[0x01A] = Cell::ConstCell(0xC902); // chip detect
 
     // Timer
     for (unsigned i = 0; i < 1; ++i) {
-        impl->cells[0x20 + i * 0x10] = Cell({ // TIMERx_CFG
+        impl->cells[0x20 + i * 0x10] = Cell::BitFieldCell({ // TIMERx_CFG
             BitFieldSlot{0, 2, {}, {}}, // TS
             BitFieldSlot{2, 3, {}, {}}, // CM
             BitFieldSlot{6, 1, {}, {}}, // TP
@@ -135,15 +158,35 @@ MMIORegion::MMIORegion(
     };
 
     // MIU
-    // memory bank setter has a delay of about 1 cycle. Game usually has a nop after the write instruction
-    impl->cells[0x10E].set = std::bind(&DataMemoryController::SetMemoryBank, &miu, 0, _1);
-    impl->cells[0x10E].get = std::bind(&DataMemoryController::GetMemoryBank, &miu, 0);
-    impl->cells[0x110].set = std::bind(&DataMemoryController::SetMemoryBank, &miu, 1, _1);
-    impl->cells[0x110].get = std::bind(&DataMemoryController::GetMemoryBank, &miu, 1);
-    impl->cells[0x114].set(0x1E20); // low = X space size, high = Y space size (both in 0x400)
-    impl->cells[0x11A].set(0x0014); // bit 6 enables memory bank exchanging?
-    impl->cells[0x11E].set = std::bind(&DataMemoryController::SetMMIOLocation, &miu, _1);
-    impl->cells[0x11E].get = std::bind(&DataMemoryController::GetMMIOLocation, &miu);
+    // impl->cells[0x100]; // MIU_WSCFG0
+    // impl->cells[0x102]; // MIU_WSCFG1
+    // impl->cells[0x104]; // MIU_Z0WSCFG
+    // impl->cells[0x106]; // MIU_Z1WSCFG
+    // impl->cells[0x108]; // MIU_Z2WSCFG
+    // impl->cells[0x10C]; // MIU_Z3WSCFG
+    impl->cells[0x10E] = Cell::RefCell(miu.x_page); // MIU_XPAGE
+    impl->cells[0x110] = Cell::RefCell(miu.y_page); // MIU_YPAGE
+    impl->cells[0x112] = Cell::RefCell(miu.z_page); // MIU_ZPAGE
+    impl->cells[0x114] = Cell::BitFieldCell({ // MIU_PAGE0CFG
+        BitFieldSlot::RefSlot(0, 6, miu.x_size[0]),
+        BitFieldSlot::RefSlot(8, 6, miu.y_size[0]),
+    });
+    impl->cells[0x116] = Cell::BitFieldCell({ // MIU_PAGE1CFG
+        BitFieldSlot::RefSlot(0, 6, miu.x_size[1]),
+        BitFieldSlot::RefSlot(8, 6, miu.y_size[1]),
+    });
+    // impl->cells[0x118]; // MIU_OFFPAGECFG
+    impl->cells[0x11A] = Cell::BitFieldCell({
+        BitFieldSlot{0, 1, {}, {}}, // PP
+        BitFieldSlot{1, 1, {}, {}}, // TESTP
+        BitFieldSlot{2, 1, {}, {}}, // INTP
+        BitFieldSlot{4, 1, {}, {}}, // ZSINGLEP
+        BitFieldSlot::RefSlot(6, 1, miu.page_mode), // PAGEMODE
+    });
+    // impl->cells[0x11C]; // MIU_DLCFG
+    impl->cells[0x11E] = Cell::RefCell(miu.mmio_base); // MIU_MMIOBASE
+    // impl->cells[0x120]; // MIU_OBSCFG
+    // impl->cells[0x122]; // MIU_POLARITY
 
     // ICU
     impl->cells[0x200].set = NoSet("ICU::GetRequest");

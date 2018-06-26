@@ -1,36 +1,46 @@
 #pragma once
 
 #include "common_types.h"
+#include "crash.h"
 #include <array>
 
 namespace Teakra {
 
-class DataMemoryController {
+class MemoryInterfaceUnit {
 public:
-    u16 GetMMIOLocation() const {
-        return mmio_location;
-    }
-    void SetMMIOLocation(u16 value) {
-        mmio_location = value;
-    }
+    u16 x_page = 0, y_page = 0, z_page = 0;
+    static constexpr u16 XYSizeResolution = 0x400;
+    std::array<u16, 2> x_size {{0x20, 0x20}};
+    std::array<u16, 2> y_size {{0x1E, 0x1E}};
+    u16 page_mode = 0;
+    u16 mmio_base = 0x8000;
+
+    static constexpr u16 MMIOSize = 0x0800;
+    static constexpr u32 DataMemoryOffset = 0x20000;
+    static constexpr u32 DataMemoryBankSize = 0x10000;
+
     bool InMMIO(u16 addr) const {
-        return addr >= mmio_location && addr < mmio_location + 0x800;
+        return addr >= mmio_base && addr < mmio_base + MMIOSize;
     }
-    u16 ToMMIO(u16 addr)  const {
-        return addr - mmio_location;
+    u16 ToMMIO(u16 addr) const {
+        ASSERT(z_page == 0);
+        return addr - mmio_base;
     }
-    void SetMemoryBank(u8 region, u16 bank) {
-        memory_bank[region] = bank;
+
+    u32 ConvertDataAddress(u16 addr) const {
+        if (page_mode == 0) {
+            ASSERT(z_page < 2);
+            return DataMemoryOffset + addr + z_page * DataMemoryBankSize;
+        } else {
+            if (addr <= x_size[0] * XYSizeResolution) {
+                ASSERT(x_page < 2);
+                return DataMemoryOffset + addr + x_page * DataMemoryBankSize;
+            } else {
+                ASSERT(y_page < 2);
+                return DataMemoryOffset + addr + y_page * DataMemoryBankSize;
+            }
+        }
     }
-    u16 GetMemoryBank(u8 region) {
-        return memory_bank[region];
-    }
-    u32 ConvertAddressByBank(u16 address) {
-        return 0x20000 + address + memory_bank[address / 0x8000] * 0x10000;
-    }
-private:
-    u16 mmio_location = 0x8000;
-    std::array<u8, 2> memory_bank{};
 };
 
 struct SharedMemory;
@@ -38,7 +48,7 @@ class MMIORegion;
 
 class MemoryInterface {
 public:
-    MemoryInterface(SharedMemory& shared_memory, DataMemoryController& data_memory_controller,
+    MemoryInterface(SharedMemory& shared_memory, MemoryInterfaceUnit& memory_interface_unit,
         MMIORegion& mmio);
     u16 ProgramRead(u32 address) const;
     void ProgramWrite(u32 address, u16 value);
@@ -47,7 +57,7 @@ public:
 
 private:
     SharedMemory& shared_memory;
-    DataMemoryController& data_memory_controller;
+    MemoryInterfaceUnit& memory_interface_unit;
     MMIORegion& mmio;
 };
 
