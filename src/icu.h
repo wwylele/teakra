@@ -27,7 +27,7 @@ public:
                     }
                 }
                 if (vectored_enabled[irq]) {
-                    OnVectoredInterrupt(vector[irq]);
+                    OnVectoredInterrupt(GetVector(irq));
                 }
             }
         }
@@ -47,21 +47,19 @@ public:
     u16 GetEnableVectored() const {
         return (u16)vectored_enabled.to_ulong();
     }
-    void SetVector(u32 irq, u32 address) {
-        vector[irq] = address;
-    }
+
     u32 GetVector(u32 irq) const {
-        return vector[irq];
+        return vector_low[irq] | ((u32)vector_high[irq] << 16);
     }
 
     std::function<void(u32)> OnInterrupt;
     std::function<void(u32)> OnVectoredInterrupt;
 
+    std::array<u16, 16> vector_low, vector_high;
 private:
     IrqBits request;
     std::array<IrqBits, 3> enabled;
     IrqBits vectored_enabled;
-    std::array<u32, 16> vector;
 };
 
 } // namespace Teakra

@@ -25,23 +25,19 @@ struct Teakra::Impl {
         icu.OnVectoredInterrupt = std::bind(&Core::SignalVectoredInterrupt, &core, _1);
 
         apbp_from_cpu.SetDataHandler(0, [this](){
-            //mmio.apbp_flags |= 1 << 8;
             icu.TriggerSingle(0xE);
         });
 
         apbp_from_cpu.SetDataHandler(1, [this](){
-            //mmio.apbp_flags |= 1 << 12;
             icu.TriggerSingle(0xE);
         });
 
         apbp_from_cpu.SetDataHandler(2, [this](){
-            //mmio.apbp_flags |= 1 << 13;
             icu.TriggerSingle(0xE);
         });
 
         for (unsigned channel = 0; channel < 16; ++channel) {
             apbp_from_cpu.SetSemaphoreHandler(channel, [this](){
-                mmio.apbp_flags |= 1 << 9;
                 icu.TriggerSingle(0xE);
             });
         }

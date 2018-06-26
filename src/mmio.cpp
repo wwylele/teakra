@@ -138,24 +138,37 @@ MMIORegion::MMIORegion(
         impl->cells[0x0C2 + i * 4].get = std::bind(&Apbp::RecvData, &apbp_from_cpu, i);
     }
     impl->cells[0x0CC].set = std::bind(&Apbp::SetSemaphore, &apbp_from_dsp, _1);
-    impl->cells[0x0CC].get = NoGet("Apbp::SetSemaphore");
-    impl->cells[0x0CE].set = NoSet("Apbp::MaskSemaphore?");
-    impl->cells[0x0CE].get = NoGet("Apbp::MaskSemaphore?");
+    impl->cells[0x0CC].get = std::bind(&Apbp::GetSemaphore, &apbp_from_dsp);
+    impl->cells[0x0CE].set = std::bind(&Apbp::MaskSemaphore, &apbp_from_cpu, _1);
+    impl->cells[0x0CE].get = std::bind(&Apbp::GetSemaphoreMask, &apbp_from_cpu);
     impl->cells[0x0D0].set = std::bind(&Apbp::ClearSemaphore, &apbp_from_cpu, _1);
     impl->cells[0x0D0].get = NoGet("Apbp::ClearSemaphore");
-    impl->cells[0x0D2].set = NoSet("Apbp::GetSemaphore?");
+    impl->cells[0x0D2].set = NoSet("Apbp::GetSemaphore");
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
-    impl->cells[0x0D6].set = [this](u16 value){ apbp_flags = value; };
-    impl->cells[0x0D6].get = [this](){
-        u16 value = apbp_flags;
-        if (this->apbp_from_cpu.IsDataReady(0))
-            value |= 1 << 8;
-        if (this->apbp_from_cpu.IsDataReady(1))
-            value |= 1 << 12;
-        if (this->apbp_from_cpu.IsDataReady(2))
-            value |= 1 << 13;
-        return value;
-    };
+    // impl->cells[0x0D4]; // interrupt mask?
+    impl->cells[0x0D6] = Cell::BitFieldCell({
+        BitFieldSlot{5, 1, {}, [this]()->u16{
+            return this->apbp_from_dsp.IsDataReady(0);
+        }},
+        BitFieldSlot{6, 1, {}, [this]()->u16{
+            return this->apbp_from_dsp.IsDataReady(1);
+        }},
+        BitFieldSlot{7, 1, {}, [this]()->u16{
+            return this->apbp_from_dsp.IsDataReady(2);
+        }},
+        BitFieldSlot{8, 1, {}, [this]()->u16{
+            return this->apbp_from_cpu.IsDataReady(0);
+        }},
+        BitFieldSlot{9, 1, {}, [this]()->u16{
+            return this->apbp_from_cpu.IsSemaphoreSignaled();
+        }},
+        BitFieldSlot{12, 1, {}, [this]()->u16{
+            return this->apbp_from_cpu.IsDataReady(1);
+        }},
+        BitFieldSlot{13, 1, {}, [this]()->u16{
+            return this->apbp_from_cpu.IsDataReady(2);
+        }},
+    });
 
     // MIU
     // impl->cells[0x100]; // MIU_WSCFG0
@@ -203,14 +216,14 @@ MMIORegion::MMIORegion(
     impl->cells[0x20A].get = std::bind(&ICU::GetEnable, &icu, 2);
     impl->cells[0x20C].set = std::bind(&ICU::SetEnableVectored, &icu, _1);
     impl->cells[0x20C].get = std::bind(&ICU::GetEnableVectored, &icu);
-    // 20E: some type bit for each
-    // 210: some type bit for each
+    // impl->cells[0x20E]; // polarity for each interrupt?
+    // impl->cells[0x210]; // source type for each interrupt?
     for (unsigned i = 0; i < 16; ++i) {
-        //impl->cells[0x212 + i * 4].set = [](u16) {
-        //    *(u32*)1 = 1;
-        //};
-        impl->cells[0x214 + i * 4].set = std::bind(&ICU::SetVector, &icu, i, _1);
-        impl->cells[0x214 + i * 4].get = std::bind(&ICU::GetVector, &icu, i);
+        impl->cells[0x212 + i * 4] = Cell::BitFieldCell({
+            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]),
+            BitFieldSlot{15, 1, {}, {}}, // ?
+        });
+        impl->cells[0x214 + i * 4] = Cell::RefCell(icu.vector_low[i]);
     }
 
     // Audio

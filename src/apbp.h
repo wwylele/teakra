@@ -18,8 +18,11 @@ public:
     void SetSemaphore(u16 bits);
     void ClearSemaphore(u16 bits);
     u16 GetSemaphore() const;
+    void MaskSemaphore(u16 bits);
+    u16 GetSemaphoreMask() const;
     void SetSemaphoreHandler(unsigned channel, std::function<void()> handler);
 
+    bool IsSemaphoreSignaled();
 private:
     class Impl;
     std::unique_ptr<Impl> impl;
