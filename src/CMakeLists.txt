@@ -11,6 +11,8 @@ add_library(teakra
     crash.h
     decoder.h
     disassembler.cpp
+    timer.cpp
+    timer.h
     icu.h
     interpreter.h
     matcher.h

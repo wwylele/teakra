@@ -1,6 +1,7 @@
 #include "mmio.h"
 #include "apbp.h"
 #include "memory_interface.h"
+#include "timer.h"
 #include <functional>
 #include <string>
 #include <vector>
@@ -93,13 +94,15 @@ MMIORegion::MMIORegion(
     MemoryInterfaceUnit& miu,
     ICU& icu,
     Apbp& apbp_from_cpu,
-    Apbp& apbp_from_dsp
+    Apbp& apbp_from_dsp,
+    std::array<Timer, 2>& timer
 ):
     impl(new Impl),
     miu(miu),
     icu(icu),
     apbp_from_cpu(apbp_from_cpu),
-    apbp_from_dsp(apbp_from_dsp)
+    apbp_from_dsp(apbp_from_dsp),
+    timer(timer)
 {
     using namespace std::placeholders;
 
@@ -108,24 +111,28 @@ MMIORegion::MMIORegion(
     // Timer
     for (unsigned i = 0; i < 1; ++i) {
         impl->cells[0x20 + i * 0x10] = Cell::BitFieldCell({ // TIMERx_CFG
-            BitFieldSlot{0, 2, {}, {}}, // TS
-            BitFieldSlot{2, 3, {}, {}}, // CM
+            BitFieldSlot::RefSlot(0, 2, timer[i].scale), // TS
+            BitFieldSlot::RefSlot(2, 3, timer[i].count_mode), // CM
             BitFieldSlot{6, 1, {}, {}}, // TP
             BitFieldSlot{7, 1, {}, {}}, // CT
-            BitFieldSlot{8, 1, {}, {}}, // PC
-            BitFieldSlot{9, 1, {}, {}}, // MU
-            BitFieldSlot{10, 1, {}, {}}, // RES
+            BitFieldSlot::RefSlot(8, 1, timer[i].pause), // PC
+            BitFieldSlot::RefSlot(9, 1, timer[i].update_mmio), // MU
+            BitFieldSlot{10, 1,
+                [this, i](u16 v){if (v) this->timer[i].Restart();},
+                []()->u16{return 0;}}, // RES
             BitFieldSlot{11, 1, {}, {}}, // BP
             BitFieldSlot{12, 1, {}, {}}, // CS
             BitFieldSlot{13, 1, {}, {}}, // GP
             BitFieldSlot{14, 2, {}, {}}, // TM
         });
 
-        impl->cells[0x22 + i * 0x10] = Cell(); // TIMERx_EW
-        impl->cells[0x24 + i * 0x10] = Cell(); // TIMERx_SCL
-        impl->cells[0x26 + i * 0x10] = Cell(); // TIMERx_SCH
-        impl->cells[0x28 + i * 0x10] = Cell(); // TIMERx_CCL
-        impl->cells[0x2A + i * 0x10] = Cell(); // TIMERx_CCH
+        impl->cells[0x22 + i * 0x10].set =
+            [this, i](u16 v){if (v) this->timer[i].TickEvent();}; // TIMERx_EW
+        impl->cells[0x22 + i * 0x10].get = []()->u16{return 0;};
+        impl->cells[0x24 + i * 0x10] = Cell::RefCell(timer[i].start_low); // TIMERx_SCL
+        impl->cells[0x26 + i * 0x10] = Cell::RefCell(timer[i].start_high); // TIMERx_SCH
+        impl->cells[0x28 + i * 0x10] = Cell::RefCell(timer[i].counter_low); // TIMERx_CCL
+        impl->cells[0x2A + i * 0x10] = Cell::RefCell(timer[i].counter_high); // TIMERx_CCH
         impl->cells[0x2C + i * 0x10] = Cell(); // TIMERx_SPWMCL
         impl->cells[0x2E + i * 0x10] = Cell(); // TIMERx_SPWMCH
     }

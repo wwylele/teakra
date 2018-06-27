@@ -3,6 +3,7 @@
 #include "../apbp.h"
 #include "../shared_memory.h"
 #include "../memory_interface.h"
+#include "../timer.h"
 #include "../mmio.h"
 #include "../icu.h"
 #include <teakra/disassembler.h>
@@ -38,7 +39,8 @@ int main(int argc, char** argv) {
     Teakra::MemoryInterfaceUnit miu;
     Teakra::ICU icu;
     Teakra::Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
-    Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp};
+    std::array<Teakra::Timer, 2> timer;
+    Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer};
     Teakra::MemoryInterface memory_interface{shared_memory, miu, mmio};
     Teakra::RegisterState regs;
     Teakra::Interpreter interpreter(regs, memory_interface);

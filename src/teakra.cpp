@@ -1,12 +1,14 @@
 #include "teakra/teakra.h"
 #include "apbp.h"
 #include "shared_memory.h"
+#include "timer.h"
 #include "memory_interface.h"
 #include "mmio.h"
 #include "icu.h"
 #include "core.h"
 #include <thread>
 #include <atomic>
+#include <array>
 
 namespace Teakra {
 
@@ -15,7 +17,8 @@ struct Teakra::Impl {
     MemoryInterfaceUnit miu;
     ICU icu;
     Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
-    MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp};
+    std::array<Timer, 2> timer;
+    MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer};
     MemoryInterface memory_interface{shared_memory, miu, mmio};
     Core core{memory_interface};
 
@@ -23,6 +26,15 @@ struct Teakra::Impl {
         using namespace std::placeholders;
         icu.OnInterrupt = std::bind(&Core::SignalInterrupt, &core, _1);
         icu.OnVectoredInterrupt = std::bind(&Core::SignalVectoredInterrupt, &core, _1);
+
+        timer[0].handler = [this](){
+            icu.TriggerSingle(0xA);
+        };
+
+        timer[1].handler = [this](){
+            icu.TriggerSingle(0x9);
+        };
+
 
         apbp_from_cpu.SetDataHandler(0, [this](){
             icu.TriggerSingle(0xE);
@@ -50,6 +62,8 @@ struct Teakra::Impl {
         core.Reset();
         while(running_flag.test_and_set()) {
             core.Run(1);
+            timer[0].Tick();
+            timer[1].Tick();
         }
         running_flag.clear();
     }
