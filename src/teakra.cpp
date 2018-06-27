@@ -6,7 +6,6 @@
 #include "mmio.h"
 #include "icu.h"
 #include "core.h"
-#include <thread>
 #include <atomic>
 #include <array>
 
@@ -55,44 +54,21 @@ struct Teakra::Impl {
         }
 
     }
-
-    std::unique_ptr<std::thread> core_thread = nullptr;
-    std::atomic_flag running_flag = ATOMIC_FLAG_INIT;
-    void CoreThread() {
-        core.Reset();
-        while(running_flag.test_and_set()) {
-            core.Run(1);
-            timer[0].Tick();
-            timer[1].Tick();
-        }
-        running_flag.clear();
-    }
 };
 
 Teakra::Teakra() : impl(new Impl) {}
-Teakra::~Teakra() {
-    if (impl->core_thread)
-        Stop();
-}
+Teakra::~Teakra() {}
 
 std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
     return impl->shared_memory.raw;
 }
 
-void Teakra::Start() {
-    if (impl->core_thread)
-        Stop();
-    impl->core.Reset();
-    impl->running_flag.test_and_set();
-    impl->core_thread = std::make_unique<std::thread>(&Impl::CoreThread, impl.get());
-}
-
-void Teakra::Stop() {
-    if (!impl->core_thread)
-        return;
-    impl->running_flag.clear();
-    impl->core_thread->join();
-    impl->core_thread = nullptr;
+void Teakra::Run(unsigned cycle) {
+    for (unsigned i = 0; i < cycle; ++i) {
+        impl->core.Run(1);
+        impl->timer[0].Tick();
+        impl->timer[1].Tick();
+    }
 }
 
 bool Teakra::SendDataIsEmpty(std::uint8_t index) const {

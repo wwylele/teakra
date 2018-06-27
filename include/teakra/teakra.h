@@ -25,8 +25,7 @@ public:
     void SetSemaphoreHandler(std::uint8_t index, std::function<void()> handler);
 
     // core
-    void Stop();
-    void Start();
+    void Run(unsigned cycle);
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;

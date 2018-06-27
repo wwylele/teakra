@@ -89,7 +89,7 @@ void Apbp::SetSemaphore(u16 bits) {
         if ((bits >> channel) & 1) {
             printf("SetSemaphore %s %u\n", debug_string, channel);
             bool signaled = impl->semaphore_channels[channel].Set();
-            impl->semaphore_master_signal = impl->semaphore_master_signal & signaled;
+            impl->semaphore_master_signal = impl->semaphore_master_signal || signaled;
         }
     }
 }
