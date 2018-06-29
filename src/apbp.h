@@ -20,7 +20,7 @@ public:
     u16 GetSemaphore() const;
     void MaskSemaphore(u16 bits);
     u16 GetSemaphoreMask() const;
-    void SetSemaphoreHandler(unsigned channel, std::function<void()> handler);
+    void SetSemaphoreHandler(std::function<void()> handler);
 
     bool IsSemaphoreSignaled();
 private:

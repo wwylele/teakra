@@ -32,7 +32,7 @@ private:
     mutable std::mutex mutex;
 };
 
-class SemaphoreChannel {
+/*class SemaphoreChannel {
 public:
     bool Set() {
         signal = true;
@@ -54,13 +54,16 @@ public:
     std::atomic<bool> mask{false};
 private:
     std::atomic<bool> signal{false};
-};
+};*/
 
 class Apbp::Impl {
 public:
     std::array<DataChannel, 3> data_channels;
-    std::array<SemaphoreChannel, 16> semaphore_channels;
-    std::atomic<bool> semaphore_master_signal{false};
+    //std::array<SemaphoreChannel, 16> semaphore_channels;
+    u16 semaphore = 0;
+    u16 semaphore_mask = 0;
+    bool semaphore_master_signal = false;
+    std::function<void()> semaphore_handler;
 };
 
 Apbp::Apbp(const char* debug_string): impl(new Impl), debug_string(debug_string) {}
@@ -85,51 +88,33 @@ void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {
 }
 
 void Apbp::SetSemaphore(u16 bits) {
-    for (unsigned channel = 0; channel < 16; ++channel) {
-        if ((bits >> channel) & 1) {
-            printf("SetSemaphore %s %u\n", debug_string, channel);
-            bool signaled = impl->semaphore_channels[channel].Set();
-            impl->semaphore_master_signal = impl->semaphore_master_signal || signaled;
-        }
+    impl->semaphore |= bits;
+    bool new_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
+    if (new_signal && impl->semaphore_handler) {
+        impl->semaphore_handler();
     }
+    impl->semaphore_master_signal = impl->semaphore_master_signal || new_signal;
 }
 
 void Apbp::ClearSemaphore(u16 bits) {
-    for (unsigned channel = 0; channel < 16; ++channel) {
-        if ((bits >> channel) & 1) {
-            printf("ClearSemaphore %s %u\n", debug_string, channel);
-            impl->semaphore_channels[channel].Clear();
-        }
-    }
-    impl->semaphore_master_signal = false; // ?
+    impl->semaphore &= ~bits;
+    impl->semaphore_master_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
 }
 
 u16 Apbp::GetSemaphore() const {
-    u16 result = 0;
-    for (unsigned channel = 0; channel < 16; ++channel) {
-        result |= impl->semaphore_channels[channel].Get() << channel;
-    }
-    return result;
+    return impl->semaphore;
 }
 
 void Apbp::MaskSemaphore(u16 bits) {
-    for (unsigned channel = 0; channel < 16; ++channel) {
-        if ((bits >> channel) & 1) {
-            impl->semaphore_channels[channel].mask = true;
-        }
-    }
+    impl->semaphore_mask = bits;
 }
 
 u16 Apbp::GetSemaphoreMask() const {
-    u16 result = 0;
-    for (unsigned channel = 0; channel < 16; ++channel) {
-        result |= impl->semaphore_channels[channel].mask << channel;
-    }
-    return result;
+    return impl->semaphore_mask;
 }
 
-void Apbp::SetSemaphoreHandler(unsigned channel, std::function<void()> handler) {
-    impl->semaphore_channels[channel].handler = std::move(handler);
+void Apbp::SetSemaphoreHandler(std::function<void()> handler) {
+    impl->semaphore_handler = std::move(handler);
 }
 
 bool Apbp::IsSemaphoreSignaled() {

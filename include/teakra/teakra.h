@@ -22,7 +22,8 @@ public:
 
     // APBP Semaphore
     void SetSemaphore(std::uint16_t value);
-    void SetSemaphoreHandler(std::uint8_t index, std::function<void()> handler);
+    void SetSemaphoreHandler(std::function<void()> handler);
+    std::uint16_t GetSemaphore();
 
     // core
     void Run(unsigned cycle);

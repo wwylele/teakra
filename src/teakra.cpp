@@ -34,7 +34,6 @@ struct Teakra::Impl {
             icu.TriggerSingle(0x9);
         };
 
-
         apbp_from_cpu.SetDataHandler(0, [this](){
             icu.TriggerSingle(0xE);
         });
@@ -47,12 +46,9 @@ struct Teakra::Impl {
             icu.TriggerSingle(0xE);
         });
 
-        for (unsigned channel = 0; channel < 16; ++channel) {
-            apbp_from_cpu.SetSemaphoreHandler(channel, [this](){
-                icu.TriggerSingle(0xE);
-            });
-        }
-
+        apbp_from_cpu.SetSemaphoreHandler( [this](){
+            icu.TriggerSingle(0xE);
+        });
     }
 };
 
@@ -90,8 +86,11 @@ void Teakra::SetRecvDataHandler(std::uint8_t index, std::function<void()> handle
 void Teakra::SetSemaphore(std::uint16_t value) {
     impl->apbp_from_cpu.SetSemaphore(value);
 }
-void Teakra::SetSemaphoreHandler(std::uint8_t index, std::function<void()> handler) {
-    impl->apbp_from_dsp.SetSemaphoreHandler(index, handler);
+void Teakra::SetSemaphoreHandler(std::function<void()> handler) {
+    impl->apbp_from_dsp.SetSemaphoreHandler(handler);
+}
+std::uint16_t Teakra::GetSemaphore() {
+    return impl->apbp_from_dsp.GetSemaphore();
 }
 
 } // namespace Teakra
