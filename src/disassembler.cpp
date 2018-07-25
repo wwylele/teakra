@@ -1022,7 +1022,7 @@ public:
         return D("mov", "stepi0", "a0h");
     }
     std::string mov_stepj0_a0h() {
-        return D("mov", "stepi0", "a1h");
+        return D("mov", "stepj0", "a0h");
     }
 
     std::string mov_prpage(Abl a) {

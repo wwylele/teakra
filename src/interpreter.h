@@ -914,7 +914,7 @@ public:
 
     void bkrep(Imm8 a, Address16 addr) {
         u16 lc = a.storage;
-        u32 address = addr.storage | (regs.pc & 0x30000); // ?
+        u32 address = addr.storage | (regs.pc & 0x30000);
         BlockRepeat(lc, address);
     }
     void bkrep(Register a, Address18_16 addr_low, Address18_2 addr_high) {
@@ -1171,7 +1171,6 @@ public:
         mem.DataWrite(--regs.sp, a.storage);
     }
     void push(Register a) {
-        // need test: p0, aX
         u16 value = RegToBus16(a.GetName(), true);
         mem.DataWrite(--regs.sp, value);
     }
@@ -1229,7 +1228,6 @@ public:
     }
 
     void pop(Register a) {
-        // need test: p0
         u16 value = mem.DataRead(regs.sp++);
         RegFromBus16(a.GetName(), value);
     }
