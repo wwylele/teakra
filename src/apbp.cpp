@@ -32,34 +32,9 @@ private:
     mutable std::mutex mutex;
 };
 
-/*class SemaphoreChannel {
-public:
-    bool Set() {
-        signal = true;
-        if (!mask) {
-            if (handler) {
-                handler();
-            }
-            return true;
-        }
-        return false;
-    }
-    void Clear() {
-        signal = false;
-    }
-    bool Get() const {
-        return signal;
-    }
-    std::function<void()> handler;
-    std::atomic<bool> mask{false};
-private:
-    std::atomic<bool> signal{false};
-};*/
-
 class Apbp::Impl {
 public:
     std::array<DataChannel, 3> data_channels;
-    //std::array<SemaphoreChannel, 16> semaphore_channels;
     u16 semaphore = 0;
     u16 semaphore_mask = 0;
     bool semaphore_master_signal = false;
@@ -88,6 +63,7 @@ void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {
 }
 
 void Apbp::SetSemaphore(u16 bits) {
+    printf("SetSemaphore %s 0x%04X\n", debug_string, bits);
     impl->semaphore |= bits;
     bool new_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
     if (new_signal && impl->semaphore_handler) {
@@ -97,6 +73,7 @@ void Apbp::SetSemaphore(u16 bits) {
 }
 
 void Apbp::ClearSemaphore(u16 bits) {
+    printf("ClearSemaphore %s 0x%04X\n", debug_string, bits);
     impl->semaphore &= ~bits;
     impl->semaphore_master_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
 }

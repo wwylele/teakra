@@ -3,6 +3,7 @@ include(CreateDirectoryGroups)
 add_library(teakra
     ../include/teakra/disassembler.h
     ../include/teakra/teakra.h
+    ahbm.h
     apbp.cpp
     apbp.h
     common_types.h
@@ -11,6 +12,8 @@ add_library(teakra
     crash.h
     decoder.h
     disassembler.cpp
+    dma.cpp
+    dma.h
     timer.cpp
     timer.h
     icu.h

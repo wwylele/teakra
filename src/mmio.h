@@ -9,6 +9,8 @@ namespace Teakra {
 class MemoryInterfaceUnit;
 class Apbp;
 class Timer;
+class Dma;
+class Ahbm;
 
 class MMIORegion {
 public:
@@ -17,7 +19,9 @@ public:
         ICU& icu,
         Apbp& apbp_from_cpu,
         Apbp& apbp_from_dsp,
-        std::array<Timer, 2>& timer
+        std::array<Timer, 2>& timer,
+        Dma& dma,
+        Ahbm& ahbm
     );
     ~MMIORegion();
     u16 Read(u16 addr); // not const because it can be a FIFO register
@@ -31,6 +35,8 @@ private:
     Apbp& apbp_from_cpu;
     Apbp& apbp_from_dsp;
     std::array<Timer, 2>& timer;
+    Dma& dma;
+    Ahbm& ahbm;
 };
 
 } // namespace Teakra

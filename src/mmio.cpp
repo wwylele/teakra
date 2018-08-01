@@ -2,6 +2,8 @@
 #include "apbp.h"
 #include "memory_interface.h"
 #include "timer.h"
+#include "dma.h"
+#include "ahbm.h"
 #include <functional>
 #include <string>
 #include <vector>
@@ -32,13 +34,20 @@ struct BitFieldSlot {
 struct Cell {
     std::function<void(u16)> set;
     std::function<u16(void)> get;
+    u16 index = 0;
 
     Cell(std::function<void(u16)> set, std::function<u16(void)> get):
         set(std::move(set)), get(std::move(get)) {}
     Cell() {
         std::shared_ptr<u16> storage = std::make_shared<u16>(0);
-        set = [storage](u16 value) {*storage = value;};
-        get = [storage]() ->u16 {return *storage;};
+        set = [storage, this](u16 value) {
+            *storage = value;
+            std::printf("MMIO: cell %04X set = %04X\n", index, value);
+        };
+        get = [storage, this]() ->u16 {
+            std::printf("MMIO: cell %04X get\n", index);
+            return *storage;
+        };
     }
     static Cell ConstCell(u16 constant) {
         Cell cell({}, {});
@@ -88,6 +97,11 @@ struct Cell {
 class MMIORegion::Impl {
 public:
     std::array<Cell, 0x800> cells{};
+    Impl() {
+        for (std::size_t i = 0; i < cells.size(); ++i) {
+            cells[i].index = i;
+        }
+    }
 };
 
 MMIORegion::MMIORegion(
@@ -95,21 +109,25 @@ MMIORegion::MMIORegion(
     ICU& icu,
     Apbp& apbp_from_cpu,
     Apbp& apbp_from_dsp,
-    std::array<Timer, 2>& timer
+    std::array<Timer, 2>& timer,
+    Dma& dma,
+    Ahbm& ahbm
 ):
     impl(new Impl),
     miu(miu),
     icu(icu),
     apbp_from_cpu(apbp_from_cpu),
     apbp_from_dsp(apbp_from_dsp),
-    timer(timer)
+    timer(timer),
+    dma(dma),
+    ahbm(ahbm)
 {
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell::ConstCell(0xC902); // chip detect
 
     // Timer
-    for (unsigned i = 0; i < 1; ++i) {
+    for (unsigned i = 0; i < 2; ++i) {
         impl->cells[0x20 + i * 0x10] = Cell::BitFieldCell({ // TIMERx_CFG
             BitFieldSlot::RefSlot(0, 2, timer[i].scale), // TS
             BitFieldSlot::RefSlot(2, 3, timer[i].count_mode), // CM
@@ -177,6 +195,18 @@ MMIORegion::MMIORegion(
         }},
     });
 
+    // AHBM
+    impl->cells[0x0E0].set = NoSet("AHBM::BusyFlag");
+    impl->cells[0x0E0].get = std::bind(&Ahbm::GetBusyFlag, &ahbm);
+    for (u16 i = 0; i < 6; ++i) {
+        impl->cells[0x0E2 + i * 6].set = std::bind(&Ahbm::SetA, &ahbm, i, _1);
+        impl->cells[0x0E2 + i * 6].get = std::bind(&Ahbm::GetA, &ahbm, i);
+        impl->cells[0x0E4 + i * 6].set = std::bind(&Ahbm::SetB, &ahbm, i, _1);
+        impl->cells[0x0E4 + i * 6].get = std::bind(&Ahbm::GetB, &ahbm, i);
+        impl->cells[0x0E6 + i * 6].set = std::bind(&Ahbm::SetDmaChannel, &ahbm, i, _1);
+        impl->cells[0x0E6 + i * 6].get = std::bind(&Ahbm::GetDmaChannel, &ahbm, i);
+    }
+
     // MIU
     // impl->cells[0x100]; // MIU_WSCFG0
     // impl->cells[0x102]; // MIU_WSCFG1
@@ -208,13 +238,52 @@ MMIORegion::MMIORegion(
     // impl->cells[0x120]; // MIU_OBSCFG
     // impl->cells[0x122]; // MIU_POLARITY
 
+    // DMA
+    impl->cells[0x184].set = std::bind(&Dma::EnableChannel, &dma, _1);
+    impl->cells[0x184].get = std::bind(&Dma::GetChannelEnabled, &dma);
+
+    impl->cells[0x1BE].set = std::bind(&Dma::ActivateChannel, &dma, _1);
+    impl->cells[0x1BE].get = std::bind(&Dma::GetActiveChannel, &dma);
+    impl->cells[0x1C0].set = std::bind(&Dma::SetAddrSrcLow, &dma, _1);
+    impl->cells[0x1C0].get = std::bind(&Dma::GetAddrSrcLow, &dma);
+    impl->cells[0x1C2].set = std::bind(&Dma::SetAddrSrcHigh, &dma, _1);
+    impl->cells[0x1C2].get = std::bind(&Dma::GetAddrSrcHigh, &dma);
+    impl->cells[0x1C4].set = std::bind(&Dma::SetAddrDstLow, &dma, _1);
+    impl->cells[0x1C4].get = std::bind(&Dma::GetAddrDstLow, &dma);
+    impl->cells[0x1C6].set = std::bind(&Dma::SetAddrDstHigh, &dma, _1);
+    impl->cells[0x1C6].get = std::bind(&Dma::GetAddrDstHigh, &dma);
+    impl->cells[0x1C8].set = std::bind(&Dma::SetLength, &dma, _1);
+    impl->cells[0x1C8].get = std::bind(&Dma::GetLength, &dma);
+    impl->cells[0x1CA].set = std::bind(&Dma::SetF, &dma, 0, _1);
+    impl->cells[0x1CA].get = std::bind(&Dma::GetF, &dma, 0);
+    impl->cells[0x1CC].set = std::bind(&Dma::SetF, &dma, 1, _1);
+    impl->cells[0x1CC].get = std::bind(&Dma::GetF, &dma, 1);
+    impl->cells[0x1CE].set = std::bind(&Dma::SetSrcA, &dma, _1);
+    impl->cells[0x1CE].get = std::bind(&Dma::GetSrcA, &dma);
+    impl->cells[0x1D0].set = std::bind(&Dma::SetDstA, &dma, _1);
+    impl->cells[0x1D0].get = std::bind(&Dma::GetDstA, &dma);
+    impl->cells[0x1D2].set = std::bind(&Dma::SetSrcB, &dma, _1);
+    impl->cells[0x1D2].get = std::bind(&Dma::GetSrcB, &dma);
+    impl->cells[0x1D4].set = std::bind(&Dma::SetDstB, &dma, _1);
+    impl->cells[0x1D4].get = std::bind(&Dma::GetDstB, &dma);
+    impl->cells[0x1D6].set = std::bind(&Dma::SetSrcC, &dma, _1);
+    impl->cells[0x1D6].get = std::bind(&Dma::GetSrcC, &dma);
+    impl->cells[0x1D8].set = std::bind(&Dma::SetDstC, &dma, _1);
+    impl->cells[0x1D8].get = std::bind(&Dma::GetDstC, &dma);
+    impl->cells[0x1DA].set = std::bind(&Dma::SetX, &dma, _1);
+    impl->cells[0x1DA].get = std::bind(&Dma::GetX, &dma);
+    impl->cells[0x1DC].set = std::bind(&Dma::SetY, &dma, _1);
+    impl->cells[0x1DC].get = std::bind(&Dma::GetY, &dma);
+    impl->cells[0x1DE].set = std::bind(&Dma::SetZ, &dma, _1);
+    impl->cells[0x1DE].get = std::bind(&Dma::GetZ, &dma);
+
     // ICU
     impl->cells[0x200].set = NoSet("ICU::GetRequest");
     impl->cells[0x200].get = std::bind(&ICU::GetRequest, &icu);
     impl->cells[0x202].set = std::bind(&ICU::Acknowledge, &icu, _1);
-    impl->cells[0x202].get = NoGet("ICU::Acknowledge");
+    impl->cells[0x202].get = std::bind(&ICU::GetAcknowledge, &icu);
     impl->cells[0x204].set = std::bind(&ICU::Trigger, &icu, _1);
-    impl->cells[0x204].get = NoGet("ICU::Trigger");
+    impl->cells[0x204].get = std::bind(&ICU::GetTrigger, &icu);
     impl->cells[0x206].set = std::bind(&ICU::SetEnable, &icu, 0, _1);
     impl->cells[0x206].get = std::bind(&ICU::GetEnable, &icu, 0);
     impl->cells[0x208].set = std::bind(&ICU::SetEnable, &icu, 1, _1);
@@ -241,15 +310,11 @@ MMIORegion::MMIORegion(
 
 MMIORegion::~MMIORegion() = default;
 
-
 u16 MMIORegion::Read(u16 addr) {
     u16 value = impl->cells[addr].get();
-    //if (addr != 0x02CA)
-        printf(">>>>>>>>> MMIO Read  @%04X -> %04X\n", addr, value);
     return value;
 }
 void MMIORegion::Write(u16 addr, u16 value) {
-    printf(">>>>>>>>> MMIO Write @%04X <- %04X\n", addr, value);
     impl->cells[addr].set(value);
 }
 } // namespace Teakra
