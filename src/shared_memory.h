@@ -1,7 +1,7 @@
 #pragma once
-#include "common_types.h"
 #include <array>
 #include <cstdio>
+#include "common_types.h"
 
 namespace Teakra {
 struct SharedMemory {

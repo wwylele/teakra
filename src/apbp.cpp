@@ -1,10 +1,10 @@
-#include "apbp.h"
 #include <array>
 #include <atomic>
 #include <mutex>
 #include <utility>
+#include "apbp.h"
 
-namespace Teakra{
+namespace Teakra {
 class DataChannel {
 public:
     void Send(u16 data) {
@@ -26,6 +26,7 @@ public:
         return ready;
     }
     std::function<void()> handler;
+
 private:
     bool ready = false;
     u16 data = 0;
@@ -41,7 +42,7 @@ public:
     std::function<void()> semaphore_handler;
 };
 
-Apbp::Apbp(const char* debug_string): impl(new Impl), debug_string(debug_string) {}
+Apbp::Apbp(const char* debug_string) : impl(new Impl), debug_string(debug_string) {}
 Apbp::~Apbp() = default;
 
 void Apbp::SendData(unsigned channel, u16 data) {

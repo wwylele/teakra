@@ -1,6 +1,6 @@
-#include <teakra/disassembler.h>
 #include <cstdio>
 #include <string>
+#include <teakra/disassembler.h>
 #include "coff.h"
 
 int main(int argc, char** argv) {
@@ -58,24 +58,26 @@ int main(int argc, char** argv) {
             if (coff.symbols_lut.count(current_addr)) {
                 const auto& symbol_list = coff.symbols_lut.at(current_addr);
                 auto begin = symbol_list.begin();
-                while(true) {
-                    auto symbol_index = std::find_if(begin, symbol_list.end(),
-                        [is_prog, current_addr, &coff](const auto symbol_index) {
-                            const auto& symbol = coff.symbols[symbol_index];
-                            if (symbol.region == Coff::SymbolEx::Absolute
-                                || symbol.region == Coff::SymbolEx::Aux)
-                                throw "what";
-                            if (symbol.region == Coff::SymbolEx::Prog && !is_prog)
-                                return false;
-                            if (symbol.region == Coff::SymbolEx::Data && is_prog)
-                                return false;
-                            if (symbol.value != current_addr)
-                                throw "what";
-                            return true;
-                        });
+                while (true) {
+                    auto symbol_index =
+                        std::find_if(begin, symbol_list.end(),
+                                     [is_prog, current_addr, &coff](const auto symbol_index) {
+                                         const auto& symbol = coff.symbols[symbol_index];
+                                         if (symbol.region == Coff::SymbolEx::Absolute ||
+                                             symbol.region == Coff::SymbolEx::Aux)
+                                             throw "what";
+                                         if (symbol.region == Coff::SymbolEx::Prog && !is_prog)
+                                             return false;
+                                         if (symbol.region == Coff::SymbolEx::Data && is_prog)
+                                             return false;
+                                         if (symbol.value != current_addr)
+                                             throw "what";
+                                         return true;
+                                     });
                     if (symbol_index != symbol_list.end()) {
                         const auto& symbol = coff.symbols[*symbol_index];
-                        fprintf(out, "$[%s]%s\n", storage_names.at(symbol.storage), symbol.name.c_str());
+                        fprintf(out, "$[%s]%s\n", storage_names.at(symbol.storage),
+                                symbol.name.c_str());
                     } else {
                         break;
                     }
@@ -86,8 +88,8 @@ int main(int argc, char** argv) {
             if (section.line_numbers.count(current_addr)) {
                 for (const auto& line_number : section.line_numbers.at(current_addr)) {
                     const auto& symbol = coff.symbols[line_number.symbol];
-                    fprintf(out, "#%d + $[%s]%s\n",
-                        line_number.line, storage_names.at(symbol.storage), symbol.name.c_str());
+                    fprintf(out, "#%d + $[%s]%s\n", line_number.line,
+                            storage_names.at(symbol.storage), symbol.name.c_str());
                 }
             }
 
@@ -116,8 +118,8 @@ int main(int argc, char** argv) {
             if (section.relocations.count(current_rel_addr)) {
                 for (const auto& relocation : section.relocations.at(current_rel_addr)) {
                     const auto& symbol = coff.symbols[relocation.symbol];
-                    fprintf(out, "{@%08X + $[%s]%s}",
-                        relocation.type, storage_names.at(symbol.storage), symbol.name.c_str());
+                    fprintf(out, "{@%08X + $[%s]%s}", relocation.type,
+                            storage_names.at(symbol.storage), symbol.name.c_str());
                 }
             }
 

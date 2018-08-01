@@ -1,15 +1,15 @@
-#include "teakra/teakra.h"
+#include <array>
+#include <atomic>
+#include "ahbm.h"
 #include "apbp.h"
-#include "shared_memory.h"
-#include "timer.h"
-#include "memory_interface.h"
-#include "mmio.h"
-#include "icu.h"
 #include "core.h"
 #include "dma.h"
-#include "ahbm.h"
-#include <atomic>
-#include <array>
+#include "icu.h"
+#include "memory_interface.h"
+#include "mmio.h"
+#include "shared_memory.h"
+#include "teakra/teakra.h"
+#include "timer.h"
 
 namespace Teakra {
 
@@ -30,29 +30,17 @@ struct Teakra::Impl {
         icu.OnInterrupt = std::bind(&Core::SignalInterrupt, &core, _1);
         icu.OnVectoredInterrupt = std::bind(&Core::SignalVectoredInterrupt, &core, _1);
 
-        timer[0].handler = [this](){
-            icu.TriggerSingle(0xA);
-        };
+        timer[0].handler = [this]() { icu.TriggerSingle(0xA); };
 
-        timer[1].handler = [this](){
-            icu.TriggerSingle(0x9);
-        };
+        timer[1].handler = [this]() { icu.TriggerSingle(0x9); };
 
-        apbp_from_cpu.SetDataHandler(0, [this](){
-            icu.TriggerSingle(0xE);
-        });
+        apbp_from_cpu.SetDataHandler(0, [this]() { icu.TriggerSingle(0xE); });
 
-        apbp_from_cpu.SetDataHandler(1, [this](){
-            icu.TriggerSingle(0xE);
-        });
+        apbp_from_cpu.SetDataHandler(1, [this]() { icu.TriggerSingle(0xE); });
 
-        apbp_from_cpu.SetDataHandler(2, [this](){
-            icu.TriggerSingle(0xE);
-        });
+        apbp_from_cpu.SetDataHandler(2, [this]() { icu.TriggerSingle(0xE); });
 
-        apbp_from_cpu.SetSemaphoreHandler( [this](){
-            icu.TriggerSingle(0xE);
-        });
+        apbp_from_cpu.SetSemaphoreHandler([this]() { icu.TriggerSingle(0xE); });
     }
 };
 

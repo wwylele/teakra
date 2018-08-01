@@ -1,8 +1,8 @@
 #pragma once
 
+#include <array>
 #include "common_types.h"
 #include "crash.h"
-#include <array>
 
 namespace Teakra {
 
@@ -10,8 +10,8 @@ class MemoryInterfaceUnit {
 public:
     u16 x_page = 0, y_page = 0, z_page = 0;
     static constexpr u16 XYSizeResolution = 0x400;
-    std::array<u16, 2> x_size {{0x20, 0x20}};
-    std::array<u16, 2> y_size {{0x1E, 0x1E}};
+    std::array<u16, 2> x_size{{0x20, 0x20}};
+    std::array<u16, 2> y_size{{0x1E, 0x1E}};
     u16 page_mode = 0;
     u16 mmio_base = 0x8000;
 
@@ -49,7 +49,7 @@ class MMIORegion;
 class MemoryInterface {
 public:
     MemoryInterface(SharedMemory& shared_memory, MemoryInterfaceUnit& memory_interface_unit,
-        MMIORegion& mmio);
+                    MMIORegion& mmio);
     u16 ProgramRead(u32 address) const;
     void ProgramWrite(u32 address, u16 value);
     u16 DataRead(u16 address); // not const because it can be a FIFO register

@@ -1,5 +1,5 @@
-#include "timer.h"
 #include "crash.h"
+#include "timer.h"
 
 namespace Teakra {
 
@@ -13,7 +13,7 @@ enum CountMode : u32 {
 void Timer::Restart() {
     ASSERT(count_mode < 4);
     if (count_mode != CountMode::FreeRunning) {
-        counter = ((u32)start_high <<16) | start_low;
+        counter = ((u32)start_high << 16) | start_low;
         UpdateMMIO();
     }
 }
@@ -28,8 +28,7 @@ void Timer::Tick() {
     if (counter == 0) {
         if (count_mode == CountMode::AutoRestart) {
             Restart();
-        }
-        else if (count_mode == CountMode::FreeRunning) {
+        } else if (count_mode == CountMode::FreeRunning) {
             counter = 0xFFFFFFFF;
             UpdateMMIO();
         }
@@ -61,4 +60,4 @@ void Timer::UpdateMMIO() {
     counter_low = counter & 0xFFFF;
 }
 
-} // Teakra
+} // namespace Teakra

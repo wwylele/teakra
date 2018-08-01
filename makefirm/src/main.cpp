@@ -1,5 +1,5 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <openssl/sha.h>
 #include "common_types.h"
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     std::string line;
     std::vector<Segment> segments;
     u32 addr;
-    while(std::getline(in, line)) {
+    while (std::getline(in, line)) {
         if (line.size() < 6)
             continue;
         if (line[0] == '.') {
@@ -93,5 +93,4 @@ int main(int argc, char** argv) {
     fwrite(&zero, 4, 1, out);
 
     fclose(out);
-
 }

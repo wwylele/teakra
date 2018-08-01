@@ -1,20 +1,23 @@
-#include "mmio.h"
-#include "apbp.h"
-#include "memory_interface.h"
-#include "timer.h"
-#include "dma.h"
-#include "ahbm.h"
 #include <functional>
 #include <string>
 #include <vector>
+#include "ahbm.h"
+#include "apbp.h"
+#include "dma.h"
+#include "memory_interface.h"
+#include "mmio.h"
+#include "timer.h"
 
 namespace Teakra {
 
 auto NoSet(const std::string& debug_string) {
-    return [debug_string](u16) {printf("Warning: NoSet on %s\n", debug_string.data());};
+    return [debug_string](u16) { printf("Warning: NoSet on %s\n", debug_string.data()); };
 }
 auto NoGet(const std::string& debug_string) {
-    return [debug_string]()->u16 {printf("Warning: NoGet on %s\n", debug_string.data()); return 0;};
+    return [debug_string]() -> u16 {
+        printf("Warning: NoGet on %s\n", debug_string.data());
+        return 0;
+    };
 }
 
 struct BitFieldSlot {
@@ -24,9 +27,9 @@ struct BitFieldSlot {
     std::function<u16(void)> get;
 
     static BitFieldSlot RefSlot(unsigned pos, unsigned length, u16& var) {
-        BitFieldSlot slot {pos, length, {}, {}};
-        slot.set = [&var](u16 value) {var = value;};
-        slot.get = [&var]()->u16 {return var;};
+        BitFieldSlot slot{pos, length, {}, {}};
+        slot.set = [&var](u16 value) { var = value; };
+        slot.get = [&var]() -> u16 { return var; };
         return slot;
     }
 };
@@ -36,15 +39,15 @@ struct Cell {
     std::function<u16(void)> get;
     u16 index = 0;
 
-    Cell(std::function<void(u16)> set, std::function<u16(void)> get):
-        set(std::move(set)), get(std::move(get)) {}
+    Cell(std::function<void(u16)> set, std::function<u16(void)> get)
+        : set(std::move(set)), get(std::move(get)) {}
     Cell() {
         std::shared_ptr<u16> storage = std::make_shared<u16>(0);
         set = [storage, this](u16 value) {
             *storage = value;
             std::printf("MMIO: cell %04X set = %04X\n", index, value);
         };
-        get = [storage, this]() ->u16 {
+        get = [storage, this]() -> u16 {
             std::printf("MMIO: cell %04X get\n", index);
             return *storage;
         };
@@ -52,20 +55,20 @@ struct Cell {
     static Cell ConstCell(u16 constant) {
         Cell cell({}, {});
         cell.set = NoSet("");
-        cell.get = [constant]()->u16 {return constant;};
+        cell.get = [constant]() -> u16 { return constant; };
         return cell;
     }
     static Cell RefCell(u16& var) {
         Cell cell({}, {});
-        cell.set = [&var](u16 value) {var = value;};
-        cell.get = [&var]()->u16 {return var;};
+        cell.set = [&var](u16 value) { var = value; };
+        cell.get = [&var]() -> u16 { return var; };
         return cell;
     }
 
     static Cell MirrorCell(Cell* mirror) {
         Cell cell({}, {});
-        cell.set = [mirror](u16 value){mirror->set(value);};
-        cell.get = [mirror]()->u16 {return mirror->get();};
+        cell.set = [mirror](u16 value) { mirror->set(value); };
+        cell.get = [mirror]() -> u16 { return mirror->get(); };
         return cell;
     }
 
@@ -104,55 +107,47 @@ public:
     }
 };
 
-MMIORegion::MMIORegion(
-    MemoryInterfaceUnit& miu,
-    ICU& icu,
-    Apbp& apbp_from_cpu,
-    Apbp& apbp_from_dsp,
-    std::array<Timer, 2>& timer,
-    Dma& dma,
-    Ahbm& ahbm
-):
-    impl(new Impl),
-    miu(miu),
-    icu(icu),
-    apbp_from_cpu(apbp_from_cpu),
-    apbp_from_dsp(apbp_from_dsp),
-    timer(timer),
-    dma(dma),
-    ahbm(ahbm)
-{
+MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, Apbp& apbp_from_dsp,
+                       std::array<Timer, 2>& timer, Dma& dma, Ahbm& ahbm)
+    : impl(new Impl), miu(miu), icu(icu), apbp_from_cpu(apbp_from_cpu),
+      apbp_from_dsp(apbp_from_dsp), timer(timer), dma(dma), ahbm(ahbm) {
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell::ConstCell(0xC902); // chip detect
 
     // Timer
     for (unsigned i = 0; i < 2; ++i) {
-        impl->cells[0x20 + i * 0x10] = Cell::BitFieldCell({ // TIMERx_CFG
-            BitFieldSlot::RefSlot(0, 2, timer[i].scale), // TS
-            BitFieldSlot::RefSlot(2, 3, timer[i].count_mode), // CM
-            BitFieldSlot{6, 1, {}, {}}, // TP
-            BitFieldSlot{7, 1, {}, {}}, // CT
-            BitFieldSlot::RefSlot(8, 1, timer[i].pause), // PC
+        impl->cells[0x20 + i * 0x10] = Cell::BitFieldCell({
+            // TIMERx_CFG
+            BitFieldSlot::RefSlot(0, 2, timer[i].scale),       // TS
+            BitFieldSlot::RefSlot(2, 3, timer[i].count_mode),  // CM
+            BitFieldSlot{6, 1, {}, {}},                        // TP
+            BitFieldSlot{7, 1, {}, {}},                        // CT
+            BitFieldSlot::RefSlot(8, 1, timer[i].pause),       // PC
             BitFieldSlot::RefSlot(9, 1, timer[i].update_mmio), // MU
             BitFieldSlot{10, 1,
-                [this, i](u16 v){if (v) this->timer[i].Restart();},
-                []()->u16{return 0;}}, // RES
-            BitFieldSlot{11, 1, {}, {}}, // BP
-            BitFieldSlot{12, 1, {}, {}}, // CS
-            BitFieldSlot{13, 1, {}, {}}, // GP
-            BitFieldSlot{14, 2, {}, {}}, // TM
+                         [this, i](u16 v) {
+                             if (v)
+                                 this->timer[i].Restart();
+                         },
+                         []() -> u16 { return 0; }}, // RES
+            BitFieldSlot{11, 1, {}, {}},             // BP
+            BitFieldSlot{12, 1, {}, {}},             // CS
+            BitFieldSlot{13, 1, {}, {}},             // GP
+            BitFieldSlot{14, 2, {}, {}},             // TM
         });
 
-        impl->cells[0x22 + i * 0x10].set =
-            [this, i](u16 v){if (v) this->timer[i].TickEvent();}; // TIMERx_EW
-        impl->cells[0x22 + i * 0x10].get = []()->u16{return 0;};
-        impl->cells[0x24 + i * 0x10] = Cell::RefCell(timer[i].start_low); // TIMERx_SCL
-        impl->cells[0x26 + i * 0x10] = Cell::RefCell(timer[i].start_high); // TIMERx_SCH
-        impl->cells[0x28 + i * 0x10] = Cell::RefCell(timer[i].counter_low); // TIMERx_CCL
+        impl->cells[0x22 + i * 0x10].set = [this, i](u16 v) {
+            if (v)
+                this->timer[i].TickEvent();
+        }; // TIMERx_EW
+        impl->cells[0x22 + i * 0x10].get = []() -> u16 { return 0; };
+        impl->cells[0x24 + i * 0x10] = Cell::RefCell(timer[i].start_low);    // TIMERx_SCL
+        impl->cells[0x26 + i * 0x10] = Cell::RefCell(timer[i].start_high);   // TIMERx_SCH
+        impl->cells[0x28 + i * 0x10] = Cell::RefCell(timer[i].counter_low);  // TIMERx_CCL
         impl->cells[0x2A + i * 0x10] = Cell::RefCell(timer[i].counter_high); // TIMERx_CCH
-        impl->cells[0x2C + i * 0x10] = Cell(); // TIMERx_SPWMCL
-        impl->cells[0x2E + i * 0x10] = Cell(); // TIMERx_SPWMCH
+        impl->cells[0x2C + i * 0x10] = Cell();                               // TIMERx_SPWMCL
+        impl->cells[0x2E + i * 0x10] = Cell();                               // TIMERx_SPWMCH
     }
 
     // APBP
@@ -172,27 +167,14 @@ MMIORegion::MMIORegion(
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
     // impl->cells[0x0D4]; // interrupt mask?
     impl->cells[0x0D6] = Cell::BitFieldCell({
-        BitFieldSlot{5, 1, {}, [this]()->u16{
-            return this->apbp_from_dsp.IsDataReady(0);
-        }},
-        BitFieldSlot{6, 1, {}, [this]()->u16{
-            return this->apbp_from_dsp.IsDataReady(1);
-        }},
-        BitFieldSlot{7, 1, {}, [this]()->u16{
-            return this->apbp_from_dsp.IsDataReady(2);
-        }},
-        BitFieldSlot{8, 1, {}, [this]()->u16{
-            return this->apbp_from_cpu.IsDataReady(0);
-        }},
-        BitFieldSlot{9, 1, {}, [this]()->u16{
-            return this->apbp_from_cpu.IsSemaphoreSignaled();
-        }},
-        BitFieldSlot{12, 1, {}, [this]()->u16{
-            return this->apbp_from_cpu.IsDataReady(1);
-        }},
-        BitFieldSlot{13, 1, {}, [this]()->u16{
-            return this->apbp_from_cpu.IsDataReady(2);
-        }},
+        BitFieldSlot{5, 1, {}, [this]() -> u16 { return this->apbp_from_dsp.IsDataReady(0); }},
+        BitFieldSlot{6, 1, {}, [this]() -> u16 { return this->apbp_from_dsp.IsDataReady(1); }},
+        BitFieldSlot{7, 1, {}, [this]() -> u16 { return this->apbp_from_dsp.IsDataReady(2); }},
+        BitFieldSlot{8, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsDataReady(0); }},
+        BitFieldSlot{
+            9, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsSemaphoreSignaled(); }},
+        BitFieldSlot{12, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsDataReady(1); }},
+        BitFieldSlot{13, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsDataReady(2); }},
     });
 
     // AHBM
@@ -217,20 +199,22 @@ MMIORegion::MMIORegion(
     impl->cells[0x10E] = Cell::RefCell(miu.x_page); // MIU_XPAGE
     impl->cells[0x110] = Cell::RefCell(miu.y_page); // MIU_YPAGE
     impl->cells[0x112] = Cell::RefCell(miu.z_page); // MIU_ZPAGE
-    impl->cells[0x114] = Cell::BitFieldCell({ // MIU_PAGE0CFG
+    impl->cells[0x114] = Cell::BitFieldCell({
+        // MIU_PAGE0CFG
         BitFieldSlot::RefSlot(0, 6, miu.x_size[0]),
         BitFieldSlot::RefSlot(8, 6, miu.y_size[0]),
     });
-    impl->cells[0x116] = Cell::BitFieldCell({ // MIU_PAGE1CFG
+    impl->cells[0x116] = Cell::BitFieldCell({
+        // MIU_PAGE1CFG
         BitFieldSlot::RefSlot(0, 6, miu.x_size[1]),
         BitFieldSlot::RefSlot(8, 6, miu.y_size[1]),
     });
     // impl->cells[0x118]; // MIU_OFFPAGECFG
     impl->cells[0x11A] = Cell::BitFieldCell({
-        BitFieldSlot{0, 1, {}, {}}, // PP
-        BitFieldSlot{1, 1, {}, {}}, // TESTP
-        BitFieldSlot{2, 1, {}, {}}, // INTP
-        BitFieldSlot{4, 1, {}, {}}, // ZSINGLEP
+        BitFieldSlot{0, 1, {}, {}},                 // PP
+        BitFieldSlot{1, 1, {}, {}},                 // TESTP
+        BitFieldSlot{2, 1, {}, {}},                 // INTP
+        BitFieldSlot{4, 1, {}, {}},                 // ZSINGLEP
         BitFieldSlot::RefSlot(6, 1, miu.page_mode), // PAGEMODE
     });
     // impl->cells[0x11C]; // MIU_DLCFG
@@ -296,15 +280,14 @@ MMIORegion::MMIORegion(
     // impl->cells[0x210]; // source type for each interrupt?
     for (unsigned i = 0; i < 16; ++i) {
         impl->cells[0x212 + i * 4] = Cell::BitFieldCell({
-            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]),
-            BitFieldSlot{15, 1, {}, {}}, // ?
+            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]), BitFieldSlot{15, 1, {}, {}}, // ?
         });
         impl->cells[0x214 + i * 4] = Cell::RefCell(icu.vector_low[i]);
     }
 
     // Audio
     for (unsigned i = 0; i < 2; ++i) {
-        impl->cells[0x2CA + i * 0x80].get = []()->u16{return 0x0002;}; // hack
+        impl->cells[0x2CA + i * 0x80].get = []() -> u16 { return 0x0002; }; // hack
     }
 }
 

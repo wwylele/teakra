@@ -15,11 +15,11 @@ struct RegisterState {
         *this = RegisterState();
     }
 
-    u32 pc = 0; // 18-bit, program counter
+    u32 pc = 0;     // 18-bit, program counter
     u16 prpage = 0; // 4-bit, program page
 
-    u16 repc = 0; // rep loop counter
-    u16 repcs = 0; // repc shadow
+    u16 repc = 0;     // rep loop counter
+    u16 repcs = 0;    // repc shadow
     bool rep = false; // true when in rep loop
     u16 mixp = 0;
     u16 sv = 0; // 16-bit two's complement shift value
@@ -46,8 +46,8 @@ struct RegisterState {
     u16 p0h_cbs = 0; // A hidden state for codebook search (CBS) opcode
 
     // step/modulo
-    u16 stepi = 0, stepj = 0; // 7 bit 2's comp
-    u16 modi = 0, modj = 0; // 9 bit
+    u16 stepi = 0, stepj = 0;   // 7 bit 2's comp
+    u16 modi = 0, modj = 0;     // 9 bit
     u16 stepi0 = 0, stepj0 = 0; // alternative step
 
     // Shadows for bank exchange
@@ -81,30 +81,31 @@ struct RegisterState {
     // vectored(?) interrupt handler address;
     u32 viaddr = 0;
 
-    u16 pcmhi = 0; // 2-bit, higher part of program address for movp/movd
-    u16 bcn = 0; // 3-bit, nest loop counter
-    u16 lp = 0; // 1-bit, set when in a loop
-    u16 sat = 0; // 1-bit, disable saturation when moving from acc
-    u16 sata = 1; // 1-bit, disable saturation when moving to acc
-    u16 hwm = 0; // 2-bit, half word mode, modify y on multiplication
-    u16 mod0_unk_const = 1; // 3-bit
+    u16 pcmhi = 0;           // 2-bit, higher part of program address for movp/movd
+    u16 bcn = 0;             // 3-bit, nest loop counter
+    u16 lp = 0;              // 1-bit, set when in a loop
+    u16 sat = 0;             // 1-bit, disable saturation when moving from acc
+    u16 sata = 1;            // 1-bit, disable saturation when moving to acc
+    u16 hwm = 0;             // 2-bit, half word mode, modify y on multiplication
+    u16 mod0_unk_const = 1;  // 3-bit
     std::array<u16, 2> ps{}; // 2-bit, product shift mode
     // sign bit of p0/1. For signed multiplication and mov, this is set to equal bit 31
     // product shift and extension is signed according to this.
     std::array<u16, 2> pe{};
-    u16 s = 0; // 1-bit, shift mode. 0 - arithmetic, 1 - logic
+    u16 s = 0;               // 1-bit, shift mode. 0 - arithmetic, 1 - logic
     std::array<u16, 5> ou{}; // user output pins
     std::array<u16, 2> iu{}; // user input pins
-    u16 page = 0; // 8-bit, Higher part of MemImm8 address
-    u16 stp16 = 0; // 1 bit. If set, stepi0/j0 will be exchanged along with cfgi/j in banke, and use stepi0/j0 for steping
-    u16 cmd = 1; // 1-bit, step/mod method. 0 - TeakLiteII; 1 - legacy TeakLite
-    u16 epi = 0; // 1-bit. If set, cause r3 = 0 when steping r3
-    u16 epj = 0; // 1-bit. If set, cause r7 = 0 when steping r7
+    u16 page = 0;            // 8-bit, Higher part of MemImm8 address
+    u16 stp16 = 0; // 1 bit. If set, stepi0/j0 will be exchanged along with cfgi/j in banke, and use
+                   // stepi0/j0 for steping
+    u16 cmd = 1;   // 1-bit, step/mod method. 0 - TeakLiteII; 1 - legacy TeakLite
+    u16 epi = 0;   // 1-bit. If set, cause r3 = 0 when steping r3
+    u16 epj = 0;   // 1-bit. If set, cause r7 = 0 when steping r7
     u16 ccnta = 1; // 1-bit. If clear, store/restore a1/b1 to shadows on context switch
-    u16 cpc = 1; // 1-bit, change word order when push/pop pc
-    u16 crep = 1; // 1-bit. If clear, store/restore repc to shadows on context switch
+    u16 cpc = 1;   // 1-bit, change word order when push/pop pc
+    u16 crep = 1;  // 1-bit. If clear, store/restore repc to shadows on context switch
 
-    std::array<u16, 8> m{}; // 1-bit each, enable modulo arithmetic for Rn
+    std::array<u16, 8> m{};  // 1-bit each, enable modulo arithmetic for Rn
     std::array<u16, 8> br{}; // 1-bit each, use bit-reversed value from Rn as address
 
     struct BlockRepeatFrame {
@@ -148,7 +149,7 @@ struct RegisterState {
 
     //// Shadow registers for context switch
 
-    template<u16 RegisterState::* origin>
+    template <u16 RegisterState::*origin>
     class ShadowRegister {
     public:
         void Store(RegisterState* self) {
@@ -157,11 +158,12 @@ struct RegisterState {
         void Restore(RegisterState* self) {
             self->*origin = shadow;
         }
+
     private:
         u16 shadow = 0;
     };
 
-    template<std::size_t size, std::array<u16, size> RegisterState::* origin>
+    template <std::size_t size, std::array<u16, size> RegisterState::*origin>
     class ShadowArrayRegister {
     public:
         void Store(RegisterState* self) {
@@ -170,12 +172,13 @@ struct RegisterState {
         void Restore(RegisterState* self) {
             self->*origin = shadow;
         }
+
     private:
         std::array<u16, size> shadow{};
     };
 
-    template<typename... ShadowRegisters>
-    class ShadowRegisterList : private ShadowRegisters ...{
+    template <typename... ShadowRegisters>
+    class ShadowRegisterList : private ShadowRegisters... {
     public:
         void Store(RegisterState* self) {
             (ShadowRegisters::Store(self), ...);
@@ -185,61 +188,55 @@ struct RegisterState {
         }
     };
 
-    template<u16 RegisterState::* origin>
+    template <u16 RegisterState::*origin>
     class ShadowSwapRegister {
     public:
         void Swap(RegisterState* self) {
             std::swap(self->*origin, shadow);
         }
+
     private:
         u16 shadow = 0;
     };
 
-    template<std::size_t size, std::array<u16, size> RegisterState::* origin>
+    template <std::size_t size, std::array<u16, size> RegisterState::*origin>
     class ShadowSwapArrayRegister {
     public:
         void Swap(RegisterState* self) {
             std::swap(self->*origin, shadow);
         }
+
     private:
         std::array<u16, size> shadow{};
     };
 
-    template<typename... ShadowSwapRegisters>
-    class ShadowSwapRegisterList : private ShadowSwapRegisters ...{
+    template <typename... ShadowSwapRegisters>
+    class ShadowSwapRegisterList : private ShadowSwapRegisters... {
     public:
         void Swap(RegisterState* self) {
             (ShadowSwapRegisters::Swap(self), ...);
         }
     };
 
-    ShadowRegisterList<
-        ShadowRegister<&RegisterState::flm>,
-        ShadowRegister<&RegisterState::fvl>,
-        ShadowRegister<&RegisterState::fe>,
-        ShadowArrayRegister<2, &RegisterState::fc>,
-        ShadowRegister<&RegisterState::fv>,
-        ShadowRegister<&RegisterState::fn>,
-        ShadowRegister<&RegisterState::fm>,
-        ShadowRegister<&RegisterState::fz>,
-        ShadowRegister<&RegisterState::fr>
-    > shadow_registers;
+    ShadowRegisterList<ShadowRegister<&RegisterState::flm>, ShadowRegister<&RegisterState::fvl>,
+                       ShadowRegister<&RegisterState::fe>,
+                       ShadowArrayRegister<2, &RegisterState::fc>,
+                       ShadowRegister<&RegisterState::fv>, ShadowRegister<&RegisterState::fn>,
+                       ShadowRegister<&RegisterState::fm>, ShadowRegister<&RegisterState::fz>,
+                       ShadowRegister<&RegisterState::fr>>
+        shadow_registers;
 
     ShadowSwapRegisterList<
-        ShadowSwapRegister<&RegisterState::pcmhi>,
-        ShadowSwapRegister<&RegisterState::sat>,
-        ShadowSwapRegister<&RegisterState::sata>,
-        ShadowSwapRegister<&RegisterState::hwm>,
-        ShadowSwapRegister<&RegisterState::s>,
-        ShadowSwapArrayRegister<2, &RegisterState::ps>,
-        ShadowSwapRegister<&RegisterState::page>,
-        ShadowSwapRegister<&RegisterState::stp16>,
-        ShadowSwapRegister<&RegisterState::cmd>,
-        ShadowSwapArrayRegister<8, &RegisterState::m>,
+        ShadowSwapRegister<&RegisterState::pcmhi>, ShadowSwapRegister<&RegisterState::sat>,
+        ShadowSwapRegister<&RegisterState::sata>, ShadowSwapRegister<&RegisterState::hwm>,
+        ShadowSwapRegister<&RegisterState::s>, ShadowSwapArrayRegister<2, &RegisterState::ps>,
+        ShadowSwapRegister<&RegisterState::page>, ShadowSwapRegister<&RegisterState::stp16>,
+        ShadowSwapRegister<&RegisterState::cmd>, ShadowSwapArrayRegister<8, &RegisterState::m>,
         ShadowSwapArrayRegister<8, &RegisterState::br>,
         ShadowSwapArrayRegister<3, &RegisterState::im>, // ?
-        ShadowSwapRegister<&RegisterState::imv> // ?
-    > shadow_swap_registers;
+        ShadowSwapRegister<&RegisterState::imv>         // ?
+        >
+        shadow_swap_registers;
 
     template <unsigned index>
     class ShadowSwapAr {
@@ -252,6 +249,7 @@ struct RegisterState {
             std::swap(self->aroffset[index * 2], offseti);
             std::swap(self->aroffset[index * 2 + 1], offsetj);
         }
+
     private:
         u16 rni, rnj, stepi, stepj, offseti, offsetj;
     };
@@ -267,6 +265,7 @@ struct RegisterState {
             std::swap(self->arpstepi[index], offseti);
             std::swap(self->arpstepj[index], offsetj);
         }
+
     private:
         u16 rni, rnj, stepi, stepj, offseti, offsetj;
     };
@@ -301,56 +300,84 @@ struct RegisterState {
     }
 
     void SwapAr(u16 index) {
-        switch(index) {
-        case 0: shadow_swap_ar0.Swap(this); break;
-        case 1: shadow_swap_ar1.Swap(this); break;
+        switch (index) {
+        case 0:
+            shadow_swap_ar0.Swap(this);
+            break;
+        case 1:
+            shadow_swap_ar1.Swap(this);
+            break;
         }
     }
 
     void SwapArp(u16 index) {
-        switch(index) {
-        case 0: shadow_swap_arp0.Swap(this); break;
-        case 1: shadow_swap_arp1.Swap(this); break;
-        case 2: shadow_swap_arp2.Swap(this); break;
-        case 3: shadow_swap_arp3.Swap(this); break;
+        switch (index) {
+        case 0:
+            shadow_swap_arp0.Swap(this);
+            break;
+        case 1:
+            shadow_swap_arp1.Swap(this);
+            break;
+        case 2:
+            shadow_swap_arp2.Swap(this);
+            break;
+        case 3:
+            shadow_swap_arp3.Swap(this);
+            break;
         }
     }
 
     bool ConditionPass(Cond cond) const {
-        switch(cond.GetName()) {
-        case CondValue::True: return true;
-        case CondValue::Eq: return fz == 1;
-        case CondValue::Neq: return fz == 0;
-        case CondValue::Gt: return fz == 0 && fm == 0;
-        case CondValue::Ge: return fm == 0;
-        case CondValue::Lt: return fm == 1;
-        case CondValue::Le: return fm == 1 || fz == 1;
-        case CondValue::Nn: return fn == 0;
-        case CondValue::C: return fc[0] == 1; // ?
-        case CondValue::V: return fv == 1;
-        case CondValue::E: return fe == 1;
-        case CondValue::L: return flm == 1 || fvl == 1; // ??
-        case CondValue::Nr: return fr == 0;
-        case CondValue::Niu0: return iu[0] == 0;
-        case CondValue::Iu0: return iu[0] == 1;
-        case CondValue::Iu1: return iu[1] == 1;
-        default: UNREACHABLE();
+        switch (cond.GetName()) {
+        case CondValue::True:
+            return true;
+        case CondValue::Eq:
+            return fz == 1;
+        case CondValue::Neq:
+            return fz == 0;
+        case CondValue::Gt:
+            return fz == 0 && fm == 0;
+        case CondValue::Ge:
+            return fm == 0;
+        case CondValue::Lt:
+            return fm == 1;
+        case CondValue::Le:
+            return fm == 1 || fz == 1;
+        case CondValue::Nn:
+            return fn == 0;
+        case CondValue::C:
+            return fc[0] == 1; // ?
+        case CondValue::V:
+            return fv == 1;
+        case CondValue::E:
+            return fe == 1;
+        case CondValue::L:
+            return flm == 1 || fvl == 1; // ??
+        case CondValue::Nr:
+            return fr == 0;
+        case CondValue::Niu0:
+            return iu[0] == 0;
+        case CondValue::Iu0:
+            return iu[0] == 1;
+        case CondValue::Iu1:
+            return iu[1] == 1;
+        default:
+            UNREACHABLE();
         }
     }
 
-    template<typename PseudoRegisterT>
+    template <typename PseudoRegisterT>
     u16 Get() const {
         return PseudoRegisterT::Get(this);
     }
 
-    template<typename PseudoRegisterT>
+    template <typename PseudoRegisterT>
     void Set(u16 value) {
         PseudoRegisterT::Set(this, value);
     }
-
 };
 
-template<u16 RegisterState::* target>
+template <u16 RegisterState::*target>
 struct Redirector {
     static u16 Get(const RegisterState* self) {
         return self->*target;
@@ -360,7 +387,7 @@ struct Redirector {
     }
 };
 
-template<std::size_t size, std::array<u16, size> RegisterState::* target, std::size_t index>
+template <std::size_t size, std::array<u16, size> RegisterState::*target, std::size_t index>
 struct ArrayRedirector {
     static u16 Get(const RegisterState* self) {
         return (self->*target)[index];
@@ -370,17 +397,17 @@ struct ArrayRedirector {
     }
 };
 
-template<u16 RegisterState::* target0, u16 RegisterState::* target1>
+template <u16 RegisterState::*target0, u16 RegisterState::*target1>
 struct DoubleRedirector {
     static u16 Get(const RegisterState* self) {
         return self->*target0 | self->*target1;
     }
-    static void Set(RegisterState* self, u16 value){
+    static void Set(RegisterState* self, u16 value) {
         self->*target0 = self->*target1 = value;
     }
 };
 
-template<u16 RegisterState::* target>
+template <u16 RegisterState::*target>
 struct RORedirector {
     static u16 Get(const RegisterState* self) {
         return self->*target;
@@ -390,7 +417,7 @@ struct RORedirector {
     }
 };
 
-template<std::size_t size, std::array<u16, size> RegisterState::* target, std::size_t index>
+template <std::size_t size, std::array<u16, size> RegisterState::*target, std::size_t index>
 struct ArrayRORedirector {
     static u16 Get(const RegisterState* self) {
         return (self->*target)[index];
@@ -400,7 +427,7 @@ struct ArrayRORedirector {
     }
 };
 
-template<unsigned index>
+template <unsigned index>
 struct AccEProxy {
     static u16 Get(const RegisterState* self) {
         return (u16)((self->a[index] >> 32) & 0xF);
@@ -424,7 +451,7 @@ struct LPRedirector {
     }
 };
 
-template<typename Proxy, unsigned position, unsigned length>
+template <typename Proxy, unsigned position, unsigned length>
 struct ProxySlot {
     using proxy = Proxy;
     static constexpr unsigned pos = position;
@@ -434,17 +461,19 @@ struct ProxySlot {
     static constexpr u16 mask = ((1 << length) - 1) << position;
 };
 
-template<typename... ProxySlots>
+template <typename... ProxySlots>
 struct PseudoRegister {
     static_assert((ProxySlots::mask | ...) == (ProxySlots::mask + ...), "Error");
     static u16 Get(const RegisterState* self) {
         return ((ProxySlots::proxy::Get(self) << ProxySlots::pos) | ...);
     }
     static void Set(RegisterState* self, u16 value) {
-        (ProxySlots::proxy::Set(self,
-            (value >> ProxySlots::pos) & ((1 << ProxySlots::len) - 1)) , ...);
+        (ProxySlots::proxy::Set(self, (value >> ProxySlots::pos) & ((1 << ProxySlots::len) - 1)),
+         ...);
     }
 };
+
+// clang-format off
 
 using cfgi = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::stepi>, 0, 7>,
@@ -619,5 +648,7 @@ using arp0 = arp<0>;
 using arp1 = arp<1>;
 using arp2 = arp<2>;
 using arp3 = arp<3>;
+
+// clang-format on
 
 } // namespace Teakra

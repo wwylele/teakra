@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common_types.h"
 #include <functional>
+#include "common_types.h"
 
 namespace Teakra {
 
@@ -30,8 +30,9 @@ public:
     u32 counter = 0;
     u16 counter_high = 0;
     u16 counter_low = 0;
+
 private:
     void UpdateMMIO();
 };
 
-} // Teakra
+} // namespace Teakra

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "common_types.h"
+#include <array>
 #include <bitset>
 #include <functional>
-#include <array>
+#include "common_types.h"
 
 namespace Teakra {
 
@@ -70,6 +70,7 @@ public:
     std::function<void(u32)> OnVectoredInterrupt;
 
     std::array<u16, 16> vector_low, vector_high;
+
 private:
     IrqBits request;
     std::array<IrqBits, 3> enabled;

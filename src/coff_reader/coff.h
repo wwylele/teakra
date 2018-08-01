@@ -1,11 +1,11 @@
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
-#include <variant>
-#include <string>
 #include <cstring>
-#include <vector>
-#include <algorithm>
+#include <string>
 #include <unordered_map>
+#include <variant>
+#include <vector>
 
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;
@@ -33,7 +33,7 @@ struct NameOrIndex {
             std::fseek(file, offset + std::get<1>(v), SEEK_SET);
             char c;
             std::string ret;
-            while(true) {
+            while (true) {
                 std::fread(&c, 1, 1, file);
                 if (c == '\0')
                     break;
@@ -81,7 +81,7 @@ constexpr u32 Moni = 0x0020;
 constexpr u32 Un40 = 0x0040;
 constexpr u32 Dupl = 0x0080;
 constexpr u32 U200 = 0x0200;
-}
+} // namespace SFlag
 
 #pragma pack(push, 1)
 struct Symbol {
@@ -94,35 +94,14 @@ struct Symbol {
 };
 static_assert(sizeof(Symbol) == 18);
 
-inline const std::unordered_map<u32, const char*> storage_names {
-    {0, "label"},
-    {1, "auto"},
-    {2, "external"},
-    {3, "static"},
-    {4, "register"},
-    {8, "struct"},
-    {9, "arg"},
-    {10, "struct-tag"},
-    {11, "union"},
-    {12, "union-tag"},
-    {13, "typedef"},
-    {15, "enum-tag"},
-    {16, "enum"},
-    {18, "bitfield"},
-    {19, "auto-arg"},
-    {98, "start"},
-    {99, "end"},
-    {100, "block"},
-    {101, "func"},
-    {102, "struct-size"},
-    {103, "file"},
-    {107, "ar"},
-    {108, "ar"},
-    {109, "ar"},
-    {110, "ar"},
-    {111, "ar"},
-    {112, "ar"},
-    {255, "physical-function-end"},
+inline const std::unordered_map<u32, const char*> storage_names{
+    {0, "label"},    {1, "auto"},       {2, "external"},  {3, "static"},
+    {4, "register"}, {8, "struct"},     {9, "arg"},       {10, "struct-tag"},
+    {11, "union"},   {12, "union-tag"}, {13, "typedef"},  {15, "enum-tag"},
+    {16, "enum"},    {18, "bitfield"},  {19, "auto-arg"}, {98, "start"},
+    {99, "end"},     {100, "block"},    {101, "func"},    {102, "struct-size"},
+    {103, "file"},   {107, "ar"},       {108, "ar"},      {109, "ar"},
+    {110, "ar"},     {111, "ar"},       {112, "ar"},      {255, "physical-function-end"},
 };
 
 /*
@@ -189,7 +168,8 @@ public:
             sections[i].name = sheader.name.GetString(in, string_offset);
             sections[i].prog_addr = sheader.prog_addr;
             sections[i].data_addr = sheader.data_addr;
-            if (expected == 0) expected = sheader.offset_data;
+            if (expected == 0)
+                expected = sheader.offset_data;
             if (expected != sheader.offset_data) {
                 throw "";
             }
@@ -222,7 +202,8 @@ public:
                     u32 addr = line.symbol_index_or_addr;
                     if (addr < sections[i].prog_addr ||
                         addr >= sections[i].prog_addr + sections[i].data.size() / 2) {
-                        if (addr != 0xFFFFFFFF && addr != 0xFFFFFFFE && addr != 0xFFFFFFFD) // unknown magic
+                        if (addr != 0xFFFFFFFF && addr != 0xFFFFFFFE &&
+                            addr != 0xFFFFFFFD) // unknown magic
                             throw "line out of range";
                     }
                     sections[i].line_numbers[addr].emplace_back(
@@ -231,11 +212,12 @@ public:
             }
 
             fseek(in, sheader.offset_rel, SEEK_SET);
-            //printf("\n");
+            // printf("\n");
             for (u16 j = 0; j < sheader.num_rel; ++j) {
                 Relocation relocation;
                 fread(&relocation, 1, sizeof(relocation), in);
-                //printf("%08X, %08X, %08X\n", relocation.addr, relocation.symbol, relocation.type);
+                // printf("%08X, %08X, %08X\n", relocation.addr, relocation.symbol,
+                // relocation.type);
                 sections[i].relocations[relocation.addr].push_back(relocation);
             }
         }
@@ -247,15 +229,16 @@ public:
             i += symbol.num_aux;
             printf("%s\n", symbol.name.GetString(in, string_offset).c_str());
             printf("value = %08X, section = %04X, type = %04X, storage = %02X, aux = %02X\n",
-                symbol.value, symbol.section_index, symbol.type, symbol.storage, symbol.num_aux);
+                   symbol.value, symbol.section_index, symbol.type, symbol.storage, symbol.num_aux);
             SymbolEx symbol_ex;
             symbol_ex.name = symbol.name.GetString(in, string_offset);
             if (symbol.section_index > 0 && symbol.section_index < 0x7FFF) {
                 u16 section_index = symbol.section_index - 1;
-                symbol_ex.region = sections[section_index].flags & SFlag::Prog ?
-                    SymbolEx::Prog : SymbolEx::Data;
-                symbol_ex.value = symbol.value + (sections[section_index].flags & SFlag::Prog ?
-                    sections[section_index].prog_addr : sections[section_index].data_addr);
+                symbol_ex.region =
+                    sections[section_index].flags & SFlag::Prog ? SymbolEx::Prog : SymbolEx::Data;
+                symbol_ex.value = symbol.value + (sections[section_index].flags & SFlag::Prog
+                                                      ? sections[section_index].prog_addr
+                                                      : sections[section_index].data_addr);
 
             } else {
                 symbol_ex.region = SymbolEx::Absolute;
@@ -267,7 +250,8 @@ public:
 
             symbols.push_back(symbol_ex);
 
-            if (symbols.back().region == SymbolEx::Prog || symbols.back().region == SymbolEx::Data) {
+            if (symbols.back().region == SymbolEx::Prog ||
+                symbols.back().region == SymbolEx::Data) {
                 symbols_lut[symbols.back().value].push_back(symbols.size() - 1);
             }
 
@@ -278,22 +262,19 @@ public:
         }
 
         // Merge duplicated sections
-        std::sort(sections.begin(), sections.end(),
-            [](const Section& left, const Section& right) {
-                u32 lm = left.flags & SFlag::Dupl;
-                u32 rm = right.flags & SFlag::Dupl;
-                if (lm == rm) {
-                    return left.name < right.name;
-                } else {
-                    return lm < rm;
-                }
-            });
+        std::sort(sections.begin(), sections.end(), [](const Section& left, const Section& right) {
+            u32 lm = left.flags & SFlag::Dupl;
+            u32 rm = right.flags & SFlag::Dupl;
+            if (lm == rm) {
+                return left.name < right.name;
+            } else {
+                return lm < rm;
+            }
+        });
         auto mid = sections.begin() + sections.size() / 2;
         for (auto a = sections.begin(), b = mid; a != mid; ++a, ++b) {
-            if (a->name != b->name ||
-                a->prog_addr != b->prog_addr ||
-                a->data_addr != b->data_addr ||
-                a->data.size() != b->data.size() ||
+            if (a->name != b->name || a->prog_addr != b->prog_addr ||
+                a->data_addr != b->data_addr || a->data.size() != b->data.size() ||
                 (a->flags + SFlag::Dupl) != b->flags)
                 throw "mismatch";
             if (!b->line_numbers.empty())
@@ -304,8 +285,8 @@ public:
         sections.resize(sections.size() / 2);
 
         // Break up multi-region section
-        auto both_begin = std::partition(sections.begin(), sections.end(),
-            [](const Section& section) {
+        auto both_begin =
+            std::partition(sections.begin(), sections.end(), [](const Section& section) {
                 return (section.flags & SFlag::RegionMask) != SFlag::RegionMask;
             });
         std::vector<Section> copy(both_begin, sections.end());
@@ -317,33 +298,31 @@ public:
             section.flags &= ~SFlag::Data;
             section.data_addr = 0;
         }
-        sections.insert(sections.end(),
-            std::make_move_iterator(copy.begin()),
-            std::make_move_iterator(copy.end()));
+        sections.insert(sections.end(), std::make_move_iterator(copy.begin()),
+                        std::make_move_iterator(copy.end()));
 
         // Sort according to address
-        std::sort(sections.begin(), sections.end(),
-            [](const Section& left, const Section& right) {
-                if ((left.flags & SFlag::RegionMask) == SFlag::Prog) {
-                    if ((right.flags & SFlag::RegionMask) == SFlag::Prog) {
-                        if (left.prog_addr == right.prog_addr) {
-                            return left.data.size() < right.data.size();
-                        }
-                        return left.prog_addr < right.prog_addr;
-                    } else {
-                        return true;
+        std::sort(sections.begin(), sections.end(), [](const Section& left, const Section& right) {
+            if ((left.flags & SFlag::RegionMask) == SFlag::Prog) {
+                if ((right.flags & SFlag::RegionMask) == SFlag::Prog) {
+                    if (left.prog_addr == right.prog_addr) {
+                        return left.data.size() < right.data.size();
                     }
+                    return left.prog_addr < right.prog_addr;
                 } else {
-                    if ((right.flags & SFlag::RegionMask) == SFlag::Prog) {
-                        return false;
-                    } else {
-                        if (left.data_addr == right.data_addr) {
-                            return left.data.size() < right.data.size();
-                        }
-                        return left.data_addr < right.data_addr;
-                    }
+                    return true;
                 }
-            });
+            } else {
+                if ((right.flags & SFlag::RegionMask) == SFlag::Prog) {
+                    return false;
+                } else {
+                    if (left.data_addr == right.data_addr) {
+                        return left.data.size() < right.data.size();
+                    }
+                    return left.data_addr < right.data_addr;
+                }
+            }
+        });
     }
 
     struct Section {
@@ -358,8 +337,8 @@ public:
             u32 symbol;
             u16 line;
         };
-        std::unordered_map<u32/*abs addr*/, std::vector<LineNumber>> line_numbers;
-        std::unordered_map<u32/*rel addr*/, std::vector<Relocation>> relocations;
+        std::unordered_map<u32 /*abs addr*/, std::vector<LineNumber>> line_numbers;
+        std::unordered_map<u32 /*rel addr*/, std::vector<Relocation>> relocations;
     };
     std::vector<Section> sections;
 
@@ -376,5 +355,5 @@ public:
         u8 storage;
     };
     std::vector<SymbolEx> symbols;
-    std::unordered_map<u32/*abs addr*/, std::vector<std::size_t/*index in symbols*/>> symbols_lut;
+    std::unordered_map<u32 /*abs addr*/, std::vector<std::size_t /*index in symbols*/>> symbols_lut;
 };

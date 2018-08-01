@@ -9,7 +9,7 @@
 struct Rejector {
     u16 mask;
     u16 unexpected;
-    bool Rejects(u16 instruction) const{
+    bool Rejects(u16 instruction) const {
         return (instruction & mask) == unexpected;
     }
 };
@@ -17,9 +17,9 @@ struct Rejector {
 template <typename Visitor>
 class Matcher {
 public:
-    using visitor_type        = Visitor;
+    using visitor_type = Visitor;
     using handler_return_type = typename Visitor::instruction_return_type;
-    using handler_function    = std::function<handler_return_type(Visitor&, u16, u16)>;
+    using handler_function = std::function<handler_return_type(Visitor&, u16, u16)>;
 
     Matcher(const char* const name, u16 mask, u16 expected, bool expanded, handler_function func)
         : name{name}, mask{mask}, expected{expected}, expanded{expanded}, fn{std::move(func)} {}
@@ -37,10 +37,11 @@ public:
     }
 
     bool Matches(u16 instruction) const {
-        return (instruction & mask) == expected
-         && std::none_of(rejectors.begin(), rejectors.end(), [instruction](const Rejector& rejector){
-             return rejector.Rejects(instruction);
-         });
+        return (instruction & mask) == expected &&
+               std::none_of(rejectors.begin(), rejectors.end(),
+                            [instruction](const Rejector& rejector) {
+                                return rejector.Rejects(instruction);
+                            });
     }
 
     Matcher Except(Rejector rejector) const {

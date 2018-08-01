@@ -1,18 +1,18 @@
-#include "../test.h"
-#include "../interpreter.h"
-#include "../apbp.h"
-#include "../shared_memory.h"
-#include "../memory_interface.h"
-#include "../timer.h"
-#include "../mmio.h"
-#include "../icu.h"
-#include "../dma.h"
-#include "../ahbm.h"
-#include <teakra/disassembler.h>
-#include <cstdio>
 #include <cinttypes>
+#include <cstdio>
 #include <iomanip>
 #include <sstream>
+#include <teakra/disassembler.h>
+#include "../ahbm.h"
+#include "../apbp.h"
+#include "../dma.h"
+#include "../icu.h"
+#include "../interpreter.h"
+#include "../memory_interface.h"
+#include "../mmio.h"
+#include "../shared_memory.h"
+#include "../test.h"
+#include "../timer.h"
 
 std::string Flag16ToString(u16 value, const char* symbols) {
     std::string result = symbols;
@@ -23,15 +23,12 @@ std::string Flag16ToString(u16 value, const char* symbols) {
     return result;
 }
 
-template<typename T>
-std::string ToHex(T i)
-{
-  u64 v = i;
-  std::stringstream stream;
-  stream << "0x"
-         << std::setfill ('0') << std::setw(sizeof(T) * 2)
-         << std::hex << v;
-  return stream.str();
+template <typename T>
+std::string ToHex(T i) {
+    u64 v = i;
+    std::stringstream stream;
+    stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << v;
+    return stream.str();
 }
 
 int main(int argc, char** argv) {
@@ -55,7 +52,8 @@ int main(int argc, char** argv) {
     int passed = 0;
     while (true) {
         TestCase test_case;
-        if (!fread(&test_case, sizeof(test_case), 1, file)) break;
+        if (!fread(&test_case, sizeof(test_case), 1, file))
+            break;
         regs.Reset();
         regs.a = test_case.before.a;
         regs.b = test_case.before.b;
@@ -97,24 +95,22 @@ int main(int argc, char** argv) {
         bool pass = true;
         auto Check40 = [&](const char* name, u64 expected, u64 actual) {
             if (expected != actual) {
-                std::printf("Mismatch: %s: %010" PRIx64 " != %010" PRIx64 "\n",
-                    name, expected & 0xFF'FFFF'FFFF, actual & 0xFF'FFFF'FFFF);
+                std::printf("Mismatch: %s: %010" PRIx64 " != %010" PRIx64 "\n", name,
+                            expected & 0xFF'FFFF'FFFF, actual & 0xFF'FFFF'FFFF);
                 pass = false;
             }
         };
 
         auto Check32 = [&](const char* name, u32 expected, u32 actual) {
             if (expected != actual) {
-                std::printf("Mismatch: %s: %08X != %08X\n",
-                    name, expected, actual);
+                std::printf("Mismatch: %s: %08X != %08X\n", name, expected, actual);
                 pass = false;
             }
         };
 
         auto Check = [&](const char* name, u16 expected, u16 actual) {
             if (expected != actual) {
-                std::printf("Mismatch: %s: %04X != %04X\n",
-                    name, expected, actual);
+                std::printf("Mismatch: %s: %04X != %04X\n", name, expected, actual);
                 pass = false;
             }
         };
@@ -122,8 +118,8 @@ int main(int argc, char** argv) {
         auto CheckFlag = [&](const char* name, u16 expected, u16 actual, const char* symbols) {
             if (expected != actual) {
                 std::printf("Mismatch: %s: %s != %s\n", name,
-                    Flag16ToString(expected, symbols).c_str(),
-                    Flag16ToString(actual, symbols).c_str());
+                            Flag16ToString(expected, symbols).c_str(),
+                            Flag16ToString(actual, symbols).c_str());
                 pass = false;
             }
         };
@@ -169,9 +165,11 @@ int main(int argc, char** argv) {
 
         for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
             Check(("memory_" + ToHex<u16>(TestSpaceX + offset)).c_str(),
-                test_case.after.test_space_x[offset], memory_interface.DataRead(TestSpaceX + offset));
+                  test_case.after.test_space_x[offset],
+                  memory_interface.DataRead(TestSpaceX + offset));
             Check(("memory_" + ToHex<u16>(TestSpaceY + offset)).c_str(),
-                test_case.after.test_space_y[offset], memory_interface.DataRead(TestSpaceY + offset));
+                  test_case.after.test_space_y[offset],
+                  memory_interface.DataRead(TestSpaceY + offset));
         }
 
         if (pass) {
@@ -180,42 +178,57 @@ int main(int argc, char** argv) {
             Teakra::Disassembler::ArArpSettings ar_arp;
             ar_arp.ar = test_case.before.ar;
             ar_arp.arp = test_case.before.arp;
-            std::printf("Test case %d: %04X %04X %s\n", i, test_case.opcode, test_case.expand,
+            std::printf(
+                "Test case %d: %04X %04X %s\n", i, test_case.opcode, test_case.expand,
                 Teakra::Disassembler::Do(test_case.opcode, test_case.expand, ar_arp).c_str());
             std::printf("before:\n");
             std::printf("a0 = %010" PRIx64 "; a1 = %010" PRIx64 "\n",
-                test_case.before.a[0] & 0xFF'FFFF'FFFF,
-                test_case.before.a[1] & 0xFF'FFFF'FFFF);
+                        test_case.before.a[0] & 0xFF'FFFF'FFFF,
+                        test_case.before.a[1] & 0xFF'FFFF'FFFF);
             std::printf("b0 = %010" PRIx64 "; b1 = %010" PRIx64 "\n",
-                test_case.before.b[0] & 0xFF'FFFF'FFFF,
-                test_case.before.b[1] & 0xFF'FFFF'FFFF);
+                        test_case.before.b[0] & 0xFF'FFFF'FFFF,
+                        test_case.before.b[1] & 0xFF'FFFF'FFFF);
             std::printf("p0 = %08X; p1 = %08X\n", test_case.before.p[0], test_case.before.p[1]);
             std::printf("x0 = %04X; x1 = %04X\n", test_case.before.x[0], test_case.before.x[1]);
             std::printf("y0 = %04X; y1 = %04X\n", test_case.before.y[0], test_case.before.y[1]);
-            std::printf("r0 = %04X; r1 = %04X; r2 = %04X; r3 = %04X\n",
-                test_case.before.r[0], test_case.before.r[1], test_case.before.r[2], test_case.before.r[3]);
-            std::printf("r4 = %04X; r5 = %04X; r6 = %04X; r7 = %04X\n",
-                test_case.before.r[4], test_case.before.r[5], test_case.before.r[6], test_case.before.r[7]);
+            std::printf("r0 = %04X; r1 = %04X; r2 = %04X; r3 = %04X\n", test_case.before.r[0],
+                        test_case.before.r[1], test_case.before.r[2], test_case.before.r[3]);
+            std::printf("r4 = %04X; r5 = %04X; r6 = %04X; r7 = %04X\n", test_case.before.r[4],
+                        test_case.before.r[5], test_case.before.r[6], test_case.before.r[7]);
             std::printf("stepi0 = %04X\n", test_case.before.stepi0);
             std::printf("stepj0 = %04X\n", test_case.before.stepj0);
             std::printf("mixp = %04X\n", test_case.before.mixp);
             std::printf("sv = %04X\n", test_case.before.sv);
             std::printf("repc = %04X\n", test_case.before.repc);
             std::printf("lc = %04X\n", test_case.before.lc);
-            std::printf("cfgi = %s\n", Flag16ToString(test_case.before.cfgi, "mmmmmmmmmsssssss").c_str());
-            std::printf("cfgj = %s\n", Flag16ToString(test_case.before.cfgj, "mmmmmmmmmsssssss").c_str());
-            std::printf("stt0 = %s\n", Flag16ToString(test_case.before.stt0, "####C###ZMNVCELL").c_str());
-            std::printf("stt1 = %s\n", Flag16ToString(test_case.before.stt1, "QP#########R####").c_str());
-            std::printf("stt2 = %s\n", Flag16ToString(test_case.before.stt2, "LBBB####mm##V21I").c_str());
-            std::printf("mod0 = %s\n", Flag16ToString(test_case.before.mod0, "#QQ#PPooSYY###SS").c_str());
-            std::printf("mod1 = %s\n", Flag16ToString(test_case.before.mod1, "???B####pppppppp").c_str());
-            std::printf("mod2 = %s\n", Flag16ToString(test_case.before.mod2, "7654321m7654321M").c_str());
-            std::printf("ar0 = %s\n", Flag16ToString(test_case.before.ar[0], "RRRRRRoosssoosss").c_str());
-            std::printf("ar1 = %s\n", Flag16ToString(test_case.before.ar[1], "RRRRRRoosssoosss").c_str());
-            std::printf("arp0 = %s\n", Flag16ToString(test_case.before.arp[0], "#RR#RRiiiiijjjjj").c_str());
-            std::printf("arp1 = %s\n", Flag16ToString(test_case.before.arp[1], "#RR#RRiiiiijjjjj").c_str());
-            std::printf("arp2 = %s\n", Flag16ToString(test_case.before.arp[2], "#RR#RRiiiiijjjjj").c_str());
-            std::printf("arp3 = %s\n", Flag16ToString(test_case.before.arp[3], "#RR#RRiiiiijjjjj").c_str());
+            std::printf("cfgi = %s\n",
+                        Flag16ToString(test_case.before.cfgi, "mmmmmmmmmsssssss").c_str());
+            std::printf("cfgj = %s\n",
+                        Flag16ToString(test_case.before.cfgj, "mmmmmmmmmsssssss").c_str());
+            std::printf("stt0 = %s\n",
+                        Flag16ToString(test_case.before.stt0, "####C###ZMNVCELL").c_str());
+            std::printf("stt1 = %s\n",
+                        Flag16ToString(test_case.before.stt1, "QP#########R####").c_str());
+            std::printf("stt2 = %s\n",
+                        Flag16ToString(test_case.before.stt2, "LBBB####mm##V21I").c_str());
+            std::printf("mod0 = %s\n",
+                        Flag16ToString(test_case.before.mod0, "#QQ#PPooSYY###SS").c_str());
+            std::printf("mod1 = %s\n",
+                        Flag16ToString(test_case.before.mod1, "???B####pppppppp").c_str());
+            std::printf("mod2 = %s\n",
+                        Flag16ToString(test_case.before.mod2, "7654321m7654321M").c_str());
+            std::printf("ar0 = %s\n",
+                        Flag16ToString(test_case.before.ar[0], "RRRRRRoosssoosss").c_str());
+            std::printf("ar1 = %s\n",
+                        Flag16ToString(test_case.before.ar[1], "RRRRRRoosssoosss").c_str());
+            std::printf("arp0 = %s\n",
+                        Flag16ToString(test_case.before.arp[0], "#RR#RRiiiiijjjjj").c_str());
+            std::printf("arp1 = %s\n",
+                        Flag16ToString(test_case.before.arp[1], "#RR#RRiiiiijjjjj").c_str());
+            std::printf("arp2 = %s\n",
+                        Flag16ToString(test_case.before.arp[2], "#RR#RRiiiiijjjjj").c_str());
+            std::printf("arp3 = %s\n",
+                        Flag16ToString(test_case.before.arp[3], "#RR#RRiiiiijjjjj").c_str());
             std::printf("FAILED\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
         }
 

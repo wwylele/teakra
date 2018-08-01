@@ -1,6 +1,6 @@
 #include <cstdio>
-#include <string>
 #include <cstring>
+#include <string>
 #include <vector>
 
 #include <teakra/disassembler.h>

@@ -1,18 +1,17 @@
 #pragma once
-#include "decoder.h"
-#include "oprand.h"
-#include "register.h"
-#include "memory_interface.h"
-#include "crash.h"
-#include <unordered_map>
-#include <unordered_set>
 #include <tuple>
 #include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include "crash.h"
+#include "decoder.h"
+#include "memory_interface.h"
+#include "oprand.h"
+#include "register.h"
 
 namespace Teakra {
 class Interpreter {
 public:
-
     Interpreter(RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
 
     void PushPC() {
@@ -49,7 +48,7 @@ public:
     }
 
     void Run(unsigned cycles) {
-        for (unsigned i  = 0; i < cycles; ++i) {
+        for (unsigned i = 0; i < cycles; ++i) {
             u16 opcode = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
             auto& decoder = decoders[opcode];
             u16 expand_value = 0;
@@ -104,7 +103,6 @@ public:
             }
         }
     }
-
 
     void SignalInterrupt(u32 i) {
         regs.ip[i] = 1;
@@ -257,7 +255,8 @@ public:
         return SignExtend<40>(result);
     }
 
-    void ProductSum(SumBase base, RegName acc, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void ProductSum(SumBase base, RegName acc, bool sub_p0, bool p0_align, bool sub_p1,
+                    bool p1_align) {
         u64 value_a = ProductToBus40(RegName::p0);
         u64 value_b = ProductToBus40(RegName::p1);
         if (p0_align) {
@@ -267,7 +266,7 @@ public:
             value_b = SignExtend<24>(value_b >> 16);
         }
         u64 value_c;
-        switch(base) {
+        switch (base) {
         case SumBase::Zero:
             value_c = 0;
             break;
@@ -299,7 +298,7 @@ public:
     }
 
     void AlmGeneric(AlmOp op, u64 a, Ax b) {
-        switch(op) {
+        switch (op) {
         case AlmOp::Or: {
             u64 value = GetAcc(b.GetName());
             value |= a;
@@ -365,19 +364,20 @@ public:
             u64 result = AddSub(value, product, false);
             SatAndSetAccAndFlag(b.GetName(), result);
         }
-        [[fallthrough]];
+            [[fallthrough]];
         case AlmOp::Sqr: {
-            regs.y[0] = regs.x[0] =  a & 0xFFFF;
+            regs.y[0] = regs.x[0] = a & 0xFFFF;
             DoMultiplication(0, true, true);
             break;
         }
 
-        default: UNREACHABLE();
+        default:
+            UNREACHABLE();
         }
     }
 
     u64 ExtendOprandForAlm(AlmOp op, u16 a) {
-        switch(op) {
+        switch (op) {
         case AlmOp::Cmp:
         case AlmOp::Sub:
         case AlmOp::Add:
@@ -402,13 +402,8 @@ public:
     void alm(Alm op, Register a, Ax b) {
         u64 value;
         auto CheckBus40OprandAllowed = [op] {
-            static const std::unordered_set<AlmOp> allowed_instruction {
-                AlmOp::Or,
-                AlmOp::And,
-                AlmOp::Xor,
-                AlmOp::Add,
-                AlmOp::Cmp,
-                AlmOp::Sub,
+            static const std::unordered_set<AlmOp> allowed_instruction{
+                AlmOp::Or, AlmOp::And, AlmOp::Xor, AlmOp::Add, AlmOp::Cmp, AlmOp::Sub,
             };
             if (allowed_instruction.count(op.GetName()) == 0)
                 UNREACHABLE(); // weird effect. probably undefined
@@ -419,7 +414,8 @@ public:
             CheckBus40OprandAllowed();
             value = ProductToBus40(RegName::p0);
             break;
-        case RegName::a0: case RegName::a1:
+        case RegName::a0:
+        case RegName::a1:
             CheckBus40OprandAllowed();
             value = GetAcc(a.GetName());
             break;
@@ -451,7 +447,8 @@ public:
         u64 and_backup = 0;
         if (op.GetName() == AlmOp::And) {
             // AND instruction has a special treatment:
-            // bit 8~15 are unaffected in the accumulator, but the flags are set as if they are affected
+            // bit 8~15 are unaffected in the accumulator, but the flags are set as if they are
+            // affected
             and_backup = GetAcc(b.GetName()) & 0xFF00;
         }
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
@@ -519,7 +516,8 @@ public:
             result = r & 0xFFFF;
             break;
         }
-        default: UNREACHABLE();
+        default:
+            UNREACHABLE();
         }
         regs.fz = result == 0;
         return result;
@@ -537,7 +535,8 @@ public:
         case AlbOp::Tst1:
         case AlbOp::Cmpv:
             return false;
-        default: UNREACHABLE();
+        default:
+            UNREACHABLE();
         }
     }
 
@@ -566,17 +565,34 @@ public:
         u16 result = GenericAlb(op, a.storage, bv);
         if (IsAlbModifying(op)) {
             switch (b.GetName()) {
-            case RegName::a0: case RegName::a1:
+            case RegName::a0:
+            case RegName::a1:
                 UNREACHABLE();
             // operation on accumulators doesn't go through regular bus with flag and saturation
-            case RegName::a0l: regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::a1l: regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::b0l: regs.b[0] = (regs.b[0] & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::b1l: regs.b[1] = (regs.b[1] & 0xFFFF'FFFF'FFFF'0000) | result; break;
-            case RegName::a0h: regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::a1h: regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::b0h: regs.b[0] = (regs.b[0] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
-            case RegName::b1h: regs.b[1] = (regs.b[1] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16); break;
+            case RegName::a0l:
+                regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'FFFF'0000) | result;
+                break;
+            case RegName::a1l:
+                regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'FFFF'0000) | result;
+                break;
+            case RegName::b0l:
+                regs.b[0] = (regs.b[0] & 0xFFFF'FFFF'FFFF'0000) | result;
+                break;
+            case RegName::b1l:
+                regs.b[1] = (regs.b[1] & 0xFFFF'FFFF'FFFF'0000) | result;
+                break;
+            case RegName::a0h:
+                regs.a[0] = (regs.a[0] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16);
+                break;
+            case RegName::a1h:
+                regs.a[1] = (regs.a[1] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16);
+                break;
+            case RegName::b0h:
+                regs.b[0] = (regs.b[0] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16);
+                break;
+            case RegName::b1h:
+                regs.b[1] = (regs.b[1] & 0xFFFF'FFFF'0000'FFFF) | ((u64)result << 16);
+                break;
             default:
                 RegFromBus16(b.GetName(), result); // including RegName:p (p0h)
             }
@@ -818,7 +834,7 @@ public:
             }
             case ModaOp::Neg: {
                 u64 value = GetAcc(a);
-                regs.fc[0] = value != 0; // ?
+                regs.fc[0] = value != 0;                  // ?
                 regs.fv = value == 0xFFFF'FF80'0000'0000; // ?
                 if (regs.fv)
                     regs.fvl = 1;
@@ -932,7 +948,7 @@ public:
         if (regs.lp) {
             ASSERT(regs.bcn <= 3);
             std::copy_backward(regs.bkrep_stack.begin(), regs.bkrep_stack.begin() + regs.bcn,
-                regs.bkrep_stack.begin() + 1);
+                               regs.bkrep_stack.begin() + 1);
             ++regs.bcn;
         }
         u32 flag = mem.DataRead(address_reg++);
@@ -957,7 +973,7 @@ public:
         mem.DataWrite(--address_reg, flag);
         if (regs.lp) {
             std::copy(regs.bkrep_stack.begin() + 1, regs.bkrep_stack.begin() + regs.bcn,
-                regs.bkrep_stack.begin());
+                      regs.bkrep_stack.begin());
             --regs.bcn;
             if (regs.bcn == 0)
                 regs.lp = 0;
@@ -1027,7 +1043,7 @@ public:
     }
     void bitrev_ebrv(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
-         regs.r[unit] = BitReverse(regs.r[unit]);
+        regs.r[unit] = BitReverse(regs.r[unit]);
         regs.br[unit] = 1;
     }
 
@@ -1039,7 +1055,8 @@ public:
 
     void brr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            regs.pc += SignExtend<7, u32>(addr.storage); // note: pc is the address of the NEXT instruction
+            regs.pc +=
+                SignExtend<7, u32>(addr.storage); // note: pc is the address of the NEXT instruction
         }
     }
 
@@ -1381,11 +1398,15 @@ public:
             SatAndSetAccAndFlag(a.GetName(), result);
         }
 
-        switch(op) {
-        case MulOp::Mpy: case MulOp::Mac: case MulOp::Maa:
+        switch (op) {
+        case MulOp::Mpy:
+        case MulOp::Mac:
+        case MulOp::Maa:
             DoMultiplication(0, true, true);
             break;
-        case MulOp::Mpysu: case MulOp::Macsu: case MulOp::Maasu:
+        case MulOp::Mpysu:
+        case MulOp::Macsu:
+        case MulOp::Maasu:
             // Note: the naming conventin of "mpysu" is "multiply signed *y* by unsigned *x*"
             DoMultiplication(0, false, true);
             break;
@@ -1501,17 +1522,17 @@ public:
         RnAndModify(unit, StepValue::Increase2Mode1);
         regs.fr = regs.r[unit] == 0;
     }
-    void modr_i2_dmod(Rn a)  {
+    void modr_i2_dmod(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
         RnAndModify(unit, StepValue::Increase2Mode1, true);
         regs.fr = regs.r[unit] == 0;
     }
-    void modr_d2(Rn a)  {
+    void modr_d2(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
         RnAndModify(unit, StepValue::Decrease2Mode1);
         regs.fr = regs.r[unit] == 0;
     }
-    void modr_d2_dmod(Rn a)  {
+    void modr_d2_dmod(Rn a) {
         u32 unit = GetRnUnit(a.GetName());
         RnAndModify(unit, StepValue::Decrease2Mode1, true);
         regs.fr = regs.r[unit] == 0;
@@ -2685,9 +2706,9 @@ public:
         mem.DataWrite(j, h);
     }
 
-    template<typename ArpStepX>
-    void mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base,
-                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    template <typename ArpStepX>
+    void mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base, bool sub_p0, bool p0_align,
+                    bool sub_p1, bool p1_align) {
         regs.sv = mem.DataRead(RnAddressAndModify(GetArRnUnit(a), GetArStep(as)));
         ProductSum(base, b.GetName(), sub_p0, p0_align, sub_p1, p1_align);
     }
@@ -2695,7 +2716,7 @@ public:
     void CodebookSearch(u16 u, u16 v, u16 r, CbsCond c) {
         u64 diff = ProductToBus40(RegName::p0) - ProductToBus40(RegName::p1);
         bool cond;
-        switch(c.GetName()) {
+        switch (c.GetName()) {
         case CbsCondValue::Ge:
             cond = !(diff >> 63);
             break;
@@ -2744,18 +2765,18 @@ public:
         CodebookSearch(u, v, r, c);
     }
 
-    void mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
+             bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         DoMultiplication(0, x0_sign, y0_sign);
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
-    template<typename ArpRnX, typename ArpStepX>
-    void mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    template <typename ArpRnX, typename ArpStepX>
+    void mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a, bool x0_sign,
+             bool y0_sign, bool x1_sign, bool y1_sign, SumBase base, bool sub_p0, bool p0_align,
+             bool sub_p1, bool p1_align) {
         ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         auto [ui, uj] = GetArpRnUnit(xy);
         auto [si, sj] = GetArpStep(i, j);
@@ -2770,9 +2791,9 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
-    void mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                   bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                   bool p1_align) {
         ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         regs.y[0] = mem.DataRead(RnAddressAndModify(GetArRnUnit(y), GetArStep(ys)));
@@ -2780,9 +2801,9 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
-    void mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                   bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                   bool p1_align) {
         ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         std::swap(regs.x[0], regs.x[1]);
         regs.y[1] = mem.DataRead(RnAddressAndModify(GetArRnUnit(y), GetArStep(ys)));
@@ -2790,9 +2811,9 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
-    void mma_my_my(ArRn1 x, ArStep1 xs, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void mma_my_my(ArRn1 x, ArStep1 xs, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                   bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                   bool p1_align) {
         ProductSum(base, a, sub_p0, p0_align, sub_p1, p1_align);
         u16 unit = GetArRnUnit(x);
         u16 address = RnAddressAndModify(unit, GetArStep(xs));
@@ -2802,9 +2823,9 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
-    void mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign,
+                 bool x1_sign, bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                 bool p1_align) {
         u16 unit = GetArRnUnit(w);
         u16 address = RnAddressAndModify(unit, GetArStep(ws));
         u16 u_value = (u16)((GetAndSatAccNoFlag(u.GetName()) >> 16) & 0xFFFF);
@@ -2818,9 +2839,9 @@ public:
         DoMultiplication(1, x1_sign, y1_sign);
     }
 
-    void mma_mov(ArRn2 w, ArStep1 ws, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    void mma_mov(ArRn2 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                 bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                 bool p1_align) {
         u16 unit = GetArRnUnit(w);
         u16 address = RnAddressAndModify(unit, GetArStep(ws));
         u16 u_value = (u16)((GetAndSatAccNoFlag(a) >> 16) & 0xFFFF);
@@ -2860,12 +2881,29 @@ private:
     MemoryInterface& mem;
 
     u64 GetAcc(RegName name) const {
-        switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: return regs.a[0];
-        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: return regs.a[1];
-        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: return regs.b[0];
-        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: return regs.b[1];
-        default: UNREACHABLE();
+        switch (name) {
+        case RegName::a0:
+        case RegName::a0h:
+        case RegName::a0l:
+        case RegName::a0e:
+            return regs.a[0];
+        case RegName::a1:
+        case RegName::a1h:
+        case RegName::a1l:
+        case RegName::a1e:
+            return regs.a[1];
+        case RegName::b0:
+        case RegName::b0h:
+        case RegName::b0l:
+        case RegName::b0e:
+            return regs.b[0];
+        case RegName::b1:
+        case RegName::b1h:
+        case RegName::b1l:
+        case RegName::b1e:
+            return regs.b[1];
+        default:
+            UNREACHABLE();
         }
     }
 
@@ -2908,79 +2946,131 @@ private:
     }
 
     u16 RegToBus16(RegName reg, bool enable_sat_for_mov = false) {
-        switch(reg) {
-        case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
+        switch (reg) {
+        case RegName::a0:
+        case RegName::a1:
+        case RegName::b0:
+        case RegName::b1:
             // get aXl, but unlike using RegName::aXl, this does never saturate.
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
             return GetAcc(reg) & 0xFFFF;
-        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
+        case RegName::a0l:
+        case RegName::a1l:
+        case RegName::b0l:
+        case RegName::b1l:
             if (enable_sat_for_mov) {
                 return GetAndSatAcc(reg) & 0xFFFF;
             }
             return GetAcc(reg) & 0xFFFF;
-        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
+        case RegName::a0h:
+        case RegName::a1h:
+        case RegName::b0h:
+        case RegName::b1h:
             if (enable_sat_for_mov) {
                 return (GetAndSatAcc(reg) >> 16) & 0xFFFF;
             }
             return (GetAcc(reg) >> 16) & 0xFFFF;
-        case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
+        case RegName::a0e:
+        case RegName::a1e:
+        case RegName::b0e:
+        case RegName::b1e:
             UNREACHABLE();
 
-        case RegName::r0: return regs.r[0];
-        case RegName::r1: return regs.r[1];
-        case RegName::r2: return regs.r[2];
-        case RegName::r3: return regs.r[3];
-        case RegName::r4: return regs.r[4];
-        case RegName::r5: return regs.r[5];
-        case RegName::r6: return regs.r[6];
-        case RegName::r7: return regs.r[7];
+        case RegName::r0:
+            return regs.r[0];
+        case RegName::r1:
+            return regs.r[1];
+        case RegName::r2:
+            return regs.r[2];
+        case RegName::r3:
+            return regs.r[3];
+        case RegName::r4:
+            return regs.r[4];
+        case RegName::r5:
+            return regs.r[5];
+        case RegName::r6:
+            return regs.r[6];
+        case RegName::r7:
+            return regs.r[7];
 
-        case RegName::x0: return regs.x[0];
-        case RegName::x1: return regs.x[1];
-        case RegName::y0: return regs.y[0];
-        case RegName::y1: return regs.y[1];
+        case RegName::x0:
+            return regs.x[0];
+        case RegName::x1:
+            return regs.x[1];
+        case RegName::y0:
+            return regs.y[0];
+        case RegName::y1:
+            return regs.y[1];
         case RegName::p0:
-        case RegName::p1: UNREACHABLE();
+        case RegName::p1:
+            UNREACHABLE();
         case RegName::p:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
             return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
 
-        case RegName::pc: UNREACHABLE();
-        case RegName::sp: return regs.sp;
-        case RegName::sv: return regs.sv;
-        case RegName::lc: return regs.Lc();
+        case RegName::pc:
+            UNREACHABLE();
+        case RegName::sp:
+            return regs.sp;
+        case RegName::sv:
+            return regs.sv;
+        case RegName::lc:
+            return regs.Lc();
 
-        case RegName::ar0: return regs.Get<ar0>();
-        case RegName::ar1: return regs.Get<ar1>();
+        case RegName::ar0:
+            return regs.Get<ar0>();
+        case RegName::ar1:
+            return regs.Get<ar1>();
 
-        case RegName::arp0: return regs.Get<arp0>();
-        case RegName::arp1: return regs.Get<arp1>();
-        case RegName::arp2: return regs.Get<arp2>();
-        case RegName::arp3: return regs.Get<arp3>();
+        case RegName::arp0:
+            return regs.Get<arp0>();
+        case RegName::arp1:
+            return regs.Get<arp1>();
+        case RegName::arp2:
+            return regs.Get<arp2>();
+        case RegName::arp3:
+            return regs.Get<arp3>();
 
-        case RegName::ext0: return regs.ext[0];
-        case RegName::ext1: return regs.ext[1];
-        case RegName::ext2: return regs.ext[2];
-        case RegName::ext3: return regs.ext[3];
+        case RegName::ext0:
+            return regs.ext[0];
+        case RegName::ext1:
+            return regs.ext[1];
+        case RegName::ext2:
+            return regs.ext[2];
+        case RegName::ext3:
+            return regs.ext[3];
 
-        case RegName::stt0: return regs.Get<stt0>();
-        case RegName::stt1: return regs.Get<stt1>();
-        case RegName::stt2: return regs.Get<stt2>();
+        case RegName::stt0:
+            return regs.Get<stt0>();
+        case RegName::stt1:
+            return regs.Get<stt1>();
+        case RegName::stt2:
+            return regs.Get<stt2>();
 
-        case RegName::st0: return regs.Get<st0>();
-        case RegName::st1: return regs.Get<st1>();
-        case RegName::st2: return regs.Get<st2>();
+        case RegName::st0:
+            return regs.Get<st0>();
+        case RegName::st1:
+            return regs.Get<st1>();
+        case RegName::st2:
+            return regs.Get<st2>();
 
-        case RegName::cfgi: return regs.Get<cfgi>();
-        case RegName::cfgj: return regs.Get<cfgj>();
+        case RegName::cfgi:
+            return regs.Get<cfgi>();
+        case RegName::cfgj:
+            return regs.Get<cfgj>();
 
-        case RegName::mod0: return regs.Get<mod0>();
-        case RegName::mod1: return regs.Get<mod1>();
-        case RegName::mod2: return regs.Get<mod2>();
-        case RegName::mod3: return regs.Get<mod3>();
-        default: UNREACHABLE();
+        case RegName::mod0:
+            return regs.Get<mod0>();
+        case RegName::mod1:
+            return regs.Get<mod1>();
+        case RegName::mod2:
+            return regs.Get<mod2>();
+        case RegName::mod3:
+            return regs.Get<mod3>();
+        default:
+            UNREACHABLE();
         }
     }
 
@@ -2994,12 +3084,33 @@ private:
     }
 
     void SetAcc(RegName name, u64 value) {
-        switch(name) {
-        case RegName::a0: case RegName::a0h: case RegName::a0l: case RegName::a0e: regs.a[0] = value; break;
-        case RegName::a1: case RegName::a1h: case RegName::a1l: case RegName::a1e: regs.a[1] = value; break;
-        case RegName::b0: case RegName::b0h: case RegName::b0l: case RegName::b0e: regs.b[0] = value; break;
-        case RegName::b1: case RegName::b1h: case RegName::b1l: case RegName::b1e: regs.b[1] = value; break;
-        default: UNREACHABLE();
+        switch (name) {
+        case RegName::a0:
+        case RegName::a0h:
+        case RegName::a0l:
+        case RegName::a0e:
+            regs.a[0] = value;
+            break;
+        case RegName::a1:
+        case RegName::a1h:
+        case RegName::a1l:
+        case RegName::a1e:
+            regs.a[1] = value;
+            break;
+        case RegName::b0:
+        case RegName::b0h:
+        case RegName::b0l:
+        case RegName::b0e:
+            regs.b[0] = value;
+            break;
+        case RegName::b1:
+        case RegName::b1h:
+        case RegName::b1l:
+        case RegName::b1e:
+            regs.b[1] = value;
+            break;
+        default:
+            UNREACHABLE();
         }
     }
 
@@ -3017,87 +3128,193 @@ private:
     }
 
     void RegFromBus16(RegName reg, u16 value) {
-        switch(reg) {
-        case RegName::a0: case RegName::a1: case RegName::b0: case RegName::b1:
+        switch (reg) {
+        case RegName::a0:
+        case RegName::a1:
+        case RegName::b0:
+        case RegName::b1:
             SatAndSetAccAndFlag(reg, SignExtend<16, u64>(value));
             break;
-        case RegName::a0l: case RegName::a1l: case RegName::b0l: case RegName::b1l:
+        case RegName::a0l:
+        case RegName::a1l:
+        case RegName::b0l:
+        case RegName::b1l:
             SatAndSetAccAndFlag(reg, (u64)value);
             break;
-        case RegName::a0h: case RegName::a1h: case RegName::b0h: case RegName::b1h:
+        case RegName::a0h:
+        case RegName::a1h:
+        case RegName::b0h:
+        case RegName::b1h:
             SatAndSetAccAndFlag(reg, SignExtend<32, u64>(value << 16));
             break;
-        case RegName::a0e: case RegName::a1e: case RegName::b0e: case RegName::b1e:
+        case RegName::a0e:
+        case RegName::a1e:
+        case RegName::b0e:
+        case RegName::b1e:
             UNREACHABLE();
 
-        case RegName::r0: regs.r[0] = value; break;
-        case RegName::r1: regs.r[1] = value; break;
-        case RegName::r2: regs.r[2] = value; break;
-        case RegName::r3: regs.r[3] = value; break;
-        case RegName::r4: regs.r[4] = value; break;
-        case RegName::r5: regs.r[5] = value; break;
-        case RegName::r6: regs.r[6] = value; break;
-        case RegName::r7: regs.r[7] = value; break;
+        case RegName::r0:
+            regs.r[0] = value;
+            break;
+        case RegName::r1:
+            regs.r[1] = value;
+            break;
+        case RegName::r2:
+            regs.r[2] = value;
+            break;
+        case RegName::r3:
+            regs.r[3] = value;
+            break;
+        case RegName::r4:
+            regs.r[4] = value;
+            break;
+        case RegName::r5:
+            regs.r[5] = value;
+            break;
+        case RegName::r6:
+            regs.r[6] = value;
+            break;
+        case RegName::r7:
+            regs.r[7] = value;
+            break;
 
-        case RegName::x0: regs.x[0] = value; break;
-        case RegName::x1: regs.x[1] = value; break;
-        case RegName::y0: regs.y[0] = value; break;
-        case RegName::y1: regs.y[1] = value; break;
+        case RegName::x0:
+            regs.x[0] = value;
+            break;
+        case RegName::x1:
+            regs.x[1] = value;
+            break;
+        case RegName::y0:
+            regs.y[0] = value;
+            break;
+        case RegName::y1:
+            regs.y[1] = value;
+            break;
         case RegName::p0:
-        case RegName::p1: UNREACHABLE();
+        case RegName::p1:
+            UNREACHABLE();
         case RegName::p: // p0h
             regs.pe[0] = value > 0x7FFF;
             regs.p[0] = (regs.p[0] & 0xFFFF) | (value << 16);
             break;
 
-        case RegName::pc: UNREACHABLE();
-        case RegName::sp: regs.sp = value; break;
-        case RegName::sv: regs.sv = value; break;
-        case RegName::lc: regs.Lc() = value; break;
+        case RegName::pc:
+            UNREACHABLE();
+        case RegName::sp:
+            regs.sp = value;
+            break;
+        case RegName::sv:
+            regs.sv = value;
+            break;
+        case RegName::lc:
+            regs.Lc() = value;
+            break;
 
-        case RegName::ar0: regs.Set<ar0>(value); break;
-        case RegName::ar1: regs.Set<ar1>(value); break;
+        case RegName::ar0:
+            regs.Set<ar0>(value);
+            break;
+        case RegName::ar1:
+            regs.Set<ar1>(value);
+            break;
 
-        case RegName::arp0: regs.Set<arp0>(value); break;
-        case RegName::arp1: regs.Set<arp1>(value); break;
-        case RegName::arp2: regs.Set<arp2>(value); break;
-        case RegName::arp3: regs.Set<arp3>(value); break;
+        case RegName::arp0:
+            regs.Set<arp0>(value);
+            break;
+        case RegName::arp1:
+            regs.Set<arp1>(value);
+            break;
+        case RegName::arp2:
+            regs.Set<arp2>(value);
+            break;
+        case RegName::arp3:
+            regs.Set<arp3>(value);
+            break;
 
-        case RegName::ext0: regs.ext[0] = value; break;
-        case RegName::ext1: regs.ext[1] = value; break;
-        case RegName::ext2: regs.ext[2] = value; break;
-        case RegName::ext3: regs.ext[3] = value; break;
+        case RegName::ext0:
+            regs.ext[0] = value;
+            break;
+        case RegName::ext1:
+            regs.ext[1] = value;
+            break;
+        case RegName::ext2:
+            regs.ext[2] = value;
+            break;
+        case RegName::ext3:
+            regs.ext[3] = value;
+            break;
 
-        case RegName::stt0: regs.Set<stt0>(value); break;
-        case RegName::stt1: regs.Set<stt1>(value); break;
-        case RegName::stt2: regs.Set<stt2>(value); break;
+        case RegName::stt0:
+            regs.Set<stt0>(value);
+            break;
+        case RegName::stt1:
+            regs.Set<stt1>(value);
+            break;
+        case RegName::stt2:
+            regs.Set<stt2>(value);
+            break;
 
-        case RegName::st0: regs.Set<st0>(value); break;
-        case RegName::st1: regs.Set<st1>(value); break;
-        case RegName::st2: regs.Set<st2>(value); break;
+        case RegName::st0:
+            regs.Set<st0>(value);
+            break;
+        case RegName::st1:
+            regs.Set<st1>(value);
+            break;
+        case RegName::st2:
+            regs.Set<st2>(value);
+            break;
 
-        case RegName::cfgi: regs.Set<cfgi>(value); break;
-        case RegName::cfgj: regs.Set<cfgj>(value); break;
+        case RegName::cfgi:
+            regs.Set<cfgi>(value);
+            break;
+        case RegName::cfgj:
+            regs.Set<cfgj>(value);
+            break;
 
-        case RegName::mod0: regs.Set<mod0>(value); break;
-        case RegName::mod1: regs.Set<mod1>(value); break;
-        case RegName::mod2: regs.Set<mod2>(value); break;
-        case RegName::mod3: regs.Set<mod3>(value); break;
-        default: UNREACHABLE();
+        case RegName::mod0:
+            regs.Set<mod0>(value);
+            break;
+        case RegName::mod1:
+            regs.Set<mod1>(value);
+            break;
+        case RegName::mod2:
+            regs.Set<mod2>(value);
+            break;
+        case RegName::mod3:
+            regs.Set<mod3>(value);
+            break;
+        default:
+            UNREACHABLE();
         }
     }
 
     static u16 GetRnUnit(RegName reg) {
-        switch(reg) {
-        case RegName::r0: return 0; break;
-        case RegName::r1: return 1; break;
-        case RegName::r2: return 2; break;
-        case RegName::r3: return 3; break;
-        case RegName::r4: return 4; break;
-        case RegName::r5: return 5; break;
-        case RegName::r6: return 6; break;
-        case RegName::r7: return 7; break;
-        default: UNREACHABLE();
+        switch (reg) {
+        case RegName::r0:
+            return 0;
+            break;
+        case RegName::r1:
+            return 1;
+            break;
+        case RegName::r2:
+            return 2;
+            break;
+        case RegName::r3:
+            return 3;
+            break;
+        case RegName::r4:
+            return 4;
+            break;
+        case RegName::r5:
+            return 5;
+            break;
+        case RegName::r6:
+            return 6;
+            break;
+        case RegName::r7:
+            return 7;
+            break;
+        default:
+            UNREACHABLE();
         }
     }
 
@@ -3114,16 +3331,25 @@ private:
     }
 
     static StepValue ConvertArStep(u16 arvalue) {
-        switch(arvalue) {
-        case 0: return StepValue::Zero;
-        case 1: return StepValue::Increase;
-        case 2: return StepValue::Decrease;
-        case 3: return StepValue::PlusStep;
-        case 4: return StepValue::Increase2Mode1;
-        case 5: return StepValue::Decrease2Mode1;
-        case 6: return StepValue::Increase2Mode2;
-        case 7: return StepValue::Decrease2Mode2;
-        default: UNREACHABLE();
+        switch (arvalue) {
+        case 0:
+            return StepValue::Zero;
+        case 1:
+            return StepValue::Increase;
+        case 2:
+            return StepValue::Decrease;
+        case 3:
+            return StepValue::PlusStep;
+        case 4:
+            return StepValue::Increase2Mode1;
+        case 5:
+            return StepValue::Decrease2Mode1;
+        case 6:
+            return StepValue::Increase2Mode2;
+        case 7:
+            return StepValue::Decrease2Mode2;
+        default:
+            UNREACHABLE();
         }
     }
 
@@ -3141,7 +3367,7 @@ private:
     std::tuple<StepValue, StepValue> GetArpStep(ArpStepX arpstepi, ArpStepX arpstepj) const {
         static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
         return std::make_tuple(ConvertArStep(regs.arpstepi[arpstepi.storage]),
-            ConvertArStep(regs.arpstepj[arpstepj.storage]));
+                               ConvertArStep(regs.arpstepj[arpstepj.storage]));
     }
 
     enum class OffsetValue : u16 {
@@ -3161,7 +3387,7 @@ private:
     std::tuple<OffsetValue, OffsetValue> GetArpOffset(ArpStepX arpstepi, ArpStepX arpstepj) const {
         static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
         return std::make_tuple((OffsetValue)regs.arpoffseti[arpstepi.storage],
-            (OffsetValue)regs.arpoffsetj[arpstepj.storage]);
+                               (OffsetValue)regs.arpoffsetj[arpstepj.storage]);
     }
 
     u16 RnAddress(unsigned unit, unsigned value) {
@@ -3212,10 +3438,16 @@ private:
         bool legacy = regs.cmd;
         bool step2_mode1 = false;
         bool step2_mode2 = false;
-        switch(step) {
-        case StepValue::Zero: s = 0; break;
-        case StepValue::Increase: s = 1; break;
-        case StepValue::Decrease: s = 0xFFFF; break;
+        switch (step) {
+        case StepValue::Zero:
+            s = 0;
+            break;
+        case StepValue::Increase:
+            s = 1;
+            break;
+        case StepValue::Decrease:
+            s = 0xFFFF;
+            break;
         // TODO: Increase/Decrease2Mode1/2 sometimes have wrong result if Step=+/-1.
         // This however never happens with modr instruction.
         // Might be undefined behaviour.
@@ -3250,7 +3482,8 @@ private:
             }
             break;
         }
-        default: UNREACHABLE();
+        default:
+            UNREACHABLE();
         }
 
         if (s == 0)
@@ -3338,8 +3571,8 @@ private:
     u16 RnAndModify(unsigned unit, StepValue step, bool dmod = false) {
         u16 ret = regs.r[unit];
         if ((unit == 3 && regs.epi) || (unit == 7 && regs.epj)) {
-            if (step != StepValue::Increase2Mode1 && step != StepValue::Decrease2Mode1
-                && step != StepValue::Increase2Mode2 && step != StepValue::Decrease2Mode2) {
+            if (step != StepValue::Increase2Mode1 && step != StepValue::Decrease2Mode1 &&
+                step != StepValue::Increase2Mode2 && step != StepValue::Decrease2Mode2) {
                 regs.r[unit] = 0;
                 return ret;
             }
@@ -3350,11 +3583,13 @@ private:
 
     u32 ProductToBus32_NoShift(RegName reg) const {
         u32 unit;
-        switch(reg) {
+        switch (reg) {
         case RegName::p0:
-            unit = 0; break;
+            unit = 0;
+            break;
         case RegName::p1:
-            unit = 1; break;
+            unit = 1;
+            break;
         default:
             UNREACHABLE();
         }
@@ -3363,11 +3598,13 @@ private:
 
     u64 ProductToBus40(RegName reg) const {
         u32 unit;
-        switch(reg) {
+        switch (reg) {
         case RegName::p0:
-            unit = 0; break;
+            unit = 0;
+            break;
         case RegName::p1:
-            unit = 1; break;
+            unit = 1;
+            break;
         default:
             UNREACHABLE();
         }
@@ -3394,11 +3631,13 @@ private:
 
     void ProductFromBus32(RegName reg, u32 value) {
         u32 unit;
-        switch(reg) {
+        switch (reg) {
         case RegName::p0:
-            unit = 0; break;
+            unit = 0;
+            break;
         case RegName::p1:
-            unit = 1; break;
+            unit = 1;
+            break;
         default:
             UNREACHABLE();
         }
@@ -3408,22 +3647,14 @@ private:
 
     static RegName CounterAcc(RegName in) {
         static std::unordered_map<RegName, RegName> map{
-            {RegName::a0, RegName::a1},
-            {RegName::a1, RegName::a0},
-            {RegName::b0, RegName::b1},
-            {RegName::b1, RegName::b0},
-            {RegName::a0l, RegName::a1l},
-            {RegName::a1l, RegName::a0l},
-            {RegName::b0l, RegName::b1l},
-            {RegName::b1l, RegName::b0l},
-            {RegName::a0h, RegName::a1h},
-            {RegName::a1h, RegName::a0h},
-            {RegName::b0h, RegName::b1h},
-            {RegName::b1h, RegName::b0h},
-            {RegName::a0e, RegName::a1e},
-            {RegName::a1e, RegName::a0e},
-            {RegName::b0e, RegName::b1e},
-            {RegName::b1e, RegName::b0e},
+            {RegName::a0, RegName::a1},   {RegName::a1, RegName::a0},
+            {RegName::b0, RegName::b1},   {RegName::b1, RegName::b0},
+            {RegName::a0l, RegName::a1l}, {RegName::a1l, RegName::a0l},
+            {RegName::b0l, RegName::b1l}, {RegName::b1l, RegName::b0l},
+            {RegName::a0h, RegName::a1h}, {RegName::a1h, RegName::a0h},
+            {RegName::b0h, RegName::b1h}, {RegName::b1h, RegName::b0h},
+            {RegName::a0e, RegName::a1e}, {RegName::a1e, RegName::a0e},
+            {RegName::b0e, RegName::b1e}, {RegName::b1e, RegName::b0e},
         };
         return map.at(in);
     }

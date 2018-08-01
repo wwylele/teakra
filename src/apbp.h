@@ -1,10 +1,10 @@
 #pragma once
-#include "common_types.h"
+#include <array>
 #include <functional>
 #include <memory>
-#include <array>
+#include "common_types.h"
 
-namespace Teakra{
+namespace Teakra {
 class Apbp {
 public:
     Apbp(const char* debug_string);
@@ -23,11 +23,10 @@ public:
     void SetSemaphoreHandler(std::function<void()> handler);
 
     bool IsSemaphoreSignaled();
+
 private:
     class Impl;
     std::unique_ptr<Impl> impl;
     const char* debug_string;
-
-
 };
 } // namespace Teakra

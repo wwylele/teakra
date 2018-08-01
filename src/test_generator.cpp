@@ -1,19 +1,16 @@
 #include <algorithm>
 #include <array>
-#include <random>
 #include <cstdio>
+#include <random>
 #include <unordered_set>
 #include "common_types.h"
-#include "oprand.h"
 #include "decoder.h"
+#include "oprand.h"
 #include "test.h"
 
 namespace Teakra::Test {
 
-enum class RegConfig {
-    Any = 0,
-    Memory = 1
-};
+enum class RegConfig { Any = 0, Memory = 1 };
 
 enum class ExpandConfig {
     None = 0, // or Zero
@@ -139,7 +136,8 @@ struct Config {
         }
         for (std::size_t i = 0; i < rp.size(); ++i) {
             if (rp[i] == RegConfig::Memory) {
-                state.r[i] = (i < 4 ? TestSpaceX : TestSpaceY) + Random::uniform(10, TestSpaceSize - 10);
+                state.r[i] =
+                    (i < 4 ? TestSpaceX : TestSpaceY) + Random::uniform(10, TestSpaceSize - 10);
                 if (!((state.mod2 >> i) & 1) && (((state.mod2 >> (i + 8)) & 1))) {
                     state.r[i] = BitReverse(state.r[i]);
                 }
@@ -179,7 +177,9 @@ Config ConfigWithArpAddress(ArpRnX r) {
 
 Config ConfigWithImm8(Imm8 imm) {
     std::unordered_set<u16> random_pos = {
-        0, 35, 0xE3,
+        0,
+        35,
+        0xE3,
     };
     if (random_pos.count(imm.storage)) {
         return AnyConfig;
@@ -190,7 +190,9 @@ Config ConfigWithImm8(Imm8 imm) {
 
 Config ConfigWithMemImm8(MemImm8 mem) {
     std::unordered_set<u16> random_pos = {
-        0, 0x88, 0xFF,
+        0,
+        0x88,
+        0xFF,
     };
     if (random_pos.count(mem.storage)) {
         Config c = AnyConfig;
@@ -209,7 +211,9 @@ Config ConfigWithMemR7Imm16() {
 
 Config ConfigWithMemR7Imm7s(MemR7Imm7s mem) {
     std::unordered_set<u16> random_pos = {
-        0, 4, 0x7E,
+        0,
+        4,
+        0x7E,
     };
     if (random_pos.count(mem.storage)) {
         Config c = AnyConfig;
@@ -223,12 +227,10 @@ Config ConfigWithMemR7Imm7s(MemR7Imm7s mem) {
 class TestGenerator {
 public:
     bool IsUnimplementedRegister(RegName r) {
-        return r == RegName::pc || r == RegName::undefine
-        || r == RegName::st0 || r == RegName::st1
-        || r == RegName::st2 || r == RegName::stt2
-        || r == RegName::ext0 || r == RegName::ext1
-        || r == RegName::ext2 || r == RegName::ext3
-        || r == RegName::mod3 || r == RegName::sp;
+        return r == RegName::pc || r == RegName::undefine || r == RegName::st0 ||
+               r == RegName::st1 || r == RegName::st2 || r == RegName::stt2 || r == RegName::ext0 ||
+               r == RegName::ext1 || r == RegName::ext2 || r == RegName::ext3 ||
+               r == RegName::mod3 || r == RegName::sp;
     }
 
     using instruction_return_type = Config;
@@ -245,7 +247,8 @@ public:
         return AnyConfig;
     }
     Config swap(SwapType swap) {
-        if (swap.GetName() == SwapTypeValue::reserved0 || swap.GetName() == SwapTypeValue::reserved1)
+        if (swap.GetName() == SwapTypeValue::reserved0 ||
+            swap.GetName() == SwapTypeValue::reserved1)
             return DisabledConfig;
         return AnyConfig;
     }
@@ -275,14 +278,11 @@ public:
         }
 
         switch (a.GetName()) {
-        case RegName::p:case RegName::a0: case RegName::a1: {
-            static const std::unordered_set<AlmOp> allowed_instruction {
-                AlmOp::Or,
-                AlmOp::And,
-                AlmOp::Xor,
-                AlmOp::Add,
-                AlmOp::Cmp,
-                AlmOp::Sub,
+        case RegName::p:
+        case RegName::a0:
+        case RegName::a1: {
+            static const std::unordered_set<AlmOp> allowed_instruction{
+                AlmOp::Or, AlmOp::And, AlmOp::Xor, AlmOp::Add, AlmOp::Cmp, AlmOp::Sub,
             };
             if (allowed_instruction.count(op.GetName()) != 0)
                 return AnyConfig;
@@ -336,7 +336,8 @@ public:
             return DisabledConfig;
         }
         switch (b.GetName()) {
-        case RegName::a0: case RegName::a1:
+        case RegName::a0:
+        case RegName::a1:
             return DisabledConfig;
         default:
             return AnyConfig.WithAnyExpand();
@@ -558,7 +559,7 @@ public:
         return DisabledConfig;
     }
     Config load_ps01(Imm4 a) {
-       return AnyConfig;
+        return AnyConfig;
     }
 
     Config push(Imm16 a) {
@@ -807,7 +808,7 @@ public:
         return ConfigWithMemR7Imm7s(b);
     }
     Config mov(MemImm16 a, Ax b) {
-         return AnyConfig.WithMemoryExpand();
+        return AnyConfig.WithMemoryExpand();
     }
     Config mov(MemImm8 a, Ab b) {
         return ConfigWithMemImm8(a);
@@ -831,12 +832,12 @@ public:
         return DisabledConfig;
     }
     Config mov(Imm16 a, Bx b) {
-         return AnyConfig.WithAnyExpand();
+        return AnyConfig.WithAnyExpand();
     }
     Config mov(Imm16 a, Register b) {
         if (IsUnimplementedRegister(b.GetName()))
             return DisabledConfig;
-         return AnyConfig.WithAnyExpand();
+        return AnyConfig.WithAnyExpand();
     }
     Config mov_icr(Imm5 a) {
         return DisabledConfig;
@@ -1358,64 +1359,64 @@ public:
         return ConfigWithArpAddress(c);
     }
 
-    template<typename ArpStepX>
-    Config mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base,
-                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    template <typename ArpStepX>
+    Config mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base, bool sub_p0, bool p0_align,
+                      bool sub_p1, bool p1_align) {
         return ConfigWithArAddress(a);
     }
 
     Config cbs(Axh a, CbsCond c) {
-        //return AnyConfig;
+        // return AnyConfig;
         return DisabledConfig;
     }
     Config cbs(Axh a, Bxh b, CbsCond c) {
-        //return AnyConfig;
+        // return AnyConfig;
         return DisabledConfig;
     }
     Config cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
-        //return ConfigWithArpAddress(a);
+        // return ConfigWithArpAddress(a);
         return DisabledConfig;
     }
 
-    Config mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    Config mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
+               bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         return AnyConfig;
     }
 
-    template<typename ArpRnX, typename ArpStepX>
-    Config mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    template <typename ArpRnX, typename ArpStepX>
+    Config mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a, bool x0_sign,
+               bool y0_sign, bool x1_sign, bool y1_sign, SumBase base, bool sub_p0, bool p0_align,
+               bool sub_p1, bool p1_align) {
         return ConfigWithArpAddress(xy);
     }
 
-    Config mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    Config mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                     bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                     bool p1_align) {
         return ConfigWithArAddress(y);
     }
 
-    Config mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    Config mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                     bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                     bool p1_align) {
         return ConfigWithArAddress(y);
     }
 
-    Config mma_my_my(ArRn1 x, ArStep1 xs, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    Config mma_my_my(ArRn1 x, ArStep1 xs, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                     bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                     bool p1_align) {
         return ConfigWithArAddress(x);
     }
 
-    Config mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    Config mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign,
+                   bool x1_sign, bool y1_sign, SumBase base, bool sub_p0, bool p0_align,
+                   bool sub_p1, bool p1_align) {
         return ConfigWithArAddress(w);
     }
 
-    Config mma_mov(ArRn2 w, ArStep1 ws, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    Config mma_mov(ArRn2 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                   bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                   bool p1_align) {
         return ConfigWithArAddress(w);
     }
 

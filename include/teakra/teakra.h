@@ -1,8 +1,8 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <functional>
-#include <array>
 #include <memory>
 
 namespace Teakra {
@@ -27,6 +27,7 @@ public:
 
     // core
     void Run(unsigned cycle);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;

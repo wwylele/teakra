@@ -1,18 +1,17 @@
 #pragma once
 #include "common_types.h"
 
-template<unsigned bits>
+template <unsigned bits>
 struct Oprand {
-    static_assert(bits > 0 && bits <=16, "!");
+    static_assert(bits > 0 && bits <= 16, "!");
     static constexpr unsigned Bits = bits;
     u16 storage;
 };
 
-template<typename OprandT, unsigned pos>
+template <typename OprandT, unsigned pos>
 struct At {
     static constexpr unsigned Bits = OprandT::Bits;
-    static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16)
-     || (Bits == 16 && pos == 16), "!");
+    static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16) || (Bits == 16 && pos == 16), "!");
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
     static constexpr bool NeedExpansion = pos == 16;
     static constexpr bool PassAsParameter = true;
@@ -46,7 +45,7 @@ struct Unused {
     static constexpr bool PassAsParameter = false;
 };
 
-template<typename OprandT, u16 value>
+template <typename OprandT, u16 value>
 struct Const {
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
@@ -65,7 +64,7 @@ enum class SumBase {
     SvRnd,
 };
 
-template<typename T, T value>
+template <typename T, T value>
 struct Cn {
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
@@ -96,7 +95,7 @@ struct NoParam {
     static constexpr bool PassAsParameter = false;
 };
 
-template<typename OprandT, unsigned pos, u16 value>
+template <typename OprandT, unsigned pos, u16 value>
 struct AtConst {
     using Base = At<OprandT, pos>;
     static_assert(Base::NeedExpansion == false, "");
@@ -112,7 +111,7 @@ constexpr unsigned intlog2(unsigned n) {
     return (n == 2) ? 1 : 1 + intlog2(n / 2);
 }
 
-template <typename EnumT, EnumT ... names>
+template <typename EnumT, EnumT... names>
 struct EnumOprand : Oprand<intlog2(sizeof...(names))> {
     static constexpr EnumT values[] = {names...};
     constexpr EnumT GetName() const {
@@ -126,6 +125,8 @@ struct EnumAllOprand : Oprand<intlog2((unsigned)EnumT::EnumEnd)> {
         return (EnumT)this->storage;
     }
 };
+
+// clang-format off
 
 enum class RegName {
     a0, a0l, a0h, a0e,
@@ -597,3 +598,5 @@ enum class CbsCondValue {
 };
 
 using CbsCond = EnumAllOprand<CbsCondValue>;
+
+// clang-format on

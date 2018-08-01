@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common_types.h"
 #include <memory>
+#include "common_types.h"
 
 namespace Teakra {
 
@@ -15,6 +15,7 @@ public:
     void Run(unsigned cycles);
     void SignalInterrupt(u32 i);
     void SignalVectoredInterrupt(u32 address);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;

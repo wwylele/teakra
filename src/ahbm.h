@@ -35,6 +35,7 @@ public:
         std::printf("AHBM: GetDmaChannel[%u]\n", i);
         return channels[i].dma_channel;
     }
+
 private:
     u16 busy_flag = 0;
     struct Channel {

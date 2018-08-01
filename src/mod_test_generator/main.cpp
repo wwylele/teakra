@@ -1,11 +1,12 @@
-#include "../test.h"
 #include <cstdio>
+#include "../test.h"
 
 int main(int argc, char** argv) {
     if (argc < 2)
         return -1;
     TestCase test_case{};
-    test_case.opcode = 0x4DA0; // mpy  y0, MemR04@3 || mpyus y1, MemR04@3offsZI@2 || sub3  p0, p1, Ax@4 || R04@3stepII2@2
+    test_case.opcode = 0x4DA0; // mpy  y0, MemR04@3 || mpyus y1, MemR04@3offsZI@2 || sub3  p0, p1,
+                               // Ax@4 || R04@3stepII2@2
     test_case.expand = 0;
     test_case.before.mod2 = 1; // enable mod for r0; disable brv
     for (u16 i = 0; i < TestSpaceSize; ++i) {
@@ -18,7 +19,8 @@ int main(int argc, char** argv) {
             test_case.before.mod1 = legacy << 13;
             for (u16 offset_mode = 0; offset_mode < 4; ++offset_mode) {
                 for (u16 step_mode = 0; step_mode < 8; ++step_mode) {
-                    /*!!!*/ if (step_mode == 3) continue;
+                    /*!!!*/ if (step_mode == 3)
+                        continue;
                     test_case.before.ar[0] = (step_mode << 5) | (offset_mode << 8);
                     u16 step_min = 0, step_max = 0x20;
                     if (step_mode != 3) {

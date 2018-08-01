@@ -3,8 +3,7 @@
 #include <cstdlib>
 
 [[noreturn]] inline void Assert(const char* expression, const char* file, int line) {
-    std::fprintf(stderr, "Assertion '%s' failed, file '%s' line '%d'.",
-        expression, file, line);
+    std::fprintf(stderr, "Assertion '%s' failed, file '%s' line '%d'.", expression, file, line);
     std::abort();
 }
 

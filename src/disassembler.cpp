@@ -2,22 +2,19 @@
 #include <sstream>
 
 #include "common_types.h"
-#include "oprand.h"
-#include "decoder.h"
-#include "teakra/disassembler.h"
 #include "crash.h"
+#include "decoder.h"
+#include "oprand.h"
+#include "teakra/disassembler.h"
 
 namespace Teakra::Disassembler {
 
-template<typename T>
-std::string ToHex(T i)
-{
-  u64 v = i;
-  std::stringstream stream;
-  stream << "0x"
-         << std::setfill ('0') << std::setw(sizeof(T) * 2)
-         << std::hex << v;
-  return stream.str();
+template <typename T>
+std::string ToHex(T i) {
+    u64 v = i;
+    std::stringstream stream;
+    stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << v;
+    return stream.str();
 }
 
 template <unsigned bits>
@@ -32,7 +29,7 @@ std::string Dsm(Imms<bits> a) {
     if (negative) {
         value = (~value) + 1;
     }
-    return (negative? '-' : ' ') + ToHex(value);
+    return (negative ? '-' : ' ') + ToHex(value);
 }
 
 std::string Dsm(MemImm8 a) {
@@ -52,65 +49,119 @@ std::string Dsm(MemR7Imm7s a) {
 
 std::string DsmReg(RegName a) {
     switch (a) {
-    case RegName::a0: return "a0";
-    case RegName::a0l: return "a0l";
-    case RegName::a0h: return "a0h";
-    case RegName::a0e: return "a0e";
-    case RegName::a1: return "a1";
-    case RegName::a1l: return "a1l";
-    case RegName::a1h: return "a1h";
-    case RegName::a1e: return "a1e";
-    case RegName::b0: return "b0";
-    case RegName::b0l: return "b0l";
-    case RegName::b0h: return "b0h";
-    case RegName::b0e: return "b0e";
-    case RegName::b1: return "b1";
-    case RegName::b1l: return "b1l";
-    case RegName::b1h: return "b1h";
-    case RegName::b1e: return "b1e";
+    case RegName::a0:
+        return "a0";
+    case RegName::a0l:
+        return "a0l";
+    case RegName::a0h:
+        return "a0h";
+    case RegName::a0e:
+        return "a0e";
+    case RegName::a1:
+        return "a1";
+    case RegName::a1l:
+        return "a1l";
+    case RegName::a1h:
+        return "a1h";
+    case RegName::a1e:
+        return "a1e";
+    case RegName::b0:
+        return "b0";
+    case RegName::b0l:
+        return "b0l";
+    case RegName::b0h:
+        return "b0h";
+    case RegName::b0e:
+        return "b0e";
+    case RegName::b1:
+        return "b1";
+    case RegName::b1l:
+        return "b1l";
+    case RegName::b1h:
+        return "b1h";
+    case RegName::b1e:
+        return "b1e";
 
-    case RegName::r0: return "r0";
-    case RegName::r1: return "r1";
-    case RegName::r2: return "r2";
-    case RegName::r3: return "r3";
-    case RegName::r4: return "r4";
-    case RegName::r5: return "r5";
-    case RegName::r6: return "r6";
-    case RegName::r7: return "r7";
+    case RegName::r0:
+        return "r0";
+    case RegName::r1:
+        return "r1";
+    case RegName::r2:
+        return "r2";
+    case RegName::r3:
+        return "r3";
+    case RegName::r4:
+        return "r4";
+    case RegName::r5:
+        return "r5";
+    case RegName::r6:
+        return "r6";
+    case RegName::r7:
+        return "r7";
 
-    case RegName::ar0: return "ar0";
-    case RegName::ar1: return "ar1";
-    case RegName::arp0: return "arp0";
-    case RegName::arp1: return "arp1";
-    case RegName::arp2: return "arp2";
-    case RegName::arp3: return "arp3";
-    case RegName::stt0: return "stt0";
-    case RegName::stt1: return "stt1";
-    case RegName::stt2: return "stt2";
-    case RegName::mod0: return "mod0";
-    case RegName::mod1: return "mod1";
-    case RegName::mod2: return "mod2";
-    case RegName::mod3: return "mod3";
-    case RegName::cfgi: return "cfgi";
-    case RegName::cfgj: return "cfgj";
+    case RegName::ar0:
+        return "ar0";
+    case RegName::ar1:
+        return "ar1";
+    case RegName::arp0:
+        return "arp0";
+    case RegName::arp1:
+        return "arp1";
+    case RegName::arp2:
+        return "arp2";
+    case RegName::arp3:
+        return "arp3";
+    case RegName::stt0:
+        return "stt0";
+    case RegName::stt1:
+        return "stt1";
+    case RegName::stt2:
+        return "stt2";
+    case RegName::mod0:
+        return "mod0";
+    case RegName::mod1:
+        return "mod1";
+    case RegName::mod2:
+        return "mod2";
+    case RegName::mod3:
+        return "mod3";
+    case RegName::cfgi:
+        return "cfgi";
+    case RegName::cfgj:
+        return "cfgj";
 
-    case RegName::x0: return "x0";
-    case RegName::x1: return "x1";
-    case RegName::y0: return "y0";
-    case RegName::y1: return "y1";
-    case RegName::p0: return "p0";
-    case RegName::p1: return "p1";
-    case RegName::p: return "p*";
+    case RegName::x0:
+        return "x0";
+    case RegName::x1:
+        return "x1";
+    case RegName::y0:
+        return "y0";
+    case RegName::y1:
+        return "y1";
+    case RegName::p0:
+        return "p0";
+    case RegName::p1:
+        return "p1";
+    case RegName::p:
+        return "p*";
 
-    case RegName::pc: return "pc";
-    case RegName::sp: return "sp";
-    case RegName::sv: return "sv";
-    case RegName::lc: return "lc";
+    case RegName::pc:
+        return "pc";
+    case RegName::sp:
+        return "sp";
+    case RegName::sv:
+        return "sv";
+    case RegName::lc:
+        return "lc";
 
-    case RegName::st0: return "st0";
-    case RegName::st1: return "st1";
-    case RegName::st2: return "st2";
-    default: return "???" + std::to_string((int)a);
+    case RegName::st0:
+        return "st0";
+    case RegName::st1:
+        return "st1";
+    case RegName::st2:
+        return "st2";
+    default:
+        return "???" + std::to_string((int)a);
     }
 }
 
@@ -121,131 +172,219 @@ std::string R(RegT a) {
 
 std::string Dsm(Alm alm) {
     switch (alm.GetName()) {
-    case AlmOp::Or: return "or";
-    case AlmOp::And: return "and";
-    case AlmOp::Xor: return "xor";
-    case AlmOp::Add: return "add";
-    case AlmOp::Tst0: return "tst0";
-    case AlmOp::Tst1: return "tst1";
-    case AlmOp::Cmp: return "cmp";
-    case AlmOp::Sub: return "sub";
-    case AlmOp::Msu: return "msu";
-    case AlmOp::Addh: return "addh";
-    case AlmOp::Addl: return "addl";
-    case AlmOp::Subh: return "subh";
-    case AlmOp::Subl: return "subl";
-    case AlmOp::Sqr: return "sqr";
-    case AlmOp::Sqra: return "sqra";
-    case AlmOp::Cmpu: return "cmpu";
-    default: return "[ERROR]";
+    case AlmOp::Or:
+        return "or";
+    case AlmOp::And:
+        return "and";
+    case AlmOp::Xor:
+        return "xor";
+    case AlmOp::Add:
+        return "add";
+    case AlmOp::Tst0:
+        return "tst0";
+    case AlmOp::Tst1:
+        return "tst1";
+    case AlmOp::Cmp:
+        return "cmp";
+    case AlmOp::Sub:
+        return "sub";
+    case AlmOp::Msu:
+        return "msu";
+    case AlmOp::Addh:
+        return "addh";
+    case AlmOp::Addl:
+        return "addl";
+    case AlmOp::Subh:
+        return "subh";
+    case AlmOp::Subl:
+        return "subl";
+    case AlmOp::Sqr:
+        return "sqr";
+    case AlmOp::Sqra:
+        return "sqra";
+    case AlmOp::Cmpu:
+        return "cmpu";
+    default:
+        return "[ERROR]";
     }
 }
 
 std::string Dsm(Alu alu) {
     switch (alu.GetName()) {
-    case AlmOp::Or: return "or";
-    case AlmOp::And: return "and";
-    case AlmOp::Xor: return "xor";
-    case AlmOp::Add: return "add";
-    case AlmOp::Cmp: return "cmp";
-    case AlmOp::Sub: return "sub";
-    default: return "[ERROR]";
+    case AlmOp::Or:
+        return "or";
+    case AlmOp::And:
+        return "and";
+    case AlmOp::Xor:
+        return "xor";
+    case AlmOp::Add:
+        return "add";
+    case AlmOp::Cmp:
+        return "cmp";
+    case AlmOp::Sub:
+        return "sub";
+    default:
+        return "[ERROR]";
     }
 }
 
 std::string Dsm(Alb alb) {
     switch (alb.GetName()) {
-    case AlbOp::Set: return "set";
-    case AlbOp::Rst: return "rst";
-    case AlbOp::Chng: return "chng";
-    case AlbOp::Addv: return "addv";
-    case AlbOp::Tst0: return "tst0";
-    case AlbOp::Tst1: return "tst1";
-    case AlbOp::Cmpv: return "cmpv";
-    case AlbOp::Subv: return "subv";
-    default: return "[ERROR]";
+    case AlbOp::Set:
+        return "set";
+    case AlbOp::Rst:
+        return "rst";
+    case AlbOp::Chng:
+        return "chng";
+    case AlbOp::Addv:
+        return "addv";
+    case AlbOp::Tst0:
+        return "tst0";
+    case AlbOp::Tst1:
+        return "tst1";
+    case AlbOp::Cmpv:
+        return "cmpv";
+    case AlbOp::Subv:
+        return "subv";
+    default:
+        return "[ERROR]";
     }
 }
 
 std::string Dsm(Moda4 moda4) {
     switch (moda4.GetName()) {
-    case ModaOp::Shr: return "shr";
-    case ModaOp::Shr4: return "shr4";
-    case ModaOp::Shl: return "shl";
-    case ModaOp::Shl4: return "shl4";
-    case ModaOp::Ror: return "ror";
-    case ModaOp::Rol: return "rol";
-    case ModaOp::Clr: return "clr";
-    case ModaOp::Not: return "not";
-    case ModaOp::Neg: return "neg";
-    case ModaOp::Rnd: return "rnd";
-    case ModaOp::Pacr: return "pacr";
-    case ModaOp::Clrr: return "clrr";
-    case ModaOp::Inc: return "inc";
-    case ModaOp::Dec: return "dec";
-    case ModaOp::Copy: return "copy";
-    default: return "[ERROR]";
+    case ModaOp::Shr:
+        return "shr";
+    case ModaOp::Shr4:
+        return "shr4";
+    case ModaOp::Shl:
+        return "shl";
+    case ModaOp::Shl4:
+        return "shl4";
+    case ModaOp::Ror:
+        return "ror";
+    case ModaOp::Rol:
+        return "rol";
+    case ModaOp::Clr:
+        return "clr";
+    case ModaOp::Not:
+        return "not";
+    case ModaOp::Neg:
+        return "neg";
+    case ModaOp::Rnd:
+        return "rnd";
+    case ModaOp::Pacr:
+        return "pacr";
+    case ModaOp::Clrr:
+        return "clrr";
+    case ModaOp::Inc:
+        return "inc";
+    case ModaOp::Dec:
+        return "dec";
+    case ModaOp::Copy:
+        return "copy";
+    default:
+        return "[ERROR]";
     }
 }
 
 std::string Dsm(Moda3 moda3) {
     switch (moda3.GetName()) {
-    case ModaOp::Shr: return "shr";
-    case ModaOp::Shr4: return "shr4";
-    case ModaOp::Shl: return "shl";
-    case ModaOp::Shl4: return "shl4";
-    case ModaOp::Ror: return "ror";
-    case ModaOp::Rol: return "rol";
-    case ModaOp::Clr: return "clr";
-    case ModaOp::Clrr: return "clrr";
-    default: return "[ERROR]";
+    case ModaOp::Shr:
+        return "shr";
+    case ModaOp::Shr4:
+        return "shr4";
+    case ModaOp::Shl:
+        return "shl";
+    case ModaOp::Shl4:
+        return "shl4";
+    case ModaOp::Ror:
+        return "ror";
+    case ModaOp::Rol:
+        return "rol";
+    case ModaOp::Clr:
+        return "clr";
+    case ModaOp::Clrr:
+        return "clrr";
+    default:
+        return "[ERROR]";
     }
 }
 
 std::string Dsm(Mul3 mul) {
-    switch(mul.GetName()) {
-    case MulOp::Mpy: return "mpy";
-    case MulOp::Mpysu: return "mpysu";
-    case MulOp::Mac: return "mac";
-    case MulOp::Macus: return "macus";
-    case MulOp::Maa: return "maa";
-    case MulOp::Macuu: return "macuu";
-    case MulOp::Macsu: return "macsu";
-    case MulOp::Maasu: return "maasu";
-    default: return "[ERROR]";
+    switch (mul.GetName()) {
+    case MulOp::Mpy:
+        return "mpy";
+    case MulOp::Mpysu:
+        return "mpysu";
+    case MulOp::Mac:
+        return "mac";
+    case MulOp::Macus:
+        return "macus";
+    case MulOp::Maa:
+        return "maa";
+    case MulOp::Macuu:
+        return "macuu";
+    case MulOp::Macsu:
+        return "macsu";
+    case MulOp::Maasu:
+        return "maasu";
+    default:
+        return "[ERROR]";
     }
 }
 
 std::string Dsm(Mul2 mul) {
-    switch(mul.GetName()) {
-    case MulOp::Mpy: return "mpy";
-    case MulOp::Mac: return "mac";
-    case MulOp::Maa: return "maa";
-    case MulOp::Macsu: return "macsu";
-    default: return "[ERROR]";
+    switch (mul.GetName()) {
+    case MulOp::Mpy:
+        return "mpy";
+    case MulOp::Mac:
+        return "mac";
+    case MulOp::Maa:
+        return "maa";
+    case MulOp::Macsu:
+        return "macsu";
+    default:
+        return "[ERROR]";
     }
 }
 
-
 std::string Dsm(Cond cond) {
     switch (cond.GetName()) {
-    case CondValue::True: return "always";
-    case CondValue::Eq: return "eq";
-    case CondValue::Neq: return "neq";
-    case CondValue::Gt: return "gt";
-    case CondValue::Ge: return "ge";
-    case CondValue::Lt: return "lt";
-    case CondValue::Le: return "le";
-    case CondValue::Nn: return "mn";
-    case CondValue::C: return "c";
-    case CondValue::V: return "v";
-    case CondValue::E: return "e";
-    case CondValue::L: return "l";
-    case CondValue::Nr: return "nr";
-    case CondValue::Niu0: return "niu0";
-    case CondValue::Iu0: return "iu0";
-    case CondValue::Iu1: return "iu1";
-    default: return "[ERROR]";
+    case CondValue::True:
+        return "always";
+    case CondValue::Eq:
+        return "eq";
+    case CondValue::Neq:
+        return "neq";
+    case CondValue::Gt:
+        return "gt";
+    case CondValue::Ge:
+        return "ge";
+    case CondValue::Lt:
+        return "lt";
+    case CondValue::Le:
+        return "le";
+    case CondValue::Nn:
+        return "mn";
+    case CondValue::C:
+        return "c";
+    case CondValue::V:
+        return "v";
+    case CondValue::E:
+        return "e";
+    case CondValue::L:
+        return "l";
+    case CondValue::Nr:
+        return "nr";
+    case CondValue::Niu0:
+        return "niu0";
+    case CondValue::Iu0:
+        return "iu0";
+    case CondValue::Iu1:
+        return "iu1";
+    default:
+        return "[ERROR]";
     }
 }
 
@@ -259,11 +398,16 @@ std::string A18(Address18_16 addr_low, Address18_2 addr_high) {
 
 std::string Dsm(StepZIDS step) {
     switch (step.GetName()) {
-    case StepValue::Zero: return "";
-    case StepValue::Increase: return "++";
-    case StepValue::Decrease: return "--";
-    case StepValue::PlusStep: return "++s";
-    default: return "[ERROR]";
+    case StepValue::Zero:
+        return "";
+    case StepValue::Increase:
+        return "++";
+    case StepValue::Decrease:
+        return "--";
+    case StepValue::PlusStep:
+        return "++s";
+    default:
+        return "[ERROR]";
     }
 }
 
@@ -282,15 +426,18 @@ std::string MemG(Reg reg) {
 }
 
 std::string Dsm(CbsCond c) {
-    switch(c.GetName()) {
-    case CbsCondValue::Ge: return "ge";
-    case CbsCondValue::Gt: return "gt";
-    default: return "[ERROR]";
+    switch (c.GetName()) {
+    case CbsCondValue::Ge:
+        return "ge";
+    case CbsCondValue::Gt:
+        return "gt";
+    default:
+        return "[ERROR]";
     }
 }
 
-template <typename ... T>
-std::string D(T ... t) {
+template <typename... T>
+std::string D(T... t) {
     return ((Dsm(t) + "    ") + ...);
 }
 
@@ -300,11 +447,19 @@ std::string Mul(bool x_sign, bool y_sign) {
 
 std::string PA(SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
     std::string result;
-    switch(base) {
-    case SumBase::Zero: result = "0  "; break;
-    case SumBase::Acc:  result = "acc"; break;
-    case SumBase::Sv:   result = "sv "; break;
-    case SumBase::SvRnd:result = "svr"; break;
+    switch (base) {
+    case SumBase::Zero:
+        result = "0  ";
+        break;
+    case SumBase::Acc:
+        result = "acc";
+        break;
+    case SumBase::Sv:
+        result = "sv ";
+        break;
+    case SumBase::SvRnd:
+        result = "svr";
+        break;
     }
     result += sub_p0 ? "-" : "+";
     result += "p0";
@@ -419,7 +574,7 @@ public:
     std::string or_(Ax a, Bx b, Ax c) {
         return D("or", R(a), R(b), R(c));
     }
-    std::string or_(Bx a, Bx b, Ax c){
+    std::string or_(Bx a, Bx b, Ax c) {
         return D("or", R(a), R(b), R(c));
     }
 
@@ -544,12 +699,18 @@ public:
 
     std::string banke(BankFlags flags) {
         std::string s;
-        if (flags.storage & 1) s += " r0";
-        if (flags.storage & 2) s += " r1";
-        if (flags.storage & 4) s += " r4";
-        if (flags.storage & 8) s += " cfgi";
-        if (flags.storage & 16) s += " r7";
-        if (flags.storage & 32) s += " cfgj";
+        if (flags.storage & 1)
+            s += " r0";
+        if (flags.storage & 2)
+            s += " r1";
+        if (flags.storage & 4)
+            s += " r4";
+        if (flags.storage & 8)
+            s += " cfgi";
+        if (flags.storage & 16)
+            s += " r7";
+        if (flags.storage & 32)
+            s += " cfgj";
         return "banke" + s;
     }
     std::string bankr() {
@@ -698,19 +859,19 @@ public:
         return D("pop", R(a));
     }
     std::string pop(Abe a) {
-        return  D("pop", R(a));
+        return D("pop", R(a));
     }
     std::string pop(ArArpSttMod a) {
-        return  D("pop", R(a));
+        return D("pop", R(a));
     }
     std::string pop(Bx a) {
         return D("pop", R(a));
     }
     std::string pop_prpage() {
-        return  D("pop", "prpage");
+        return D("pop", "prpage");
     }
     std::string pop(Px a) {
-        return  D("pop", R(a));
+        return D("pop", R(a));
     }
     std::string pop_r6() {
         return D("pop", "r6");
@@ -764,7 +925,7 @@ public:
         return D("tstb", R(a), b);
     }
     std::string tstb_r6(Imm4 b) {
-       return D("tstb", "r6", b);
+        return D("tstb", "r6", b);
     }
     std::string tstb(SttMod a, Imm16 b) {
         return D("tstb", R(a), b);
@@ -829,13 +990,13 @@ public:
     std::string modr_i2(Rn a) {
         return D("modr", R(a), "+2");
     }
-    std::string modr_i2_dmod(Rn a)  {
+    std::string modr_i2_dmod(Rn a) {
         return D("modr", R(a), "+2", "dmod");
     }
-    std::string modr_d2(Rn a)  {
+    std::string modr_d2(Rn a) {
         return D("modr", R(a), "-2");
     }
-    std::string modr_d2_dmod(Rn a)  {
+    std::string modr_d2_dmod(Rn a) {
         return D("modr", R(a), "-2", "dmod");
     }
     std::string modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
@@ -877,7 +1038,7 @@ public:
         return D("mov", R(a), "x0");
     }
     std::string mov_x1(Abl a) {
-         return D("mov", R(a), "x1");
+        return D("mov", R(a), "x1");
     }
     std::string mov_y1(Abl a) {
         return D("mov", R(a), "y1");
@@ -910,7 +1071,7 @@ public:
         return D("mov", a, R(b));
     }
     std::string mov_sv(MemImm8 a) {
-       return D("mov", a, "sv");
+        return D("mov", a, "sv");
     }
     std::string mov_dvm_to(Ab b) {
         return D("mov", "dvm", R(b));
@@ -1368,21 +1529,25 @@ public:
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
     }
     std::string max2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
-        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi),
+                 MemARPSJ(c, csj));
     }
     std::string max2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
-        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+        return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi),
+                 MemARPSJ(c, csj));
     }
     std::string min2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
-        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi),
+                 MemARPSJ(c, csj));
     }
     std::string min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
-        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi), MemARPSJ(c, csj));
+        return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi),
+                 MemARPSJ(c, csj));
     }
 
-    template<typename ArpStepX>
-    std::string mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base,
-                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    template <typename ArpStepX>
+    std::string mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base, bool sub_p0, bool p0_align,
+                           bool sub_p1, bool p1_align) {
         return D("mov", MemARS(a, as), "sv", PA(base, sub_p0, p0_align, sub_p1, p1_align), R(b));
     }
 
@@ -1396,60 +1561,56 @@ public:
         return D("cbs", MemARPSI(a, asi), MemARPSJ(a, asj), c);
     }
 
-    std::string mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::string mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
+                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         return D("x0<->x1", PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+                 Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    template<typename ArpRnX, typename ArpStepX>
+    template <typename ArpRnX, typename ArpStepX>
     std::string mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+                    bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
+                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         return D("xy<-", MemARPSI(xy, i), MemARPSJ(xy, j),
-            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign),
-            dmodi ? "dmodi" : "", dmodj? "dmodj" : "");
+                 PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a), Mul(x0_sign, y0_sign),
+                 Mul(x1_sign, y1_sign), dmodi ? "dmodi" : "", dmodj ? "dmodj" : "");
     }
 
-    std::string mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        return D("x0<->x1, y0<-", MemARS(y, ys),
-            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    std::string mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                          bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                          bool p1_align) {
+        return D("x0<->x1, y0<-", MemARS(y, ys), PA(base, sub_p0, p0_align, sub_p1, p1_align),
+                 DsmReg(a), Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        return D("x0<->x1, y1<-", MemARS(y, ys),
-            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    std::string mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                          bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                          bool p1_align) {
+        return D("x0<->x1, y1<-", MemARS(y, ys), PA(base, sub_p0, p0_align, sub_p1, p1_align),
+                 DsmReg(a), Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_my_my(ArRn1 x, ArStep1 xs, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
-        return D("x<-", MemARS(x, xs),
-            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+    std::string mma_my_my(ArRn1 x, ArStep1 xs, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                          bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                          bool p1_align) {
+        return D("x<-", MemARS(x, xs), PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
+                 Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::string mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign,
+                        bool x1_sign, bool y1_sign, SumBase base, bool sub_p0, bool p0_align,
+                        bool sub_p1, bool p1_align) {
         return D("mov", R(u), R(v), MemARS(w, ws), "x0<->x1",
-            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+                 PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a), Mul(x0_sign, y0_sign),
+                 Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_mov(ArRn2 w, ArStep1 ws, RegName a,
-             bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
-             SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::string mma_mov(ArRn2 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
+                        bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                        bool p1_align) {
         return D("mov,^", DsmReg(a), MemARS(w, ws), "x0<->x1",
-            PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
-            Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
+                 PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a), Mul(x0_sign, y0_sign),
+                 Mul(x1_sign, y1_sign));
     }
 
     std::string addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
@@ -1474,17 +1635,17 @@ public:
     }
 
 private:
-
     template <typename ArRn>
     std::string DsmArRn(ArRn a) {
         if (ar_arp) {
-            return "%r" + std::to_string((ar_arp->ar[a.storage / 2] >> (13 - 3 * (a.storage % 2))) & 7);
+            return "%r" +
+                   std::to_string((ar_arp->ar[a.storage / 2] >> (13 - 3 * (a.storage % 2))) & 7);
         }
         return "arrn" + std::to_string(a.storage);
     }
 
     std::string ConvertArStepAndOffset(u16 v) {
-        static const std::array<std::string, 8> step_names {{
+        static const std::array<std::string, 8> step_names{{
             "++0",
             "++1",
             "--1",
@@ -1495,7 +1656,7 @@ private:
             "--2*",
         }};
 
-        static const std::array<std::string, 4> offset_names {{
+        static const std::array<std::string, 4> offset_names{{
             "+0",
             "+1",
             "-1",
@@ -1557,7 +1718,7 @@ private:
     }
 
     template <typename ArRn, typename ArStep>
-    std::string MemARS(ArRn reg, ArStep step)  {
+    std::string MemARS(ArRn reg, ArStep step) {
         return "[" + DsmArRn(reg) + DsmArStep(step) + "]";
     }
 
@@ -1565,9 +1726,8 @@ private:
         return "[" + DsmArRn(reg) + DsmArStepAlt(step) + "]";
     }
 
-
     template <typename ArpRn, typename ArpStep>
-    std::string MemARPSI(ArpRn reg, ArpStep step)  {
+    std::string MemARPSI(ArpRn reg, ArpStep step) {
         return "[" + DsmArpRni(reg) + DsmArpStepi(step) + "]";
     }
 
@@ -1596,4 +1756,4 @@ std::string Do(std::uint16_t opcode, std::uint16_t expansion, std::optional<ArAr
     return decoder.call(dsm, opcode, expansion);
 }
 
-} // namespace Teakra::dissasembler
+} // namespace Teakra::Disassembler

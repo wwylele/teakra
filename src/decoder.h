@@ -1,17 +1,17 @@
 #pragma once
+#include <type_traits>
+#include <vector>
 #include "crash.h"
 #include "matcher.h"
 #include "oprand.h"
-#include <type_traits>
-#include <vector>
 
-template <typename ... OprandAtT>
+template <typename... OprandAtT>
 struct OprandList {
     template <typename OprandAtT0>
     using prefix = OprandList<OprandAtT0, OprandAtT...>;
 };
 
-template <typename ... OprandAtT>
+template <typename... OprandAtT>
 struct FilterOprand;
 
 template <>
@@ -19,27 +19,26 @@ struct FilterOprand<> {
     using result = OprandList<>;
 };
 
-template <bool keep, typename OprandAtT0, typename ... OprandAtT>
+template <bool keep, typename OprandAtT0, typename... OprandAtT>
 struct FilterOprandHelper;
 
-template <typename OprandAtT0, typename ... OprandAtT>
+template <typename OprandAtT0, typename... OprandAtT>
 struct FilterOprandHelper<false, OprandAtT0, OprandAtT...> {
     using result = typename FilterOprand<OprandAtT...>::result;
 };
 
-template <typename OprandAtT0, typename ... OprandAtT>
+template <typename OprandAtT0, typename... OprandAtT>
 struct FilterOprandHelper<true, OprandAtT0, OprandAtT...> {
-    using result = typename FilterOprand<OprandAtT...>::result
-        ::template prefix<OprandAtT0>;
+    using result = typename FilterOprand<OprandAtT...>::result ::template prefix<OprandAtT0>;
 };
 
-template <typename OprandAtT0, typename ... OprandAtT>
+template <typename OprandAtT0, typename... OprandAtT>
 struct FilterOprand<OprandAtT0, OprandAtT...> {
-    using result = typename FilterOprandHelper<OprandAtT0::PassAsParameter,
-        OprandAtT0, OprandAtT...>::result;
+    using result =
+        typename FilterOprandHelper<OprandAtT0::PassAsParameter, OprandAtT0, OprandAtT...>::result;
 };
 
-template <typename V, typename F, u16 expected, typename ... OprandAtT>
+template <typename V, typename F, u16 expected, typename... OprandAtT>
 struct MatcherCreator {
     template <typename OprandListT>
     struct Proxy;
@@ -47,14 +46,16 @@ struct MatcherCreator {
     template <typename... OprandAtTs>
     struct Proxy<OprandList<OprandAtTs...>> {
         F func;
-        auto operator()(V& visitor, [[maybe_unused]]u16 opcode, [[maybe_unused]]u16 expansion) const {
-            return (visitor.*func)(OprandAtTs::Filter(opcode, expansion) ...);
+        auto operator()(V& visitor, [[maybe_unused]] u16 opcode,
+                        [[maybe_unused]] u16 expansion) const {
+            return (visitor.*func)(OprandAtTs::Filter(opcode, expansion)...);
         }
     };
 
     static Matcher<V> Create(const char* name, F func) {
         // Oprands shouldn't overlap each other, nor overlap with the expected ones
-        static_assert((OprandAtT::Mask + ... + expected) == (OprandAtT::Mask | ... | expected), "Error");
+        static_assert((OprandAtT::Mask + ... + expected) == (OprandAtT::Mask | ... | expected),
+                      "Error");
 
         Proxy<typename FilterOprand<OprandAtT...>::result> proxy{func};
 
@@ -64,23 +65,26 @@ struct MatcherCreator {
     }
 };
 
-template <typename ... OprandAtConstT>
+template <typename... OprandAtConstT>
 struct RejectorCreator {
     static constexpr Rejector rejector{(OprandAtConstT::Mask | ...), (OprandAtConstT::Pad | ...)};
 };
 
-template<typename V, typename OprandListT>
+template <typename V, typename OprandListT>
 struct VisitorFunctionWithoutFilter;
 
-template<typename V, typename ... OprandAtT>
+template <typename V, typename... OprandAtT>
 struct VisitorFunctionWithoutFilter<V, OprandList<OprandAtT...>> {
     using type = typename V::instruction_return_type (V::*)(decltype(OprandAtT::Filter(0, 0))...);
 };
 
-template<typename V, typename ... OprandAtT>
+template <typename V, typename... OprandAtT>
 struct VisitorFunction {
-    using type = typename VisitorFunctionWithoutFilter<V, typename FilterOprand<OprandAtT...>::result>::type;
+    using type =
+        typename VisitorFunctionWithoutFilter<V, typename FilterOprand<OprandAtT...>::result>::type;
 };
+
+// clang-format off
 
 template <typename V>
 std::vector<Matcher<V>> GetDecodeTable() {
@@ -683,17 +687,19 @@ std::vector<Matcher<V>> GetDecodeTable() {
     };
 }
 
-template<typename V>
+// clang-format on
+
+template <typename V>
 Matcher<V> Decode(u16 instruction) {
     static const auto table = GetDecodeTable<V>();
 
-    const auto matches_instruction = [instruction](const auto& matcher) { return matcher.Matches(instruction); };
+    const auto matches_instruction = [instruction](const auto& matcher) {
+        return matcher.Matches(instruction);
+    };
 
     auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
     if (iter == table.end()) {
-        return Matcher<V>::AllMatcher([](V& v, u16 opcode, u16){
-            return v.undefined(opcode);
-        });
+        return Matcher<V>::AllMatcher([](V& v, u16 opcode, u16) { return v.undefined(opcode); });
     } else {
         auto other = std::find_if(iter + 1, table.end(), matches_instruction);
         ASSERT(other == table.end());
@@ -701,7 +707,7 @@ Matcher<V> Decode(u16 instruction) {
     }
 }
 
-template<typename V>
+template <typename V>
 std::vector<Matcher<V>> GetDecoderTable() {
     std::vector<Matcher<V>> table;
     table.reserve(0x10000);
