@@ -1293,7 +1293,7 @@ public:
     void popa(Ab a) {
         u16 h = mem.DataRead(regs.sp++);
         u16 l = mem.DataRead(regs.sp++);
-        u64 value = SignExtend<32, u64>((h << 16) | l);
+        u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
         SatAndSetAccAndFlag(a.GetName(), value);
     }
 
