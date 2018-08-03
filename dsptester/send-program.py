@@ -9,6 +9,9 @@ for UDP_IP in ["10.42.0.241", "127.0.0.1"]:
     MESSAGE = struct.pack('<H', 0xD590)
 
     for i in range(1, len(sys.argv)):
+        if sys.argv[i] == '-1':
+            MESSAGE = struct.pack('<H', 0xD591)
+            continue
         inst = sys.argv[i];
         splitted = inst.split('+')
         code = int(splitted[0], 16)
@@ -19,4 +22,3 @@ for UDP_IP in ["10.42.0.241", "127.0.0.1"]:
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
-

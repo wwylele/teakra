@@ -358,7 +358,7 @@ void ExecuteTestCases() {
     consoleSelect(&topScreen);
 }
 
-void UploadDspProgram(const std::vector<u16>& code) {
+void UploadDspProgram(const std::vector<u16>& code, bool oneshot) {
     StopDspProgram();
     InvalidateCache(&dspP[0x2000], 0x2000);
 
@@ -371,7 +371,12 @@ void UploadDspProgram(const std::vector<u16>& code) {
     dspP[end + 4] = 0x1800;
 
     FlushCache(&dspP[0x2000], 0x2000);
-    StartDspProgram();
+
+    if (oneshot) {
+        PulseDspProgram();
+    } else {
+        StartDspProgram();
+    }
 }
 
 int udp_s;
@@ -432,7 +437,7 @@ void CheckPackage() {
         return;
     u16 magic;
     memcpy(&magic, buf, 2);
-    if (magic == 0xD590) {
+    if (magic == 0xD590 || magic == 0xD591) {
         std::vector<u16> program_package((recv_len - 2) / 2);
         memcpy(program_package.data(), buf + 2, program_package.size() * 2);
         consoleSelect(&bottomScreen);
@@ -440,7 +445,7 @@ void CheckPackage() {
         for (u16 code : program_package) {
             printf("%04X ", code);
         }
-        UploadDspProgram(program_package);
+        UploadDspProgram(program_package, magic == 0xD591);
         printf("\nUploaded!\n");
 
         consoleSelect(&topScreen);
@@ -612,7 +617,7 @@ int main() {
         }
 
         if (kDown & KEY_X) {
-            UploadDspProgram({0x86A0}); // add r0, a0
+            UploadDspProgram({0x86A0}, false); // add r0, a0
         }
 
         if (kDown & KEY_Y) {

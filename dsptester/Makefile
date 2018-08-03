@@ -6,10 +6,6 @@ ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
-ifeq ($(strip $(MAKEROM)),)
-$(error "Please set MAKEROM in your environment. export MAKEROM=<path to>makerom")
-endif
-
 TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
@@ -127,11 +123,11 @@ $(OUTPUT).3dsx	:	$(OUTPUT).elf
 endif
 
 $(OUTPUT).cia   :	$(OUTPUT).cxi
-	@$(MAKEROM) -f cia -o $(OUTPUT).cia -target t -i $(OUTPUT).cxi:0:0
+	@makerom -f cia -o $(OUTPUT).cia -target t -i $(OUTPUT).cxi:0:0
 	@echo built ... $(OUTPUT).cia
 
 $(OUTPUT).cxi   :   $(OUTPUT).elf $(OUTPUT).smdh $(TOPDIR)/rsf.rsf $(TOPDIR)/banner.bnr
-	@$(MAKEROM) -o $(OUTPUT).cxi -rsf $(TOPDIR)/rsf.rsf -target t -elf $(OUTPUT).elf -icon $(OUTPUT).smdh -banner $(TOPDIR)/banner.bnr
+	@makerom -o $(OUTPUT).cxi -rsf $(TOPDIR)/rsf.rsf -target t -elf $(OUTPUT).elf -icon $(OUTPUT).smdh -banner $(TOPDIR)/banner.bnr
 	@echo built ... $(OUTPUT).cxi
 
 $(OUTPUT).elf	:	$(OFILES)
