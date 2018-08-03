@@ -12,7 +12,7 @@ for UDP_IP in ["10.42.0.241", "127.0.0.1"]:
         if sys.argv[i] == '-1':
             MESSAGE = struct.pack('<H', 0xD591)
             continue
-        inst = sys.argv[i];
+        inst = sys.argv[i]
         splitted = inst.split('+')
         code = int(splitted[0], 16)
         for param in splitted[1:]:
