@@ -3,6 +3,7 @@
 #include <vector>
 #include "ahbm.h"
 #include "apbp.h"
+#include "btdmp.h"
 #include "dma.h"
 #include "memory_interface.h"
 #include "mmio.h"
@@ -108,9 +109,10 @@ public:
 };
 
 MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, Apbp& apbp_from_dsp,
-                       std::array<Timer, 2>& timer, Dma& dma, Ahbm& ahbm)
+                       std::array<Timer, 2>& timer, Dma& dma, Ahbm& ahbm,
+                       std::array<Btdmp, 2>& btdmp)
     : impl(new Impl), miu(miu), icu(icu), apbp_from_cpu(apbp_from_cpu),
-      apbp_from_dsp(apbp_from_dsp), timer(timer), dma(dma), ahbm(ahbm) {
+      apbp_from_dsp(apbp_from_dsp), timer(timer), dma(dma), ahbm(ahbm), btdmp(btdmp) {
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell::ConstCell(0xC902); // chip detect
@@ -286,9 +288,9 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     }
 
     // Audio
-    for (unsigned i = 0; i < 2; ++i) {
+    /*for (unsigned i = 0; i < 2; ++i) {
         impl->cells[0x2CA + i * 0x80].get = []() -> u16 { return 0x0002; }; // hack
-    }
+    }*/
 }
 
 MMIORegion::~MMIORegion() = default;

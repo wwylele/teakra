@@ -6,6 +6,7 @@ add_library(teakra
     ahbm.h
     apbp.cpp
     apbp.h
+    btdmp.h
     common_types.h
     core.cpp
     core.h

@@ -5,6 +5,7 @@
 #include <teakra/disassembler.h>
 #include "../ahbm.h"
 #include "../apbp.h"
+#include "../btdmp.h"
 #include "../dma.h"
 #include "../icu.h"
 #include "../interpreter.h"
@@ -41,7 +42,8 @@ int main(int argc, char** argv) {
     std::array<Teakra::Timer, 2> timer;
     Teakra::Dma dma;
     Teakra::Ahbm ahbm;
-    Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm};
+    std::array<Teakra::Btdmp, 2> btdmp{{{"0"}, {"1"}}};
+    Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     Teakra::MemoryInterface memory_interface{shared_memory, miu, mmio};
     Teakra::RegisterState regs;
     Teakra::Interpreter interpreter(regs, memory_interface);

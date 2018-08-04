@@ -2,6 +2,7 @@
 #include <atomic>
 #include "ahbm.h"
 #include "apbp.h"
+#include "btdmp.h"
 #include "core.h"
 #include "dma.h"
 #include "icu.h"
@@ -21,7 +22,8 @@ struct Teakra::Impl {
     std::array<Timer, 2> timer;
     Dma dma;
     Ahbm ahbm;
-    MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm};
+    std::array<Btdmp, 2> btdmp{{{"0"}, {"1"}}};
+    MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     MemoryInterface memory_interface{shared_memory, miu, mmio};
     Core core{memory_interface};
 
