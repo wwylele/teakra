@@ -228,6 +228,10 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x184].set = std::bind(&Dma::EnableChannel, &dma, _1);
     impl->cells[0x184].get = std::bind(&Dma::GetChannelEnabled, &dma);
 
+    impl->cells[0x18C].get = []() -> u16 {
+        return 0xFFFF;
+    }; // SEOX ?
+
     impl->cells[0x1BE].set = std::bind(&Dma::ActivateChannel, &dma, _1);
     impl->cells[0x1BE].get = std::bind(&Dma::GetActiveChannel, &dma);
     impl->cells[0x1C0].set = std::bind(&Dma::SetAddrSrcLow, &dma, _1);
@@ -287,10 +291,20 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
         impl->cells[0x214 + i * 4] = Cell::RefCell(icu.vector_low[i]);
     }
 
-    // Audio
-    /*for (unsigned i = 0; i < 2; ++i) {
-        impl->cells[0x2CA + i * 0x80].get = []() -> u16 { return 0x0002; }; // hack
-    }*/
+    // BTDMP
+    for (u16 i = 0; i < 2; ++i) {
+        impl->cells[0x2A2 + i * 0x80].set = std::bind(&Btdmp::SetTransmitPeriod, &btdmp[i], _1);
+        impl->cells[0x2A2 + i * 0x80].get = std::bind(&Btdmp::GetTransmitPeriod, &btdmp[i]);
+        impl->cells[0x2BE + i * 0x80].set = std::bind(&Btdmp::SetTransmitEnable, &btdmp[i], _1);
+        impl->cells[0x2BE + i * 0x80].get = std::bind(&Btdmp::GetTransmitEnable, &btdmp[i]);
+        impl->cells[0x2C2 + i * 0x80] = Cell::BitFieldCell({
+            BitFieldSlot{3, 1, {}, std::bind(&Btdmp::GetTransmitFull, &btdmp[i])},
+            BitFieldSlot{4, 1, {}, std::bind(&Btdmp::GetTransmitEmpty, &btdmp[i])},
+        });
+        impl->cells[0x2C6 + i * 0x80].set = std::bind(&Btdmp::Send, &btdmp[i], _1);
+        impl->cells[0x2CA + i * 0x80].set = std::bind(&Btdmp::SetTransmitFlush, &btdmp[i], _1);
+        impl->cells[0x2CA + i * 0x80].get = std::bind(&Btdmp::GetTransmitFlush, &btdmp[i]);
+    }
 }
 
 MMIORegion::~MMIORegion() = default;

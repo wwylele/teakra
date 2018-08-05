@@ -43,12 +43,14 @@ struct Teakra::Impl {
         apbp_from_cpu.SetDataHandler(2, [this]() { icu.TriggerSingle(0xE); });
 
         apbp_from_cpu.SetSemaphoreHandler([this]() { icu.TriggerSingle(0xE); });
+
+        btdmp[0].handler = [this]() { icu.TriggerSingle(0xB); };
+        btdmp[1].handler = [this]() { icu.TriggerSingle(0xB); };
     }
 };
 
 Teakra::Teakra() : impl(new Impl) {}
-Teakra::~Teakra() {}
-
+Teakra::~Teakra() = default;
 std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
     return impl->shared_memory.raw;
 }
@@ -58,6 +60,8 @@ void Teakra::Run(unsigned cycle) {
         impl->core.Run(1);
         impl->timer[0].Tick();
         impl->timer[1].Tick();
+        impl->btdmp[0].Tick();
+        impl->btdmp[1].Tick();
     }
 }
 
