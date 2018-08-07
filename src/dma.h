@@ -1,12 +1,16 @@
 #pragma once
 #include <array>
 #include <cstdio>
+#include <functional>
 #include "common_types.h"
 
 namespace Teakra {
 
+struct SharedMemory;
+
 class Dma {
 public:
+    Dma(SharedMemory& shared_memory) : shared_memory(shared_memory) {}
     void EnableChannel(u16 value) {
         std::printf("DMA: enable channel %04X\n", value);
         enable_channel = value;
@@ -154,11 +158,21 @@ public:
     void SetZ(u16 value) {
         std::printf("DMA: SetZ %04X\n", value);
         channels[active_channel].z = value;
+
+        if (value == 0x40C0) {
+            DoDma();
+        }
     }
     u16 GetZ() {
         std::printf("DMA: GetZ\n");
         return channels[active_channel].z;
     }
+
+    void SetReadCallback(std::function<std::vector<u8>(u32 address, u32 size)> callback) {
+        read_callback = std::move(callback);
+    }
+
+    void DoDma();
 
 private:
     u16 enable_channel = 0;
@@ -176,6 +190,9 @@ private:
     };
 
     std::array<Channel, 8> channels;
+
+    std::function<std::vector<u8>(u32 address, u32 size)> read_callback;
+    SharedMemory& shared_memory;
 };
 
 } // namespace Teakra

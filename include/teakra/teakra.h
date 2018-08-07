@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <vector>
 
 namespace Teakra {
 class Teakra {
@@ -27,6 +28,9 @@ public:
 
     // core
     void Run(unsigned cycle);
+
+    void SetDmaReadCallback(
+        std::function<std::vector<uint8_t>(std::uint32_t address, std::uint32_t size)> callback);
 
 private:
     struct Impl;
