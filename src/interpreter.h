@@ -1,4 +1,5 @@
 #pragma once
+#include <exception>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -10,6 +11,12 @@
 #include "register.h"
 
 namespace Teakra {
+
+class UnimplementedException : public std::runtime_error {
+public:
+    UnimplementedException() : std::runtime_error("unimplemented") {}
+};
+
 class Interpreter {
 public:
     Interpreter(RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
@@ -219,7 +226,7 @@ public:
         SatAndSetAccAndFlag(d1, v); // only this one affects flags (except for fl)
     }
     void trap() {
-        UNREACHABLE();
+        throw UnimplementedException();
     }
 
     void DoMultiplication(u32 unit, bool x_sign, bool y_sign) {
@@ -406,7 +413,7 @@ public:
                 AlmOp::Or, AlmOp::And, AlmOp::Xor, AlmOp::Add, AlmOp::Cmp, AlmOp::Sub,
             };
             if (allowed_instruction.count(op.GetName()) == 0)
-                UNREACHABLE(); // weird effect. probably undefined
+                throw UnimplementedException(); // weird effect. probably undefined
         };
         switch (a.GetName()) {
         // need more test
@@ -558,7 +565,7 @@ public:
         if (b.GetName() == RegName::p) {
             bv = ProductToBus40(RegName::p0) >> 16;
         } else if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
-            UNREACHABLE(); // weird effect;
+            throw UnimplementedException(); // weird effect;
         } else {
             bv = RegToBus16(b.GetName());
         }
@@ -1132,7 +1139,7 @@ public:
         }
     }
     void retd() {
-        UNREACHABLE();
+        throw UnimplementedException();
     }
     void reti(Cond c) {
         if (regs.ConditionPass(c)) {
@@ -3423,6 +3430,7 @@ private:
         } else { // OffsetValue::MinusOne
             if (!emod)
                 return address - 1;
+            throw UnimplementedException();
             // TODO: sometimes this would return two addresses,
             // neither of which is the original Rn value.
             // This only happens for memory writing, but not for memory reading.
@@ -3448,22 +3456,30 @@ private:
         case StepValue::Decrease:
             s = 0xFFFF;
             break;
-        // TODO: Increase/Decrease2Mode1/2 sometimes have wrong result if Step=+/-1.
+        // TODO: Increase/Decrease2Mode1/2 sometimes have wrong result if Offset=+/-1.
         // This however never happens with modr instruction.
         // Might be undefined behaviour.
         case StepValue::Increase2Mode1:
+            if (!dmod && !regs.br[unit] && regs.m[unit])
+                throw UnimplementedException();
             s = 2;
             step2_mode1 = !legacy;
             break;
         case StepValue::Decrease2Mode1:
+            if (!dmod && !regs.br[unit] && regs.m[unit])
+                throw UnimplementedException();
             s = 0xFFFE;
             step2_mode1 = !legacy;
             break;
         case StepValue::Increase2Mode2:
+            if (!dmod && !regs.br[unit] && regs.m[unit])
+                throw UnimplementedException();
             s = 2;
             step2_mode2 = !legacy;
             break;
         case StepValue::Decrease2Mode2:
+            if (!dmod && !regs.br[unit] && regs.m[unit])
+                throw UnimplementedException();
             s = 0xFFFE;
             step2_mode2 = !legacy;
             break;

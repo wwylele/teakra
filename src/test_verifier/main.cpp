@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
 
     int i = 0;
     int passed = 0;
+    int total = 0;
     while (true) {
         TestCase test_case;
         if (!fread(&test_case, sizeof(test_case), 1, file))
@@ -92,86 +93,92 @@ int main(int argc, char** argv) {
         memory_interface.ProgramWrite(0, test_case.opcode);
         memory_interface.ProgramWrite(1, test_case.expand);
 
-        interpreter.Run(1);
-
         bool pass = true;
-        auto Check40 = [&](const char* name, u64 expected, u64 actual) {
-            if (expected != actual) {
-                std::printf("Mismatch: %s: %010" PRIx64 " != %010" PRIx64 "\n", name,
-                            expected & 0xFF'FFFF'FFFF, actual & 0xFF'FFFF'FFFF);
-                pass = false;
+
+        try {
+            interpreter.Run(1);
+            auto Check40 = [&](const char* name, u64 expected, u64 actual) {
+                if (expected != actual) {
+                    std::printf("Mismatch: %s: %010" PRIx64 " != %010" PRIx64 "\n", name,
+                                expected & 0xFF'FFFF'FFFF, actual & 0xFF'FFFF'FFFF);
+                    pass = false;
+                }
+            };
+
+            auto Check32 = [&](const char* name, u32 expected, u32 actual) {
+                if (expected != actual) {
+                    std::printf("Mismatch: %s: %08X != %08X\n", name, expected, actual);
+                    pass = false;
+                }
+            };
+
+            auto Check = [&](const char* name, u16 expected, u16 actual) {
+                if (expected != actual) {
+                    std::printf("Mismatch: %s: %04X != %04X\n", name, expected, actual);
+                    pass = false;
+                }
+            };
+
+            auto CheckFlag = [&](const char* name, u16 expected, u16 actual, const char* symbols) {
+                if (expected != actual) {
+                    std::printf("Mismatch: %s: %s != %s\n", name,
+                                Flag16ToString(expected, symbols).c_str(),
+                                Flag16ToString(actual, symbols).c_str());
+                    pass = false;
+                }
+            };
+
+            Check40("a0", SignExtend<40>(test_case.after.a[0]), regs.a[0]);
+            Check40("a1", SignExtend<40>(test_case.after.a[1]), regs.a[1]);
+            Check40("b0", SignExtend<40>(test_case.after.b[0]), regs.b[0]);
+            Check40("b1", SignExtend<40>(test_case.after.b[1]), regs.b[1]);
+            Check32("p0", test_case.after.p[0], regs.p[0]);
+            Check32("p1", test_case.after.p[1], regs.p[1]);
+            Check("r0", test_case.after.r[0], regs.r[0]);
+            Check("r1", test_case.after.r[1], regs.r[1]);
+            Check("r2", test_case.after.r[2], regs.r[2]);
+            Check("r3", test_case.after.r[3], regs.r[3]);
+            Check("r4", test_case.after.r[4], regs.r[4]);
+            Check("r5", test_case.after.r[5], regs.r[5]);
+            Check("r6", test_case.after.r[6], regs.r[6]);
+            Check("r7", test_case.after.r[7], regs.r[7]);
+            Check("x0", test_case.after.x[0], regs.x[0]);
+            Check("x1", test_case.after.x[1], regs.x[1]);
+            Check("y0", test_case.after.y[0], regs.y[0]);
+            Check("y1", test_case.after.y[1], regs.y[1]);
+            Check("stepi0", test_case.after.stepi0, regs.stepi0);
+            Check("stepj0", test_case.after.stepj0, regs.stepj0);
+            Check("mixp", test_case.after.mixp, regs.mixp);
+            Check("sv", test_case.after.sv, regs.sv);
+            Check("repc", test_case.after.repc, regs.repc);
+            Check("lc", test_case.after.lc, regs.Lc());
+            CheckFlag("cfgi", test_case.after.cfgi, regs.Get<Teakra::cfgi>(), "mmmmmmmmmsssssss");
+            CheckFlag("cfgj", test_case.after.cfgj, regs.Get<Teakra::cfgj>(), "mmmmmmmmmsssssss");
+            CheckFlag("stt0", test_case.after.stt0, regs.Get<Teakra::stt0>(), "####C###ZMNVCELL");
+            CheckFlag("stt1", test_case.after.stt1, regs.Get<Teakra::stt1>(), "QP#########R####");
+            CheckFlag("stt2", test_case.after.stt2, regs.Get<Teakra::stt2>(), "LBBB####mm##V21I");
+            CheckFlag("mod0", test_case.after.mod0, regs.Get<Teakra::mod0>(), "#QQ#PPooSYY###SS");
+            CheckFlag("mod1", test_case.after.mod1, regs.Get<Teakra::mod1>(), "???B####pppppppp");
+            CheckFlag("mod2", test_case.after.mod2, regs.Get<Teakra::mod2>(), "7654321m7654321M");
+            CheckFlag("ar0", test_case.after.ar[0], regs.Get<Teakra::ar0>(), "RRRRRRoosssoosss");
+            CheckFlag("ar1", test_case.after.ar[1], regs.Get<Teakra::ar1>(), "RRRRRRoosssoosss");
+            CheckFlag("arp0", test_case.after.arp[0], regs.Get<Teakra::arp0>(), "#RR#RRjjjjjiiiii");
+            CheckFlag("arp1", test_case.after.arp[1], regs.Get<Teakra::arp1>(), "#RR#RRjjjjjiiiii");
+            CheckFlag("arp2", test_case.after.arp[2], regs.Get<Teakra::arp2>(), "#RR#RRjjjjjiiiii");
+            CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRjjjjjiiiii");
+
+            for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
+                Check(("memory_" + ToHex<u16>(TestSpaceX + offset)).c_str(),
+                      test_case.after.test_space_x[offset],
+                      memory_interface.DataRead(TestSpaceX + offset));
+                Check(("memory_" + ToHex<u16>(TestSpaceY + offset)).c_str(),
+                      test_case.after.test_space_y[offset],
+                      memory_interface.DataRead(TestSpaceY + offset));
             }
-        };
-
-        auto Check32 = [&](const char* name, u32 expected, u32 actual) {
-            if (expected != actual) {
-                std::printf("Mismatch: %s: %08X != %08X\n", name, expected, actual);
-                pass = false;
-            }
-        };
-
-        auto Check = [&](const char* name, u16 expected, u16 actual) {
-            if (expected != actual) {
-                std::printf("Mismatch: %s: %04X != %04X\n", name, expected, actual);
-                pass = false;
-            }
-        };
-
-        auto CheckFlag = [&](const char* name, u16 expected, u16 actual, const char* symbols) {
-            if (expected != actual) {
-                std::printf("Mismatch: %s: %s != %s\n", name,
-                            Flag16ToString(expected, symbols).c_str(),
-                            Flag16ToString(actual, symbols).c_str());
-                pass = false;
-            }
-        };
-
-        Check40("a0", SignExtend<40>(test_case.after.a[0]), regs.a[0]);
-        Check40("a1", SignExtend<40>(test_case.after.a[1]), regs.a[1]);
-        Check40("b0", SignExtend<40>(test_case.after.b[0]), regs.b[0]);
-        Check40("b1", SignExtend<40>(test_case.after.b[1]), regs.b[1]);
-        Check32("p0", test_case.after.p[0], regs.p[0]);
-        Check32("p1", test_case.after.p[1], regs.p[1]);
-        Check("r0", test_case.after.r[0], regs.r[0]);
-        Check("r1", test_case.after.r[1], regs.r[1]);
-        Check("r2", test_case.after.r[2], regs.r[2]);
-        Check("r3", test_case.after.r[3], regs.r[3]);
-        Check("r4", test_case.after.r[4], regs.r[4]);
-        Check("r5", test_case.after.r[5], regs.r[5]);
-        Check("r6", test_case.after.r[6], regs.r[6]);
-        Check("r7", test_case.after.r[7], regs.r[7]);
-        Check("x0", test_case.after.x[0], regs.x[0]);
-        Check("x1", test_case.after.x[1], regs.x[1]);
-        Check("y0", test_case.after.y[0], regs.y[0]);
-        Check("y1", test_case.after.y[1], regs.y[1]);
-        Check("stepi0", test_case.after.stepi0, regs.stepi0);
-        Check("stepj0", test_case.after.stepj0, regs.stepj0);
-        Check("mixp", test_case.after.mixp, regs.mixp);
-        Check("sv", test_case.after.sv, regs.sv);
-        Check("repc", test_case.after.repc, regs.repc);
-        Check("lc", test_case.after.lc, regs.Lc());
-        CheckFlag("cfgi", test_case.after.cfgi, regs.Get<Teakra::cfgi>(), "mmmmmmmmmsssssss");
-        CheckFlag("cfgj", test_case.after.cfgj, regs.Get<Teakra::cfgj>(), "mmmmmmmmmsssssss");
-        CheckFlag("stt0", test_case.after.stt0, regs.Get<Teakra::stt0>(), "####C###ZMNVCELL");
-        CheckFlag("stt1", test_case.after.stt1, regs.Get<Teakra::stt1>(), "QP#########R####");
-        CheckFlag("stt2", test_case.after.stt2, regs.Get<Teakra::stt2>(), "LBBB####mm##V21I");
-        CheckFlag("mod0", test_case.after.mod0, regs.Get<Teakra::mod0>(), "#QQ#PPooSYY###SS");
-        CheckFlag("mod1", test_case.after.mod1, regs.Get<Teakra::mod1>(), "???B####pppppppp");
-        CheckFlag("mod2", test_case.after.mod2, regs.Get<Teakra::mod2>(), "7654321m7654321M");
-        CheckFlag("ar0", test_case.after.ar[0], regs.Get<Teakra::ar0>(), "RRRRRRoosssoosss");
-        CheckFlag("ar1", test_case.after.ar[1], regs.Get<Teakra::ar1>(), "RRRRRRoosssoosss");
-        CheckFlag("arp0", test_case.after.arp[0], regs.Get<Teakra::arp0>(), "#RR#RRjjjjjiiiii");
-        CheckFlag("arp1", test_case.after.arp[1], regs.Get<Teakra::arp1>(), "#RR#RRjjjjjiiiii");
-        CheckFlag("arp2", test_case.after.arp[2], regs.Get<Teakra::arp2>(), "#RR#RRjjjjjiiiii");
-        CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRjjjjjiiiii");
-
-        for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
-            Check(("memory_" + ToHex<u16>(TestSpaceX + offset)).c_str(),
-                  test_case.after.test_space_x[offset],
-                  memory_interface.DataRead(TestSpaceX + offset));
-            Check(("memory_" + ToHex<u16>(TestSpaceY + offset)).c_str(),
-                  test_case.after.test_space_y[offset],
-                  memory_interface.DataRead(TestSpaceY + offset));
+            ++total;
+        } catch (Teakra::UnimplementedException e) {
+            std::printf("Skipped one unimplemented case\n");
+            pass = false;
         }
 
         if (pass) {
@@ -237,7 +244,7 @@ int main(int argc, char** argv) {
         ++i;
     }
 
-    std::printf("%d / %d passed!", passed, i);
+    std::printf("%d / %d passed!", passed, total);
 
     std::fclose(file);
     std::getchar();
