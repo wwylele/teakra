@@ -3458,28 +3458,19 @@ private:
             break;
         // TODO: Increase/Decrease2Mode1/2 sometimes have wrong result if Offset=+/-1.
         // This however never happens with modr instruction.
-        // Might be undefined behaviour.
         case StepValue::Increase2Mode1:
-            if (!dmod && !regs.br[unit] && regs.m[unit])
-                throw UnimplementedException();
             s = 2;
             step2_mode1 = !legacy;
             break;
         case StepValue::Decrease2Mode1:
-            if (!dmod && !regs.br[unit] && regs.m[unit])
-                throw UnimplementedException();
             s = 0xFFFE;
             step2_mode1 = !legacy;
             break;
         case StepValue::Increase2Mode2:
-            if (!dmod && !regs.br[unit] && regs.m[unit])
-                throw UnimplementedException();
             s = 2;
             step2_mode2 = !legacy;
             break;
         case StepValue::Decrease2Mode2:
-            if (!dmod && !regs.br[unit] && regs.m[unit])
-                throw UnimplementedException();
             s = 0xFFFE;
             step2_mode2 = !legacy;
             break;
