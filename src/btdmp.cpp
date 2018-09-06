@@ -3,7 +3,7 @@
 namespace Teakra {
 
 Btdmp::Btdmp(const char* debug_string) : debug_string(debug_string) {
-    file = std::fopen((std::string("/home/wwylele/dspout.wav.") + debug_string).c_str(), "wb");
+    file = std::fopen((std::string("dspout.wav.") + debug_string).c_str(), "wb");
     std::fseek(file, sizeof(wavfileheader), SEEK_SET);
 }
 Btdmp::~Btdmp() {
