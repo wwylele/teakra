@@ -1,6 +1,6 @@
 #include <iomanip>
 #include <sstream>
-
+#include <vector>
 #include "common_types.h"
 #include "crash.h"
 #include "decoder.h"
@@ -29,7 +29,7 @@ std::string Dsm(Imms<bits> a) {
     if (negative) {
         value = (~value) + 1;
     }
-    return (negative ? '-' : ' ') + ToHex(value);
+    return (negative ? "-" : "") + ToHex(value);
 }
 
 std::string Dsm(MemImm8 a) {
@@ -437,8 +437,8 @@ std::string Dsm(CbsCond c) {
 }
 
 template <typename... T>
-std::string D(T... t) {
-    return ((Dsm(t) + "    ") + ...);
+std::vector<std::string> D(T... t) {
+    return std::vector<std::string>{Dsm(t)...};
 }
 
 std::string Mul(bool x_sign, bool y_sign) {
@@ -472,20 +472,20 @@ std::string PA(SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_al
 
 class Disassembler {
 public:
-    using instruction_return_type = std::string;
+    using instruction_return_type = std::vector<std::string>;
 
-    std::string undefined(u16 opcode) {
-        return "[undefined]";
+    std::vector<std::string> undefined(u16 opcode) {
+        return D("[undefined]");
     }
 
-    std::string nop() {
-        return "nop";
+    std::vector<std::string> nop() {
+        return D("nop");
     }
 
-    std::string norm(Ax a, Rn b, StepZIDS bs) {
+    std::vector<std::string> norm(Ax a, Rn b, StepZIDS bs) {
         return D("norm", R(a), MemR(b, bs));
     }
-    std::string swap(SwapType swap) {
+    std::vector<std::string> swap(SwapType swap) {
         std::string desc;
         switch (swap.GetName()) {
         case SwapTypeValue::a0b0:
@@ -535,1098 +535,1101 @@ public:
         }
         return D("swap", desc);
     }
-    std::string trap() {
-        return "trap";
+    std::vector<std::string> trap() {
+        return D("trap");
     }
 
-    std::string alm(Alm op, MemImm8 a, Ax b) {
+    std::vector<std::string> alm(Alm op, MemImm8 a, Ax b) {
         return D(op, a, R(b));
     }
-    std::string alm(Alm op, Rn a, StepZIDS as, Ax b) {
+    std::vector<std::string> alm(Alm op, Rn a, StepZIDS as, Ax b) {
         return D(op, MemR(a, as), R(b));
     }
-    std::string alm(Alm op, Register a, Ax b) {
+    std::vector<std::string> alm(Alm op, Register a, Ax b) {
         return D(op, R(a), R(b));
     }
-    std::string alm_r6(Alm op, Ax b) {
+    std::vector<std::string> alm_r6(Alm op, Ax b) {
         return D(op, "r6", R(b));
     }
 
-    std::string alu(Alu op, MemImm16 a, Ax b) {
+    std::vector<std::string> alu(Alu op, MemImm16 a, Ax b) {
         return D(op, a, R(b));
     }
-    std::string alu(Alu op, MemR7Imm16 a, Ax b) {
+    std::vector<std::string> alu(Alu op, MemR7Imm16 a, Ax b) {
         return D(op, a, R(b));
     }
-    std::string alu(Alu op, Imm16 a, Ax b) {
+    std::vector<std::string> alu(Alu op, Imm16 a, Ax b) {
         return D(op, a, R(b));
     }
-    std::string alu(Alu op, Imm8 a, Ax b) {
+    std::vector<std::string> alu(Alu op, Imm8 a, Ax b) {
         return D(op, a, R(b));
     }
-    std::string alu(Alu op, MemR7Imm7s a, Ax b) {
+    std::vector<std::string> alu(Alu op, MemR7Imm7s a, Ax b) {
         return D(op, a, R(b));
     }
 
-    std::string or_(Ab a, Ax b, Ax c) {
+    std::vector<std::string> or_(Ab a, Ax b, Ax c) {
         return D("or", R(a), R(b), R(c));
     }
-    std::string or_(Ax a, Bx b, Ax c) {
+    std::vector<std::string> or_(Ax a, Bx b, Ax c) {
         return D("or", R(a), R(b), R(c));
     }
-    std::string or_(Bx a, Bx b, Ax c) {
+    std::vector<std::string> or_(Bx a, Bx b, Ax c) {
         return D("or", R(a), R(b), R(c));
     }
 
-    std::string alb(Alb op, Imm16 a, MemImm8 b) {
+    std::vector<std::string> alb(Alb op, Imm16 a, MemImm8 b) {
         return D(op, a, b);
     }
-    std::string alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
+    std::vector<std::string> alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
         return D(op, a, MemR(b, bs));
     }
-    std::string alb(Alb op, Imm16 a, Register b) {
+    std::vector<std::string> alb(Alb op, Imm16 a, Register b) {
         return D(op, a, R(b));
     }
-    std::string alb_r6(Alb op, Imm16 a) {
+    std::vector<std::string> alb_r6(Alb op, Imm16 a) {
         return D(op, a, "r6");
     }
-    std::string alb(Alb op, Imm16 a, SttMod b) {
+    std::vector<std::string> alb(Alb op, Imm16 a, SttMod b) {
         return D(op, a, R(b));
     }
 
-    std::string add(Ab a, Bx b) {
+    std::vector<std::string> add(Ab a, Bx b) {
         return D("add", R(a), R(b));
     }
-    std::string add(Bx a, Ax b) {
+    std::vector<std::string> add(Bx a, Ax b) {
         return D("add", R(a), R(b));
     }
-    std::string add_p1(Ax b) {
+    std::vector<std::string> add_p1(Ax b) {
         return D("add", "p1", R(b));
     }
-    std::string add(Px a, Bx b) {
+    std::vector<std::string> add(Px a, Bx b) {
         return D("add", R(a), R(b));
     }
 
-    std::string sub(Ab a, Bx b) {
+    std::vector<std::string> sub(Ab a, Bx b) {
         return D("sub", R(a), R(b));
     }
-    std::string sub(Bx a, Ax b) {
+    std::vector<std::string> sub(Bx a, Ax b) {
         return D("sub", R(a), R(b));
     }
-    std::string sub_p1(Ax b) {
+    std::vector<std::string> sub_p1(Ax b) {
         return D("sub", "p1", R(b));
     }
-    std::string sub(Px a, Bx b) {
+    std::vector<std::string> sub(Px a, Bx b) {
         return D("sub", R(a), R(b));
     }
 
-    std::string app(Ab c, SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::vector<std::string> app(Ab c, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                                 bool p1_align) {
         return D(PA(base, sub_p0, p0_align, sub_p1, p1_align), R(c));
     }
 
-    std::string add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> add_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("add||add", MemARPSJ(a, asj), MemARPSI(a, asi), R(b));
     }
-    std::string add_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> add_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("add||sub", MemARPSJ(a, asj), MemARPSI(a, asi), R(b));
     }
-    std::string sub_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> sub_add(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("sub||add", MemARPSJ(a, asj), MemARPSI(a, asi), R(b));
     }
-    std::string sub_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> sub_sub(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("sub||sub", MemARPSJ(a, asj), MemARPSI(a, asi), R(b));
     }
 
-    std::string add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
+    std::vector<std::string> add_sub_sv(ArRn1 a, ArStep1 as, Ab b) {
         return D("add||sub", MemARS(a, as), "sv", R(b));
     }
-    std::string sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
+    std::vector<std::string> sub_add_sv(ArRn1 a, ArStep1 as, Ab b) {
         return D("sub||add", MemARS(a, as), "sv", R(b));
     }
 
-    std::string sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> sub_add_i_mov_j_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("sub||add", MemARPSI(a, asi), R(b), "||mov", MemARPSJ(a, asj), "sv");
     }
-    std::string sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> sub_add_j_mov_i_sv(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("sub||add", MemARPSJ(a, asj), R(b), "||mov", MemARPSI(a, asi), "sv");
     }
-    std::string add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> add_sub_i_mov_j(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("add_sub", MemARPSI(a, asi), R(b), "||mov", R(b), MemARPSJ(a, asj));
     }
-    std::string add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> add_sub_j_mov_i(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("add_sub", MemARPSJ(a, asj), R(b), "||mov", R(b), MemARPSI(a, asi));
     }
 
-    std::string moda4(Moda4 op, Ax a, Cond cond) {
+    std::vector<std::string> moda4(Moda4 op, Ax a, Cond cond) {
         return D(op, R(a), cond);
     }
 
-    std::string moda3(Moda3 op, Bx a, Cond cond) {
+    std::vector<std::string> moda3(Moda3 op, Bx a, Cond cond) {
         return D(op, R(a), cond);
     }
 
-    std::string pacr1(Ax a) {
+    std::vector<std::string> pacr1(Ax a) {
         return D("pacr p1", R(a));
     }
-    std::string clr(Ab a, Ab b) {
+    std::vector<std::string> clr(Ab a, Ab b) {
         return D("clr", R(a), R(b));
     }
-    std::string clrr(Ab a, Ab b) {
+    std::vector<std::string> clrr(Ab a, Ab b) {
         return D("clrr", R(a), R(b));
     }
 
-    std::string bkrep(Imm8 a, Address16 addr) {
+    std::vector<std::string> bkrep(Imm8 a, Address16 addr) {
         return D("bkrep", a, addr);
     }
-    std::string bkrep(Register a, Address18_16 addr_low, Address18_2 addr_high) {
+    std::vector<std::string> bkrep(Register a, Address18_16 addr_low, Address18_2 addr_high) {
         return D("bkrep", R(a), A18(addr_low, addr_high));
     }
-    std::string bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
+    std::vector<std::string> bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
         return D("bkrep", "r6", A18(addr_low, addr_high));
     }
-    std::string bkreprst(ArRn2 a) {
+    std::vector<std::string> bkreprst(ArRn2 a) {
         return D("bkreprst", MemAR(a));
     }
-    std::string bkreprst_memsp() {
+    std::vector<std::string> bkreprst_memsp() {
         return D("bkreprst", "[sp]");
     }
-    std::string bkrepsto(ArRn2 a) {
+    std::vector<std::string> bkrepsto(ArRn2 a) {
         return D("bkrepsto", MemAR(a));
     }
-    std::string bkrepsto_memsp() {
+    std::vector<std::string> bkrepsto_memsp() {
         return D("bkrepsto", "[sp]");
     }
 
-    std::string banke(BankFlags flags) {
-        std::string s;
+    std::vector<std::string> banke(BankFlags flags) {
+        std::vector<std::string> s{"banke"};
         if (flags.storage & 1)
-            s += " r0";
+            s.push_back("r0");
         if (flags.storage & 2)
-            s += " r1";
+            s.push_back("r1");
         if (flags.storage & 4)
-            s += " r4";
+            s.push_back("r4");
         if (flags.storage & 8)
-            s += " cfgi";
+            s.push_back("cfgi");
         if (flags.storage & 16)
-            s += " r7";
+            s.push_back("r7");
         if (flags.storage & 32)
-            s += " cfgj";
-        return "banke" + s;
+            s.push_back("cfgj");
+        return s;
     }
-    std::string bankr() {
-        return "bankr";
+    std::vector<std::string> bankr() {
+        return D("bankr");
     }
-    std::string bankr(Ar a) {
+    std::vector<std::string> bankr(Ar a) {
         return D("bankr", R(a));
     }
-    std::string bankr(Ar a, Arp b) {
+    std::vector<std::string> bankr(Ar a, Arp b) {
         return D("bankr", R(a), R(b));
     }
-    std::string bankr(Arp a) {
+    std::vector<std::string> bankr(Arp a) {
         return D("bankr", R(a));
     }
 
-    std::string bitrev(Rn a) {
+    std::vector<std::string> bitrev(Rn a) {
         return D("bitrev", R(a));
     }
-    std::string bitrev_dbrv(Rn a) {
+    std::vector<std::string> bitrev_dbrv(Rn a) {
         return D("bitrev", R(a), "dbrv");
     }
-    std::string bitrev_ebrv(Rn a) {
+    std::vector<std::string> bitrev_ebrv(Rn a) {
         return D("bitrev", R(a), "ebrv");
     }
 
-    std::string br(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
+    std::vector<std::string> br(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         return D("br", A18(addr_low, addr_high), cond);
     }
 
-    std::string brr(RelAddr7 addr, Cond cond) {
+    std::vector<std::string> brr(RelAddr7 addr, Cond cond) {
         return D("brr", ToHex(addr.storage), cond);
     }
 
-    std::string break_() {
-        return "break";
+    std::vector<std::string> break_() {
+        return D("break");
     }
 
-    std::string call(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
+    std::vector<std::string> call(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         return D("call", A18(addr_low, addr_high), cond);
     }
-    std::string calla(Axl a) {
+    std::vector<std::string> calla(Axl a) {
         return D("calla", R(a));
     }
-    std::string calla(Ax a) {
+    std::vector<std::string> calla(Ax a) {
         return D("calla", R(a));
     }
-    std::string callr(RelAddr7 addr, Cond cond) {
+    std::vector<std::string> callr(RelAddr7 addr, Cond cond) {
         return D("callr", ToHex(addr.storage), cond);
     }
 
-    std::string cntx_s() {
-        return "cntx s";
+    std::vector<std::string> cntx_s() {
+        return D("cntx", "s");
     }
-    std::string cntx_r() {
-        return "cntx r";
+    std::vector<std::string> cntx_r() {
+        return D("cntx", "r");
     }
 
-    std::string ret(Cond c) {
+    std::vector<std::string> ret(Cond c) {
         return D("ret", c);
     }
-    std::string retd() {
-        return "retd";
+    std::vector<std::string> retd() {
+        return D("retd");
     }
-    std::string reti(Cond c) {
+    std::vector<std::string> reti(Cond c) {
         return D("reti", c);
     }
-    std::string retic(Cond c) {
+    std::vector<std::string> retic(Cond c) {
         return D("retic", c);
     }
-    std::string retid() {
-        return "retid";
+    std::vector<std::string> retid() {
+        return D("retid");
     }
-    std::string retidc() {
-        return "retidc";
+    std::vector<std::string> retidc() {
+        return D("retidc");
     }
-    std::string rets(Imm8 a) {
+    std::vector<std::string> rets(Imm8 a) {
         return D("rets", a);
     }
 
-    std::string load_ps(Imm2 a) {
+    std::vector<std::string> load_ps(Imm2 a) {
         return D("load", a, "ps");
     }
-    std::string load_stepi(Imm7s a) {
+    std::vector<std::string> load_stepi(Imm7s a) {
         return D("load", a, "stepi");
     }
-    std::string load_stepj(Imm7s a) {
+    std::vector<std::string> load_stepj(Imm7s a) {
         return D("load", a, "stepj");
     }
-    std::string load_page(Imm8 a) {
+    std::vector<std::string> load_page(Imm8 a) {
         return D("load", a, "page");
     }
-    std::string load_modi(Imm9 a) {
+    std::vector<std::string> load_modi(Imm9 a) {
         return D("load", a, "modi");
     }
-    std::string load_modj(Imm9 a) {
+    std::vector<std::string> load_modj(Imm9 a) {
         return D("load", a, "modj");
     }
-    std::string load_movpd(Imm2 a) {
+    std::vector<std::string> load_movpd(Imm2 a) {
         return D("load", a, "movpd");
     }
-    std::string load_ps01(Imm4 a) {
+    std::vector<std::string> load_ps01(Imm4 a) {
         return D("load", a, "ps01");
     }
 
-    std::string push(Imm16 a) {
+    std::vector<std::string> push(Imm16 a) {
         return D("push", a);
     }
-    std::string push(Register a) {
+    std::vector<std::string> push(Register a) {
         return D("push", R(a));
     }
-    std::string push(Abe a) {
+    std::vector<std::string> push(Abe a) {
         return D("push", R(a));
     }
-    std::string push(ArArpSttMod a) {
+    std::vector<std::string> push(ArArpSttMod a) {
         return D("push", R(a));
     }
-    std::string push_prpage() {
+    std::vector<std::string> push_prpage() {
         return D("push", "prpage");
     }
-    std::string push(Px a) {
+    std::vector<std::string> push(Px a) {
         return D("push", R(a));
     }
-    std::string push_r6() {
+    std::vector<std::string> push_r6() {
         return D("push", "r6");
     }
-    std::string push_repc() {
+    std::vector<std::string> push_repc() {
         return D("push", "repc");
     }
-    std::string push_x0() {
+    std::vector<std::string> push_x0() {
         return D("push", "x0");
     }
-    std::string push_x1() {
+    std::vector<std::string> push_x1() {
         return D("push", "x1");
     }
-    std::string push_y1() {
+    std::vector<std::string> push_y1() {
         return D("push", "y1");
     }
-    std::string pusha(Ax a) {
+    std::vector<std::string> pusha(Ax a) {
         return D("pusha", R(a));
     }
-    std::string pusha(Bx a) {
+    std::vector<std::string> pusha(Bx a) {
         return D("pusha", R(a));
     }
 
-    std::string pop(Register a) {
+    std::vector<std::string> pop(Register a) {
         return D("pop", R(a));
     }
-    std::string pop(Abe a) {
+    std::vector<std::string> pop(Abe a) {
         return D("pop", R(a));
     }
-    std::string pop(ArArpSttMod a) {
+    std::vector<std::string> pop(ArArpSttMod a) {
         return D("pop", R(a));
     }
-    std::string pop(Bx a) {
+    std::vector<std::string> pop(Bx a) {
         return D("pop", R(a));
     }
-    std::string pop_prpage() {
+    std::vector<std::string> pop_prpage() {
         return D("pop", "prpage");
     }
-    std::string pop(Px a) {
+    std::vector<std::string> pop(Px a) {
         return D("pop", R(a));
     }
-    std::string pop_r6() {
+    std::vector<std::string> pop_r6() {
         return D("pop", "r6");
     }
-    std::string pop_repc() {
+    std::vector<std::string> pop_repc() {
         return D("pop", "repc");
     }
-    std::string pop_x0() {
+    std::vector<std::string> pop_x0() {
         return D("pop", "x0");
     }
-    std::string pop_x1() {
+    std::vector<std::string> pop_x1() {
         return D("pop", "x1");
     }
-    std::string pop_y1() {
+    std::vector<std::string> pop_y1() {
         return D("pop", "y1");
     }
-    std::string popa(Ab a) {
+    std::vector<std::string> popa(Ab a) {
         return D("popa", R(a));
     }
 
-    std::string rep(Imm8 a) {
+    std::vector<std::string> rep(Imm8 a) {
         return D("rep", a);
     }
-    std::string rep(Register a) {
+    std::vector<std::string> rep(Register a) {
         return D("rep", R(a));
     }
-    std::string rep_r6() {
+    std::vector<std::string> rep_r6() {
         return D("rep", "r6");
     }
 
-    std::string shfc(Ab a, Ab b, Cond cond) {
+    std::vector<std::string> shfc(Ab a, Ab b, Cond cond) {
         return D("shfc", R(a), R(b), cond);
     }
-    std::string shfi(Ab a, Ab b, Imm6s s) {
+    std::vector<std::string> shfi(Ab a, Ab b, Imm6s s) {
         return D("shfi", R(a), R(b), s);
     }
 
-    std::string tst4b(ArRn2 b, ArStep2 bs) {
+    std::vector<std::string> tst4b(ArRn2 b, ArStep2 bs) {
         return D("tst4b", "a0l", MemARS(b, bs));
     }
-    std::string tst4b(ArRn2 b, ArStep2 bs, Ax c) {
+    std::vector<std::string> tst4b(ArRn2 b, ArStep2 bs, Ax c) {
         return D("tst4b", "a0l", MemARS(b, bs), R(c));
     }
-    std::string tstb(MemImm8 a, Imm4 b) {
+    std::vector<std::string> tstb(MemImm8 a, Imm4 b) {
         return D("tstb", a, b);
     }
-    std::string tstb(Rn a, StepZIDS as, Imm4 b) {
+    std::vector<std::string> tstb(Rn a, StepZIDS as, Imm4 b) {
         return D("tstb", MemR(a, as), b);
     }
-    std::string tstb(Register a, Imm4 b) {
+    std::vector<std::string> tstb(Register a, Imm4 b) {
         return D("tstb", R(a), b);
     }
-    std::string tstb_r6(Imm4 b) {
+    std::vector<std::string> tstb_r6(Imm4 b) {
         return D("tstb", "r6", b);
     }
-    std::string tstb(SttMod a, Imm16 b) {
+    std::vector<std::string> tstb(SttMod a, Imm16 b) {
         return D("tstb", R(a), b);
     }
 
-    std::string and_(Ab a, Ab b, Ax c) {
+    std::vector<std::string> and_(Ab a, Ab b, Ax c) {
         return D("and", R(a), R(b), R(c));
     }
 
-    std::string dint() {
-        return "dint";
+    std::vector<std::string> dint() {
+        return D("dint");
     }
-    std::string eint() {
-        return "eint";
+    std::vector<std::string> eint() {
+        return D("eint");
     }
 
-    std::string mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
+    std::vector<std::string> mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
         return D(op, MemR(y, ys), x, R(a));
     }
-    std::string mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
+    std::vector<std::string> mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
         return D(op, "y0", MemR(x, xs), R(a));
     }
-    std::string mul_y0(Mul3 op, Register x, Ax a) {
+    std::vector<std::string> mul_y0(Mul3 op, Register x, Ax a) {
         return D(op, "y0", R(x), R(a));
     }
-    std::string mul(Mul3 op, R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
+    std::vector<std::string> mul(Mul3 op, R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
         return D(op, MemR(y, ys), MemR(x, xs), R(a));
     }
-    std::string mul_y0_r6(Mul3 op, Ax a) {
+    std::vector<std::string> mul_y0_r6(Mul3 op, Ax a) {
         return D(op, "y0", "r6", R(a));
     }
-    std::string mul_y0(Mul2 op, MemImm8 x, Ax a) {
+    std::vector<std::string> mul_y0(Mul2 op, MemImm8 x, Ax a) {
         return D(op, "y0", x, R(a));
     }
 
-    std::string mpyi(Imm8s x) {
+    std::vector<std::string> mpyi(Imm8s x) {
         return D("mpyi", "y0", x);
     }
 
-    std::string msu(R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
+    std::vector<std::string> msu(R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
         return D("msu", MemR(y, ys), MemR(x, xs), R(a));
     }
-    std::string msu(Rn y, StepZIDS ys, Imm16 x, Ax a) {
+    std::vector<std::string> msu(Rn y, StepZIDS ys, Imm16 x, Ax a) {
         return D("msu", MemR(y, ys), x, R(a));
     }
-    std::string msusu(ArRn2 x, ArStep2 xs, Ax a) {
+    std::vector<std::string> msusu(ArRn2 x, ArStep2 xs, Ax a) {
         return D("msusu", "y0", MemARS(x, xs), R(a));
     }
-    std::string mac_x1to0(Ax a) {
+    std::vector<std::string> mac_x1to0(Ax a) {
         return D("mac", "y0", "x1->x0", R(a));
     }
-    std::string mac1(ArpRn1 xy, ArpStep1 xis, ArpStep1 yjs, Ax a) {
+    std::vector<std::string> mac1(ArpRn1 xy, ArpStep1 xis, ArpStep1 yjs, Ax a) {
         return D("mac1", MemARPSJ(xy, yjs), MemARPSI(xy, xis), R(a));
     }
 
-    std::string modr(Rn a, StepZIDS as) {
+    std::vector<std::string> modr(Rn a, StepZIDS as) {
         return D("modr", MemR(a, as));
     }
-    std::string modr_dmod(Rn a, StepZIDS as) {
+    std::vector<std::string> modr_dmod(Rn a, StepZIDS as) {
         return D("modr", MemR(a, as), "dmod");
     }
-    std::string modr_i2(Rn a) {
+    std::vector<std::string> modr_i2(Rn a) {
         return D("modr", R(a), "+2");
     }
-    std::string modr_i2_dmod(Rn a) {
+    std::vector<std::string> modr_i2_dmod(Rn a) {
         return D("modr", R(a), "+2", "dmod");
     }
-    std::string modr_d2(Rn a) {
+    std::vector<std::string> modr_d2(Rn a) {
         return D("modr", R(a), "-2");
     }
-    std::string modr_d2_dmod(Rn a) {
+    std::vector<std::string> modr_d2_dmod(Rn a) {
         return D("modr", R(a), "-2", "dmod");
     }
-    std::string modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+    std::vector<std::string> modr_eemod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "eemod");
     }
-    std::string modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+    std::vector<std::string> modr_edmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "edmod");
     }
-    std::string modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+    std::vector<std::string> modr_demod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "demod");
     }
-    std::string modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
+    std::vector<std::string> modr_ddmod(ArpRn2 a, ArpStep2 asi, ArpStep2 asj) {
         return D("modr", MemARPSI(a, asi), MemARPSJ(a, asj), "ddmod");
     }
 
-    std::string movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
+    std::vector<std::string> movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
         return D("mov d->p", MemR(a, as), MemR(b, bs));
     }
-    std::string movp(Axl a, Register b) {
+    std::vector<std::string> movp(Axl a, Register b) {
         return D("mov p->r", MemG(a), R(b));
     }
-    std::string movp(Ax a, Register b) {
+    std::vector<std::string> movp(Ax a, Register b) {
         return D("mov p->r", MemG(a), R(b));
     }
-    std::string movp(Rn a, StepZIDS as, R0123 b, StepZIDS bs) {
+    std::vector<std::string> movp(Rn a, StepZIDS as, R0123 b, StepZIDS bs) {
         return D("mov p->d", MemR(a, as), MemR(b, bs));
     }
-    std::string movpdw(Ax a) {
+    std::vector<std::string> movpdw(Ax a) {
         return D("mov p->pc", MemG(a));
     }
 
-    std::string mov(Ab a, Ab b) {
+    std::vector<std::string> mov(Ab a, Ab b) {
         return D("mov", R(a), R(b));
     }
-    std::string mov_dvm(Abl a) {
+    std::vector<std::string> mov_dvm(Abl a) {
         return D("mov", R(a), "dvm");
     }
-    std::string mov_x0(Abl a) {
+    std::vector<std::string> mov_x0(Abl a) {
         return D("mov", R(a), "x0");
     }
-    std::string mov_x1(Abl a) {
+    std::vector<std::string> mov_x1(Abl a) {
         return D("mov", R(a), "x1");
     }
-    std::string mov_y1(Abl a) {
+    std::vector<std::string> mov_y1(Abl a) {
         return D("mov", R(a), "y1");
     }
-    std::string mov(Ablh a, MemImm8 b) {
+    std::vector<std::string> mov(Ablh a, MemImm8 b) {
         return D("mov", R(a), b);
     }
-    std::string mov(Axl a, MemImm16 b) {
+    std::vector<std::string> mov(Axl a, MemImm16 b) {
         return D("mov", R(a), b);
     }
-    std::string mov(Axl a, MemR7Imm16 b) {
+    std::vector<std::string> mov(Axl a, MemR7Imm16 b) {
         return D("mov", R(a), b);
     }
-    std::string mov(Axl a, MemR7Imm7s b) {
+    std::vector<std::string> mov(Axl a, MemR7Imm7s b) {
         return D("mov", R(a), b);
     }
-    std::string mov(MemImm16 a, Ax b) {
+    std::vector<std::string> mov(MemImm16 a, Ax b) {
         return D("mov", a, R(b));
     }
-    std::string mov(MemImm8 a, Ab b) {
+    std::vector<std::string> mov(MemImm8 a, Ab b) {
         return D("mov", a, R(b));
     }
-    std::string mov(MemImm8 a, Ablh b) {
+    std::vector<std::string> mov(MemImm8 a, Ablh b) {
         return D("mov", a, R(b));
     }
-    std::string mov_eu(MemImm8 a, Axh b) {
+    std::vector<std::string> mov_eu(MemImm8 a, Axh b) {
         return D("mov", a, R(b), "eu");
     }
-    std::string mov(MemImm8 a, RnOld b) {
+    std::vector<std::string> mov(MemImm8 a, RnOld b) {
         return D("mov", a, R(b));
     }
-    std::string mov_sv(MemImm8 a) {
+    std::vector<std::string> mov_sv(MemImm8 a) {
         return D("mov", a, "sv");
     }
-    std::string mov_dvm_to(Ab b) {
+    std::vector<std::string> mov_dvm_to(Ab b) {
         return D("mov", "dvm", R(b));
     }
-    std::string mov_icr_to(Ab b) {
+    std::vector<std::string> mov_icr_to(Ab b) {
         return D("mov", "icr", R(b));
     }
-    std::string mov(Imm16 a, Bx b) {
+    std::vector<std::string> mov(Imm16 a, Bx b) {
         return D("mov", a, R(b));
     }
-    std::string mov(Imm16 a, Register b) {
+    std::vector<std::string> mov(Imm16 a, Register b) {
         return D("mov", a, R(b));
     }
-    std::string mov_icr(Imm5 a) {
+    std::vector<std::string> mov_icr(Imm5 a) {
         return D("mov", a, "icr");
     }
-    std::string mov(Imm8s a, Axh b) {
+    std::vector<std::string> mov(Imm8s a, Axh b) {
         return D("mov", a, R(b));
     }
-    std::string mov(Imm8s a, RnOld b) {
+    std::vector<std::string> mov(Imm8s a, RnOld b) {
         return D("mov", a, R(b));
     }
-    std::string mov_sv(Imm8s a) {
+    std::vector<std::string> mov_sv(Imm8s a) {
         return D("mov", a, "sv");
     }
-    std::string mov(Imm8 a, Axl b) {
+    std::vector<std::string> mov(Imm8 a, Axl b) {
         return D("mov", a, R(b));
     }
-    std::string mov(MemR7Imm16 a, Ax b) {
+    std::vector<std::string> mov(MemR7Imm16 a, Ax b) {
         return D("mov", a, R(b));
     }
-    std::string mov(MemR7Imm7s a, Ax b) {
+    std::vector<std::string> mov(MemR7Imm7s a, Ax b) {
         return D("mov", a, R(b));
     }
-    std::string mov(Rn a, StepZIDS as, Bx b) {
+    std::vector<std::string> mov(Rn a, StepZIDS as, Bx b) {
         return D("mov", MemR(a, as), R(b));
     }
-    std::string mov(Rn a, StepZIDS as, Register b) {
+    std::vector<std::string> mov(Rn a, StepZIDS as, Register b) {
         return D("mov", MemR(a, as), R(b));
     }
-    std::string mov_memsp_to(Register b) {
+    std::vector<std::string> mov_memsp_to(Register b) {
         return D("mov", "[sp]", R(b));
     }
-    std::string mov_mixp_to(Register b) {
+    std::vector<std::string> mov_mixp_to(Register b) {
         return D("mov", "mixp", R(b));
     }
-    std::string mov(RnOld a, MemImm8 b) {
+    std::vector<std::string> mov(RnOld a, MemImm8 b) {
         return D("mov", R(a), b);
     }
-    std::string mov_icr(Register a) {
+    std::vector<std::string> mov_icr(Register a) {
         return D("mov", R(a), "icr");
     }
-    std::string mov_mixp(Register a) {
+    std::vector<std::string> mov_mixp(Register a) {
         return D("mov", R(a), "mixp");
     }
-    std::string mov(Register a, Rn b, StepZIDS bs) {
+    std::vector<std::string> mov(Register a, Rn b, StepZIDS bs) {
         return D("mov", R(a), MemR(b, bs));
     }
-    std::string mov(Register a, Bx b) {
+    std::vector<std::string> mov(Register a, Bx b) {
         return D("mov", R(a), R(b));
     }
-    std::string mov(Register a, Register b) {
+    std::vector<std::string> mov(Register a, Register b) {
         return D("mov", R(a), R(b));
     }
-    std::string mov_repc_to(Ab b) {
+    std::vector<std::string> mov_repc_to(Ab b) {
         return D("mov", "repc", R(b));
     }
-    std::string mov_sv_to(MemImm8 b) {
+    std::vector<std::string> mov_sv_to(MemImm8 b) {
         return D("mov", "sv", b);
     }
-    std::string mov_x0_to(Ab b) {
+    std::vector<std::string> mov_x0_to(Ab b) {
         return D("mov", "x0", R(b));
     }
-    std::string mov_x1_to(Ab b) {
+    std::vector<std::string> mov_x1_to(Ab b) {
         return D("mov", "x1", R(b));
     }
-    std::string mov_y1_to(Ab b) {
+    std::vector<std::string> mov_y1_to(Ab b) {
         return D("mov", "y1", R(b));
     }
-    std::string mov(Imm16 a, ArArp b) {
+    std::vector<std::string> mov(Imm16 a, ArArp b) {
         return D("mov", a, R(b));
     }
-    std::string mov_r6(Imm16 a) {
+    std::vector<std::string> mov_r6(Imm16 a) {
         return D("mov", a, "r6");
     }
-    std::string mov_repc(Imm16 a) {
+    std::vector<std::string> mov_repc(Imm16 a) {
         return D("mov", a, "repc");
     }
-    std::string mov_stepi0(Imm16 a) {
+    std::vector<std::string> mov_stepi0(Imm16 a) {
         return D("mov", a, "stepi0");
     }
-    std::string mov_stepj0(Imm16 a) {
+    std::vector<std::string> mov_stepj0(Imm16 a) {
         return D("mov", a, "stepj0");
     }
-    std::string mov(Imm16 a, SttMod b) {
+    std::vector<std::string> mov(Imm16 a, SttMod b) {
         return D("mov", a, R(b));
     }
-    std::string mov_prpage(Imm4 a) {
+    std::vector<std::string> mov_prpage(Imm4 a) {
         return D("mov", a, "prpage");
     }
 
-    std::string mov_a0h_stepi0() {
+    std::vector<std::string> mov_a0h_stepi0() {
         return D("mov", "a0h", "stepi0");
     }
-    std::string mov_a0h_stepj0() {
+    std::vector<std::string> mov_a0h_stepj0() {
         return D("mov", "a0h", "stepj0");
     }
-    std::string mov_stepi0_a0h() {
+    std::vector<std::string> mov_stepi0_a0h() {
         return D("mov", "stepi0", "a0h");
     }
-    std::string mov_stepj0_a0h() {
+    std::vector<std::string> mov_stepj0_a0h() {
         return D("mov", "stepj0", "a0h");
     }
 
-    std::string mov_prpage(Abl a) {
+    std::vector<std::string> mov_prpage(Abl a) {
         return D("mov", R(a), "prpage");
     }
-    std::string mov_repc(Abl a) {
+    std::vector<std::string> mov_repc(Abl a) {
         return D("mov", R(a), "repc");
     }
-    std::string mov(Abl a, ArArp b) {
+    std::vector<std::string> mov(Abl a, ArArp b) {
         return D("mov", R(a), R(b));
     }
-    std::string mov(Abl a, SttMod b) {
+    std::vector<std::string> mov(Abl a, SttMod b) {
         return D("mov", R(a), R(b));
     }
 
-    std::string mov_prpage_to(Abl b) {
+    std::vector<std::string> mov_prpage_to(Abl b) {
         return D("mov", "prpage", R(b));
     }
-    std::string mov_repc_to(Abl b) {
+    std::vector<std::string> mov_repc_to(Abl b) {
         return D("mov", "repc", R(b));
     }
-    std::string mov(ArArp a, Abl b) {
+    std::vector<std::string> mov(ArArp a, Abl b) {
         return D("mov", R(a), R(b));
     }
-    std::string mov(SttMod a, Abl b) {
+    std::vector<std::string> mov(SttMod a, Abl b) {
         return D("mov", R(a), R(b));
     }
 
-    std::string mov_repc_to(ArRn1 b, ArStep1 bs) {
+    std::vector<std::string> mov_repc_to(ArRn1 b, ArStep1 bs) {
         return D("mov", "repc", MemARS(b, bs));
     }
-    std::string mov(ArArp a, ArRn1 b, ArStep1 bs) {
+    std::vector<std::string> mov(ArArp a, ArRn1 b, ArStep1 bs) {
         return D("mov", R(a), MemARS(b, bs));
     }
-    std::string mov(SttMod a, ArRn1 b, ArStep1 bs) {
+    std::vector<std::string> mov(SttMod a, ArRn1 b, ArStep1 bs) {
         return D("mov", R(a), MemARS(b, bs));
     }
 
-    std::string mov_repc(ArRn1 a, ArStep1 as) {
+    std::vector<std::string> mov_repc(ArRn1 a, ArStep1 as) {
         return D("mov", MemARS(a, as), "repc");
     }
-    std::string mov(ArRn1 a, ArStep1 as, ArArp b) {
+    std::vector<std::string> mov(ArRn1 a, ArStep1 as, ArArp b) {
         return D("mov", MemARS(a, as), R(b));
     }
-    std::string mov(ArRn1 a, ArStep1 as, SttMod b) {
+    std::vector<std::string> mov(ArRn1 a, ArStep1 as, SttMod b) {
         return D("mov", MemARS(a, as), R(b));
     }
 
-    std::string mov_repc_to(MemR7Imm16 b) {
+    std::vector<std::string> mov_repc_to(MemR7Imm16 b) {
         return D("mov", "repc", b);
     }
-    std::string mov(ArArpSttMod a, MemR7Imm16 b) {
+    std::vector<std::string> mov(ArArpSttMod a, MemR7Imm16 b) {
         return D("mov", R(a), b);
     }
 
-    std::string mov_repc(MemR7Imm16 a) {
+    std::vector<std::string> mov_repc(MemR7Imm16 a) {
         return D("mov", a, "repc");
     }
-    std::string mov(MemR7Imm16 a, ArArpSttMod b) {
+    std::vector<std::string> mov(MemR7Imm16 a, ArArpSttMod b) {
         return D("mov", a, R(b));
     }
 
-    std::string mov_pc(Ax a) {
+    std::vector<std::string> mov_pc(Ax a) {
         return D("mov", R(a), "pc");
     }
-    std::string mov_pc(Bx a) {
+    std::vector<std::string> mov_pc(Bx a) {
         return D("mov", R(a), "pc");
     }
 
-    std::string mov_mixp_to(Bx b) {
+    std::vector<std::string> mov_mixp_to(Bx b) {
         return D("mov", "mixp", R(b));
     }
-    std::string mov_mixp_r6() {
+    std::vector<std::string> mov_mixp_r6() {
         return D("mov", "mixp", "r6");
     }
-    std::string mov_p0h_to(Bx b) {
+    std::vector<std::string> mov_p0h_to(Bx b) {
         return D("mov", "p0h", R(b));
     }
-    std::string mov_p0h_r6() {
+    std::vector<std::string> mov_p0h_r6() {
         return D("mov", "p0h", "r6");
     }
-    std::string mov_p0h_to(Register b) {
+    std::vector<std::string> mov_p0h_to(Register b) {
         return D("mov", "p0h", R(b));
     }
-    std::string mov_p0(Ab a) {
+    std::vector<std::string> mov_p0(Ab a) {
         return D("mov", R(a), "p0");
     }
-    std::string mov_p1_to(Ab b) {
+    std::vector<std::string> mov_p1_to(Ab b) {
         return D("mov", "p1", R(b));
     }
 
-    std::string mov2(Px a, ArRn2 b, ArStep2 bs) {
+    std::vector<std::string> mov2(Px a, ArRn2 b, ArStep2 bs) {
         return D("mov", R(a), MemARS(b, bs));
     }
-    std::string mov2s(Px a, ArRn2 b, ArStep2 bs) {
+    std::vector<std::string> mov2s(Px a, ArRn2 b, ArStep2 bs) {
         return D("mov s", R(a), MemARS(b, bs));
     }
-    std::string mov2(ArRn2 a, ArStep2 as, Px b) {
+    std::vector<std::string> mov2(ArRn2 a, ArStep2 as, Px b) {
         return D("mov", MemARS(a, as), R(b));
     }
-    std::string mova(Ab a, ArRn2 b, ArStep2 bs) {
+    std::vector<std::string> mova(Ab a, ArRn2 b, ArStep2 bs) {
         return D("mov", R(a), MemARS(b, bs));
     }
-    std::string mova(ArRn2 a, ArStep2 as, Ab b) {
+    std::vector<std::string> mova(ArRn2 a, ArStep2 as, Ab b) {
         return D("mov", MemARS(a, as), R(b));
     }
 
-    std::string mov_r6_to(Bx b) {
+    std::vector<std::string> mov_r6_to(Bx b) {
         return D("mov", "r6", R(b));
     }
-    std::string mov_r6_mixp() {
+    std::vector<std::string> mov_r6_mixp() {
         return D("mov", "r6", "mixp");
     }
-    std::string mov_r6_to(Register b) {
+    std::vector<std::string> mov_r6_to(Register b) {
         return D("mov", "r6", R(b));
     }
-    std::string mov_r6(Register a) {
+    std::vector<std::string> mov_r6(Register a) {
         return D("mov", R(a), "r6");
     }
-    std::string mov_memsp_r6() {
+    std::vector<std::string> mov_memsp_r6() {
         return D("mov", "[sp]", "r6");
     }
-    std::string mov_r6_to(Rn b, StepZIDS bs) {
+    std::vector<std::string> mov_r6_to(Rn b, StepZIDS bs) {
         return D("mov", "r6", MemR(b, bs));
     }
-    std::string mov_r6(Rn a, StepZIDS as) {
+    std::vector<std::string> mov_r6(Rn a, StepZIDS as) {
         return D("mov", MemR(a, as), "r6");
     }
 
-    std::string movs(MemImm8 a, Ab b) {
+    std::vector<std::string> movs(MemImm8 a, Ab b) {
         return D("movs", a, R(b));
     }
-    std::string movs(Rn a, StepZIDS as, Ab b) {
+    std::vector<std::string> movs(Rn a, StepZIDS as, Ab b) {
         return D("movs", MemR(a, as), R(b));
     }
-    std::string movs(Register a, Ab b) {
+    std::vector<std::string> movs(Register a, Ab b) {
         return D("movs", R(a), R(b));
     }
-    std::string movs_r6_to(Ax b) {
+    std::vector<std::string> movs_r6_to(Ax b) {
         return D("movs", "r6", R(b));
     }
-    std::string movsi(RnOld a, Ab b, Imm5s s) {
+    std::vector<std::string> movsi(RnOld a, Ab b, Imm5s s) {
         return D("movsi", R(a), R(b), s);
     }
 
-    std::string mov2_axh_m_y0_m(Axh a, ArRn2 b, ArStep2 bs) {
+    std::vector<std::string> mov2_axh_m_y0_m(Axh a, ArRn2 b, ArStep2 bs) {
         return D("mov||mov", R(a), "y0", MemARS(b, bs));
     }
-    std::string mov2_ax_mij(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
+    std::vector<std::string> mov2_ax_mij(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
         return D("mov hilj", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
-    std::string mov2_ax_mji(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
+    std::vector<std::string> mov2_ax_mji(Ab a, ArpRn1 b, ArpStep1 bsi, ArpStep1 bsj) {
         return D("mov lihj", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
-    std::string mov2_mij_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> mov2_mij_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("mov hilj", MemARPSI(a, asi), MemARPSJ(a, asj), R(b));
     }
-    std::string mov2_mji_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
+    std::vector<std::string> mov2_mji_ax(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, Ab b) {
         return D("mov lihj", MemARPSI(a, asi), MemARPSJ(a, asj), R(b));
     }
-    std::string mov2_abh_m(Abh ax, Abh ay, ArRn1 b, ArStep1 bs) {
+    std::vector<std::string> mov2_abh_m(Abh ax, Abh ay, ArRn1 b, ArStep1 bs) {
         return D("mov||mov", R(ax), R(ay), MemARS(b, bs));
     }
-    std::string exchange_iaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+    std::vector<std::string> exchange_iaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         return D("exchange i->a->j", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
-    std::string exchange_riaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+    std::vector<std::string> exchange_riaj(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         return D("exchange ri->a->j", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
-    std::string exchange_jai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+    std::vector<std::string> exchange_jai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         return D("exchange j->a->i", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
-    std::string exchange_rjai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
+    std::vector<std::string> exchange_rjai(Axh a, ArpRn2 b, ArpStep2 bsi, ArpStep2 bsj) {
         return D("exchange rj->a->i", R(a), MemARPSI(b, bsi), MemARPSJ(b, bsj));
     }
 
-    std::string movr(ArRn2 a, ArStep2 as, Abh b) {
+    std::vector<std::string> movr(ArRn2 a, ArStep2 as, Abh b) {
         return D("movr", MemARS(a, as), R(b));
     }
-    std::string movr(Rn a, StepZIDS as, Ax b) {
+    std::vector<std::string> movr(Rn a, StepZIDS as, Ax b) {
         return D("movr", MemR(a, as), R(b));
     }
-    std::string movr(Register a, Ax b) {
+    std::vector<std::string> movr(Register a, Ax b) {
         return D("movr", R(a), R(b));
     }
-    std::string movr(Bx a, Ax b) {
+    std::vector<std::string> movr(Bx a, Ax b) {
         return D("movr", R(a), R(b));
     }
-    std::string movr_r6_to(Ax b) {
+    std::vector<std::string> movr_r6_to(Ax b) {
         return D("movr", "r6", R(b));
     }
 
-    std::string exp(Bx a) {
+    std::vector<std::string> exp(Bx a) {
         return D("exp", R(a));
     }
-    std::string exp(Bx a, Ax b) {
+    std::vector<std::string> exp(Bx a, Ax b) {
         return D("exp", R(a), R(b));
     }
-    std::string exp(Rn a, StepZIDS as) {
+    std::vector<std::string> exp(Rn a, StepZIDS as) {
         return D("exp", MemR(a, as));
     }
-    std::string exp(Rn a, StepZIDS as, Ax b) {
+    std::vector<std::string> exp(Rn a, StepZIDS as, Ax b) {
         return D("exp", MemR(a, as), R(b));
     }
-    std::string exp(Register a) {
+    std::vector<std::string> exp(Register a) {
         return D("exp", R(a));
     }
-    std::string exp(Register a, Ax b) {
+    std::vector<std::string> exp(Register a, Ax b) {
         return D("exp", R(a), R(b));
     }
-    std::string exp_r6() {
+    std::vector<std::string> exp_r6() {
         return D("exp", "r6");
     }
-    std::string exp_r6(Ax b) {
+    std::vector<std::string> exp_r6(Ax b) {
         return D("exp", "r6", R(b));
     }
 
-    std::string lim(Ax a, Ax b) {
+    std::vector<std::string> lim(Ax a, Ax b) {
         return D("lim", R(a), R(b));
     }
 
-    std::string vtrclr0() {
+    std::vector<std::string> vtrclr0() {
         return D("vtrclr0");
     }
-    std::string vtrclr1() {
+    std::vector<std::string> vtrclr1() {
         return D("vtrclr1");
     }
-    std::string vtrclr() {
+    std::vector<std::string> vtrclr() {
         return D("vtrclr");
     }
-    std::string vtrmov0(Axl a) {
+    std::vector<std::string> vtrmov0(Axl a) {
         return D("vtrmov0", R(a));
     }
-    std::string vtrmov1(Axl a) {
+    std::vector<std::string> vtrmov1(Axl a) {
         return D("vtrmov1", R(a));
     }
-    std::string vtrmov(Axl a) {
+    std::vector<std::string> vtrmov(Axl a) {
         return D("vtrmov", R(a));
     }
-    std::string vtrshr() {
+    std::vector<std::string> vtrshr() {
         return D("vtrshr");
     }
 
-    std::string clrp0() {
+    std::vector<std::string> clrp0() {
         return D("clr0");
     }
-    std::string clrp1() {
+    std::vector<std::string> clrp1() {
         return D("clr1");
     }
-    std::string clrp() {
+    std::vector<std::string> clrp() {
         return D("clr");
     }
 
-    std::string max_ge(Ax a, StepZIDS bs) {
+    std::vector<std::string> max_ge(Ax a, StepZIDS bs) {
         return D("max_ge", R(a), "^", "r0", bs);
     }
-    std::string max_gt(Ax a, StepZIDS bs) {
+    std::vector<std::string> max_gt(Ax a, StepZIDS bs) {
         return D("max_gt", R(a), "^", "r0", bs);
     }
-    std::string min_le(Ax a, StepZIDS bs) {
+    std::vector<std::string> min_le(Ax a, StepZIDS bs) {
         return D("min_le", R(a), "^", "r0", bs);
     }
-    std::string min_lt(Ax a, StepZIDS bs) {
+    std::vector<std::string> min_lt(Ax a, StepZIDS bs) {
         return D("min_lt", R(a), "^", "r0", bs);
     }
 
-    std::string max_ge_r0(Ax a, StepZIDS bs) {
+    std::vector<std::string> max_ge_r0(Ax a, StepZIDS bs) {
         return D("max_ge", R(a), "[r0]", bs);
     }
-    std::string max_gt_r0(Ax a, StepZIDS bs) {
+    std::vector<std::string> max_gt_r0(Ax a, StepZIDS bs) {
         return D("max_gt", R(a), "[r0]", bs);
     }
-    std::string min_le_r0(Ax a, StepZIDS bs) {
+    std::vector<std::string> min_le_r0(Ax a, StepZIDS bs) {
         return D("min_le", R(a), "[r0]", bs);
     }
-    std::string min_lt_r0(Ax a, StepZIDS bs) {
+    std::vector<std::string> min_lt_r0(Ax a, StepZIDS bs) {
         return D("min_lt", R(a), "[r0]", bs);
     }
-    std::string divs(MemImm8 a, Ax b) {
+    std::vector<std::string> divs(MemImm8 a, Ax b) {
         return D("divs", a, R(b));
     }
 
-    std::string sqr_sqr_add3(Ab a, Ab b) {
+    std::vector<std::string> sqr_sqr_add3(Ab a, Ab b) {
         return D("sqr h||l", R(a), "||add3", R(b));
     }
-    std::string sqr_sqr_add3(ArRn2 a, ArStep2 as, Ab b) {
+    std::vector<std::string> sqr_sqr_add3(ArRn2 a, ArStep2 as, Ab b) {
         return D("sqr h||l", MemARS(a, as), "||add3", R(b));
     }
-    std::string sqr_mpysu_add3a(Ab a, Ab b) {
+    std::vector<std::string> sqr_mpysu_add3a(Ab a, Ab b) {
         return D("sqr h||mpysu hl", R(a), "||add3a", R(b));
     }
 
-    std::string cmp(Ax a, Bx b) {
+    std::vector<std::string> cmp(Ax a, Bx b) {
         return D("cmp", R(a), R(b));
     }
-    std::string cmp_b0_b1() {
+    std::vector<std::string> cmp_b0_b1() {
         return D("cmp", "b0", "b1");
     }
-    std::string cmp_b1_b0() {
+    std::vector<std::string> cmp_b1_b0() {
         return D("cmp", "b1", "b0");
     }
-    std::string cmp(Bx a, Ax b) {
+    std::vector<std::string> cmp(Bx a, Ax b) {
         return D("cmp", R(a), R(b));
     }
-    std::string cmp_p1_to(Ax b) {
+    std::vector<std::string> cmp_p1_to(Ax b) {
         return D("cmp", "p1", R(b));
     }
 
-    std::string max2_vtr(Ax a) {
+    std::vector<std::string> max2_vtr(Ax a) {
         return D("max h||l", R(a), "||vtrshr");
     }
-    std::string min2_vtr(Ax a) {
+    std::vector<std::string> min2_vtr(Ax a) {
         return D("min h||l", R(a), "||vtrshr");
     }
-    std::string max2_vtr(Ax a, Bx b) {
+    std::vector<std::string> max2_vtr(Ax a, Bx b) {
         return D("max h||l", R(a), R(b), "||vtrshr");
     }
-    std::string min2_vtr(Ax a, Bx b) {
+    std::vector<std::string> min2_vtr(Ax a, Bx b) {
         return D("min h||l", R(a), R(b), "||vtrshr");
     }
-    std::string max2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> max2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         return D("max h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
     }
-    std::string max2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> max2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         return D("max h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
     }
-    std::string max2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> max2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         return D("max h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
     }
-    std::string max2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> max2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         return D("max h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
     }
-    std::string min2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> min2_vtr_movl(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
     }
-    std::string min2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> min2_vtr_movh(Ax a, Bx b, ArRn1 c, ArStep1 cs) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
     }
-    std::string min2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> min2_vtr_movl(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^l", R(a), MemARS(c, cs));
     }
-    std::string min2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
+    std::vector<std::string> min2_vtr_movh(Bx a, Ax b, ArRn1 c, ArStep1 cs) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^h", R(a), MemARS(c, cs));
     }
-    std::string max2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+    std::vector<std::string> max2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi),
                  MemARPSJ(c, csj));
     }
-    std::string max2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+    std::vector<std::string> max2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         return D("max h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi),
                  MemARPSJ(c, csj));
     }
-    std::string min2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+    std::vector<std::string> min2_vtr_movij(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hilj", R(a), MemARPSI(c, csi),
                  MemARPSJ(c, csj));
     }
-    std::string min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
+    std::vector<std::string> min2_vtr_movji(Ax a, Bx b, ArpRn1 c, ArpStep1 csi, ArpStep1 csj) {
         return D("min h||l", R(a), R(b), "||vtrshr", "||mov^hjli", R(a), MemARPSI(c, csi),
                  MemARPSJ(c, csj));
     }
 
     template <typename ArpStepX>
-    std::string mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base, bool sub_p0, bool p0_align,
-                           bool sub_p1, bool p1_align) {
+    std::vector<std::string> mov_sv_app(ArRn1 a, ArpStepX as, Bx b, SumBase base, bool sub_p0,
+                                        bool p0_align, bool sub_p1, bool p1_align) {
         return D("mov", MemARS(a, as), "sv", PA(base, sub_p0, p0_align, sub_p1, p1_align), R(b));
     }
 
-    std::string cbs(Axh a, CbsCond c) {
+    std::vector<std::string> cbs(Axh a, CbsCond c) {
         return D("cbs", R(a), "r0", c);
     }
-    std::string cbs(Axh a, Bxh b, CbsCond c) {
+    std::vector<std::string> cbs(Axh a, Bxh b, CbsCond c) {
         return D("cbs", R(a), R(b), "r0", c);
     }
-    std::string cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
+    std::vector<std::string> cbs(ArpRn1 a, ArpStep1 asi, ArpStep1 asj, CbsCond c) {
         return D("cbs", MemARPSI(a, asi), MemARPSJ(a, asj), c);
     }
 
-    std::string mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
-                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::vector<std::string> mma(RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+                                 SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                                 bool p1_align) {
         return D("x0<->x1", PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
                  Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
     template <typename ArpRnX, typename ArpStepX>
-    std::string mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj, RegName a,
-                    bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
-                    bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
+    std::vector<std::string> mma(ArpRnX xy, ArpStepX i, ArpStepX j, bool dmodi, bool dmodj,
+                                 RegName a, bool x0_sign, bool y0_sign, bool x1_sign, bool y1_sign,
+                                 SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
+                                 bool p1_align) {
         return D("xy<-", MemARPSI(xy, i), MemARPSJ(xy, j),
                  PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a), Mul(x0_sign, y0_sign),
                  Mul(x1_sign, y1_sign), dmodi ? "dmodi" : "", dmodj ? "dmodj" : "");
     }
 
-    std::string mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
-                          bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
-                          bool p1_align) {
+    std::vector<std::string> mma_mx_xy(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign,
+                                       bool x1_sign, bool y1_sign, SumBase base, bool sub_p0,
+                                       bool p0_align, bool sub_p1, bool p1_align) {
         return D("x0<->x1, y0<-", MemARS(y, ys), PA(base, sub_p0, p0_align, sub_p1, p1_align),
                  DsmReg(a), Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
-                          bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
-                          bool p1_align) {
+    std::vector<std::string> mma_xy_mx(ArRn1 y, ArStep1 ys, RegName a, bool x0_sign, bool y0_sign,
+                                       bool x1_sign, bool y1_sign, SumBase base, bool sub_p0,
+                                       bool p0_align, bool sub_p1, bool p1_align) {
         return D("x0<->x1, y1<-", MemARS(y, ys), PA(base, sub_p0, p0_align, sub_p1, p1_align),
                  DsmReg(a), Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_my_my(ArRn1 x, ArStep1 xs, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
-                          bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
-                          bool p1_align) {
+    std::vector<std::string> mma_my_my(ArRn1 x, ArStep1 xs, RegName a, bool x0_sign, bool y0_sign,
+                                       bool x1_sign, bool y1_sign, SumBase base, bool sub_p0,
+                                       bool p0_align, bool sub_p1, bool p1_align) {
         return D("x<-", MemARS(x, xs), PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a),
                  Mul(x0_sign, y0_sign), Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign,
-                        bool x1_sign, bool y1_sign, SumBase base, bool sub_p0, bool p0_align,
-                        bool sub_p1, bool p1_align) {
+    std::vector<std::string> mma_mov(Axh u, Bxh v, ArRn1 w, ArStep1 ws, RegName a, bool x0_sign,
+                                     bool y0_sign, bool x1_sign, bool y1_sign, SumBase base,
+                                     bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
         return D("mov", R(u), R(v), MemARS(w, ws), "x0<->x1",
                  PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a), Mul(x0_sign, y0_sign),
                  Mul(x1_sign, y1_sign));
     }
 
-    std::string mma_mov(ArRn2 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign, bool x1_sign,
-                        bool y1_sign, SumBase base, bool sub_p0, bool p0_align, bool sub_p1,
-                        bool p1_align) {
+    std::vector<std::string> mma_mov(ArRn2 w, ArStep1 ws, RegName a, bool x0_sign, bool y0_sign,
+                                     bool x1_sign, bool y1_sign, SumBase base, bool sub_p0,
+                                     bool p0_align, bool sub_p1, bool p1_align) {
         return D("mov,^", DsmReg(a), MemARS(w, ws), "x0<->x1",
                  PA(base, sub_p0, p0_align, sub_p1, p1_align), DsmReg(a), Mul(x0_sign, y0_sign),
                  Mul(x1_sign, y1_sign));
     }
 
-    std::string addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
+    std::vector<std::string> addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
         return D("addhp", MemARS(a, as), R(b), R(c));
     }
 
-    std::string mov_ext0(Imm8s a) {
+    std::vector<std::string> mov_ext0(Imm8s a) {
         return D("mov", a, "ext0");
     }
-    std::string mov_ext1(Imm8s a) {
+    std::vector<std::string> mov_ext1(Imm8s a) {
         return D("mov", a, "ext1");
     }
-    std::string mov_ext2(Imm8s a) {
+    std::vector<std::string> mov_ext2(Imm8s a) {
         return D("mov", a, "ext2");
     }
-    std::string mov_ext3(Imm8s a) {
+    std::vector<std::string> mov_ext3(Imm8s a) {
         return D("mov", a, "ext3");
     }
 
@@ -1749,11 +1752,24 @@ bool NeedExpansion(std::uint16_t opcode) {
     return decoder.NeedExpansion();
 }
 
-std::string Do(std::uint16_t opcode, std::uint16_t expansion, std::optional<ArArpSettings> ar_arp) {
+std::vector<std::string> GetTokenList(std::uint16_t opcode, std::uint16_t expansion,
+                                      std::optional<ArArpSettings> ar_arp) {
     Disassembler dsm;
     dsm.SetArArp(ar_arp);
     auto decoder = Decode<Disassembler>(opcode);
-    return decoder.call(dsm, opcode, expansion);
+    auto v = decoder.call(dsm, opcode, expansion);
+    return v;
+}
+
+std::string Do(std::uint16_t opcode, std::uint16_t expansion, std::optional<ArArpSettings> ar_arp) {
+    auto v = GetTokenList(opcode, expansion, ar_arp);
+    std::string last = v.back();
+    std::string result;
+    v.pop_back();
+    for (const auto& s : v) {
+        result += s + "    ";
+    }
+    return result + last;
 }
 
 } // namespace Teakra::Disassembler

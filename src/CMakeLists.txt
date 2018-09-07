@@ -26,6 +26,7 @@ add_library(teakra
     mmio.cpp
     mmio.h
     oprand.h
+    parser.cpp
     register.h
     shared_memory.h
     teakra.cpp
@@ -48,3 +49,4 @@ add_subdirectory(test_generator)
 add_subdirectory(test_verifier)
 add_subdirectory(mod_test_generator)
 add_subdirectory(step2_test_generator)
+add_subdirectory(makedsp1)

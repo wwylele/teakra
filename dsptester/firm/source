@@ -1,193 +1,188 @@
-.p0000
-0000 4180 br 0800
-0001 0800
-0002 4180 br 3000
-0003 3000
-0004 4180 br 3000
-0005 3000
-0006 4180 br 3000
-0007 3000
-0008 0000
-0009 0000
-000a 0000
-000b 0000
-000c 0000
-000d 0000
-000e 4180 br 3000
-000f 3000
-0010 0000
-0011 0000
-0012 0000
-0013 0000
-0014 0000
-0015 0000
-0016 4180 br 3000
-0017 3000
+segment p 0000
+br 0x00000000 always// reset vector
+data 0800
+br 0x00000000 always
+data 3000
+br 0x00000000 always
+data 3000
+br 0x00000000 always // int0
+data 3000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+br 0x00000000 always // int1
+data 3000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+br 0x00000000 always // int2
+data 3000
 
-.p0800  pre-write shutdown sequence
-     0480 load 0x80, page
-     6F60 clr  Implied ConstZero, b0, always
-     30C8 mov  b0l, [page+0xC8]   T_REPLY2
-     4180 br 1800   jump to epilogue first to dump the initial register value
-     1800
+segment p 0800 // pre-write shutdown sequence
+load 0x0080 page
+clr b0 always
+mov b0l [page:0x00c8] // T_REPLY2
+br 0x00000000 always // jump to epilogue first to dump the initial register value
+data 1800
 
-.p1000  signal handler & prologue
-     0400 load 0x00, page
+segment p 1000 // signal handler & prologue
+load 0x0000 page
 
-     6202 mov  [page+2], b0l
-     5031 brr  +3, eq
-     6F60 clr  Implied ConstZero, b0, always
-     3000 mov  b0l, [page+0]
-     3002 mov  b0l, [page+2]
+mov [page:0x0002] b0l
+brr 0x0003 eq
+clr b0 always
+mov b0l [page:0x0000]
+mov b0l [page:0x0002]
 
-     6201 mov  [page+1], b0l
-     5031 brr  +3, eq
-     3000 mov  b0l, [page+0]
-     6F60 clr  Implied ConstZero, b0, always
-     3001 mov  b0l, [page+1]
+mov [page:0x0001] b0l
+brr 0x0003 eq
+mov b0l [page:0x0000]
+clr b0 always
+mov b0l [page:0x0001]
 
-     6200 mov  [page+0], b0l
+mov [page:0x0000] b0l
+br 0x00000000 eq
+data 1000
 
-     4181 br 1000, eq
-     1000
+mov 0x0000 sp
+data 2000
 
-     5E0D mov 2000 sp
-     2000
+mov 0x0000 mod0 // disable SAR and PS so a/b/p can be correctly loaded
+data 0003
 
-     0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
-     0003
+mov 0x0000 mod3 // clear mod3 from E000 to 0000. Game does this at the beginning so let it be the default env
+data 0000
 
-     0037   mov 0000, mod3  clear mod3 from E000 to 0000. Game does this at the beginning so let it be the default env
-     0000
+pop r7
+pop r6
+pop r5
+pop r4
+pop r3
+pop r2
+pop r1
+pop r0
+pop a0l
+mov a0l mixp
+pop repc
+pop a0h
+mov a0h stepj0
+pop a0h
+mov a0h stepi0
+pop lc
+pop p1
+pop y1
+pop x1
+pop p0
+pop y0
+pop x0
+pop sv
+popa b1
+pop b1e
+popa b0
+pop b0e
+popa a1
+pop a1e
+popa a0
+pop a0e
+pop arp3
+pop arp2
+pop arp1
+pop arp0
+pop ar1
+pop ar0
+pop mod2
+pop mod1
+pop mod0
+pop stt2
+pop stt1
+pop stt0
+pop cfgj
+pop cfgi
 
-     5E66         pop r7
-     0024         pop r6
-     5E65         pop r5
-     5E64         pop r4
-     5E63         pop r3
-     5E62         pop r2
-     5E61         pop r1
-     5E60         pop r0
-     5E7A         pop a0l
-     5E9A         mov a0l mixp
-     D7F0         pop repc
-     5E7C         pop a0h
-     D59B         mov a0h stepj0
-     5E7C         pop a0h
-     D49B         mov a0h stepi0
-     5E7E         pop lc
-     D497         pop p1
-     0004         pop y1
-     D495         pop x1
-     D496         pop p0
-     5E67         pop y0
-     D494         pop x0
-     5E7F         pop sv
+mov 0x0000 sp
+data 1000
+br 0x00000000 always
+data 2000
 
-     47B1         popa b1
-     47B5         pop b1e
-     47B0         popa b0
-     47B4         pop b0e
-     47B3         popa a1
-     47B7         pop a1e
-     47B2         popa a0
-     47B6         pop a0e
+segment p 1800 //  epilogue
+mov 0x0000 sp
+data 3000
 
-     85C7         pop arp3
-     84C7         pop arp2
-     83C7         pop arp1
-     82C7         pop arp0
-     81C7         pop ar1
-     80C7         pop ar0
-     8EC7         pop mod2
-     8DC7         pop mod1
-     8CC7         pop mod0
-     8AC7         pop stt2
-     89C7         pop stt1
-     88C7         pop stt0
-     5E6F         pop cfgj
-     5E6E         pop cfgi
+push cfgi
+push cfgj
+push stt0
+push stt1
+push stt2
+push mod0
+push mod1
+push mod2
+push ar0 
+push ar1 
+push arp0
+push arp1
+push arp2
+push arp3
 
-     5E0D mov 1000 sp
-     1000
-     4180 br 2000
-     2000
+mov 0x0000 mod0 // disable SAR and PS so a/b/p can be correctly loaded
+data 0003
 
-.p1800  epilogue
-     5E0D mov 3000 sp
-     3000
+push a0e 
+pusha a0 
+push a1e 
+pusha a1 
+push b0e 
+pusha b0 
+push b1e 
+pusha b1 
+push sv 
+push x0 
+push y0 
+push p0 
+push x1 
+push y1 
+push p1 
+push lc 
+mov stepi0 a0h
+push a0h
+mov stepj0 a0h
+push a0h
+push repc
+mov mixp a0l
+push a0l
+push r0 
+push r1 
+push r2 
+push r3 
+push r4 
+push r5 
+push r6 
+push r7   
 
-     5E4E         push cfgi 2fff
-     5E4F         push cfgj 2ffe
-     D3D8         push stt0 2ffd
-     D3D9         push stt1 2ffc
-     D3DA         push stt2 2ffb
-     D3DC         push mod0 2ffa
-     D3DD         push mod1 2ff9
-     D3DE         push mod2 2ff8
-     D3D0         push ar0 2ff7
-     D3D1         push ar1  2ff6
-     D3D2         push arp0 2ff5
-     D3D3         push arp1 2ff4
-     D3D4         push arp2 2ff3
-     D3D5         push arp3 2ff2
+load 0x0000 page
+mov [page:0x0003] b0l
+brr 0x0003 eq
+clr b0 always
+mov b0l [page:0x0000]
+mov b0l [page:0x0003]
 
-     0034   mov 0003, mod0  disable SAR and PS so a/b/p can be correctly loaded
-     0003
+br 0x00000000 always
+data 1000
 
-     D7CC         push a0e 2ff1
-     4384         pusha a0 2fef
-     D7CE         push a1e 2fee
-     43C4         pusha a1 2fec
-     D7C8         push b0e 2feb
-     D788         pusha b0 2fe9
-     D7CA         push b1e 2fe8
-     D78A         pusha b1 2fe6
+segment p 2000 // test area
+br 0x00000000 always
+data 1800
 
-     5E5F         push sv 2fe5
-     D4D4         push x0 2fe4
-     5E47         push y0 2fe3
-     D78C         push p0 2fe1
-     D4D5         push x1 2fe0
-     D4D6         push y1 2fdf
-     D78E         push p1 2fdd
-     5E5E         push lc 2fdc
-     D482         mov stepi0 a0h
-     5E5C         push a0h 2fdb
-     D582         mov stepj0 a0h
-     5E5C         push a0h 2fda
-     D7F8         push repc 2fd9
-     47DA         mov mixp a0l
-     5E5A         push a0l 2fd8
-     5E40         push r0 2fd7
-     5E41         push r1 2fd6
-     5E42         push r2 2fd5
-     5E43         push r3 2fd4
-     5E44         push r4 2fd3
-     5E45         push r5 2fd2
-     D4D7         push r6 2fd1
-     5E46         push r7   // after all push, SP is at 2FD0
+segment p 3000 // interrupt
+reti always
 
-     0400 load 0x00, page
-
-     6203 mov  [page+3], b0l
-     5031 brr  +3, eq
-     6F60 clr  Implied ConstZero, b0, always
-     3000 mov  b0l, [page+0]
-     3003 mov  b0l, [page+3]
-
-     4180 br 1000
-     1000
-
-.p2000   test area
-2000 4180 br 1800
-2001 1800
-
-.p3000   interrupt handler
-3000 45C0 reti
-
-.d0000   signal area
-0000 0000     current status
-0001 0000     start signal
-0002 0000     stop signal
-0003 0000     one shot signal
+segment d 0000 // signal area
+data 0000
+data 0000
+data 0000
+data 0000
