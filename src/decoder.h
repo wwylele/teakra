@@ -54,8 +54,7 @@ struct MatcherCreator {
 
     static Matcher<V> Create(const char* name, F func) {
         // Oprands shouldn't overlap each other, nor overlap with the expected ones
-        static_assert((OprandAtT::Mask + ... + expected) == (OprandAtT::Mask | ... | expected),
-                      "Error");
+        static_assert(NoOverlap<u16, expected, OprandAtT::Mask ...>, "Error");
 
         Proxy<typename FilterOprand<OprandAtT...>::result> proxy{func};
 
@@ -75,7 +74,7 @@ struct VisitorFunctionWithoutFilter;
 
 template <typename V, typename... OprandAtT>
 struct VisitorFunctionWithoutFilter<V, OprandList<OprandAtT...>> {
-    using type = typename V::instruction_return_type (V::*)(decltype(OprandAtT::Filter(0, 0))...);
+    using type = typename V::instruction_return_type (V::*)(typename OprandAtT::FilterResult...);
 };
 
 template <typename V, typename... OprandAtT>

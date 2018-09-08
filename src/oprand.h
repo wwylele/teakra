@@ -1,6 +1,9 @@
 #pragma once
 #include "common_types.h"
 
+template <typename T, T... values>
+inline constexpr bool NoOverlap = (values + ...) == (values | ...);
+
 template <unsigned bits>
 struct Oprand {
     static_assert(bits > 0 && bits <= 16, "!");
@@ -15,6 +18,7 @@ struct At {
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
     static constexpr bool NeedExpansion = pos == 16;
     static constexpr bool PassAsParameter = true;
+    using FilterResult = OprandT;
     static constexpr OprandT Filter(u16 opcode, u16 expansion) {
         OprandT oprand{};
         if (NeedExpansion)
@@ -32,6 +36,7 @@ struct AtNamed {
     static constexpr u16 Mask = BaseType::Mask;
     static constexpr bool NeedExpansion = BaseType::NeedExpansion;
     static constexpr bool PassAsParameter = BaseType::PassAsParameter;
+    using FilterResult = typename BaseType::FilterResult::NameType;
     static constexpr auto Filter(u16 opcode, u16 expansion) {
         return BaseType::Filter(opcode, expansion).GetName();
     }
@@ -50,6 +55,7 @@ struct Const {
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
+    using FilterResult = OprandT;
     static constexpr OprandT Filter(u16, u16) {
         OprandT oprand{};
         oprand.storage = value;
@@ -69,6 +75,7 @@ struct Cn {
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
+    using FilterResult = T;
     static constexpr T Filter(u16, u16) {
         return value;
     }
@@ -113,6 +120,7 @@ constexpr unsigned intlog2(unsigned n) {
 
 template <typename EnumT, EnumT... names>
 struct EnumOprand : Oprand<intlog2(sizeof...(names))> {
+    using NameType = EnumT;
     static constexpr EnumT values[] = {names...};
     constexpr EnumT GetName() const {
         return values[this->storage];
@@ -121,6 +129,7 @@ struct EnumOprand : Oprand<intlog2(sizeof...(names))> {
 
 template <typename EnumT>
 struct EnumAllOprand : Oprand<intlog2((unsigned)EnumT::EnumEnd)> {
+    using NameType = EnumT;
     constexpr EnumT GetName() const {
         return (EnumT)this->storage;
     }

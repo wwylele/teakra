@@ -463,7 +463,7 @@ struct ProxySlot {
 
 template <typename... ProxySlots>
 struct PseudoRegister {
-    static_assert((ProxySlots::mask | ...) == (ProxySlots::mask + ...), "Error");
+    static_assert(NoOverlap<u16, ProxySlots::mask...>, "Error");
     static u16 Get(const RegisterState* self) {
         return ((ProxySlots::proxy::Get(self) << ProxySlots::pos) | ...);
     }
