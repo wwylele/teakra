@@ -25,28 +25,28 @@ br 0x00000000 always // int2
 data 3000
 
 segment p 0800 // pre-write shutdown sequence
-load 0x0080 page
+load 0x0080u8 page
 clr b0 always
-mov b0l [page:0x00c8] // T_REPLY2
+mov b0l [page:0x00c8u8] // T_REPLY2
 br 0x00000000 always // jump to epilogue first to dump the initial register value
 data 1800
 
 segment p 1000 // signal handler & prologue
-load 0x0000 page
+load 0x0000u8 page
 
-mov [page:0x0002] b0l
+mov [page:0x0002u8] b0l
 brr 0x0003 eq
 clr b0 always
-mov b0l [page:0x0000]
-mov b0l [page:0x0002]
+mov b0l [page:0x0000u8]
+mov b0l [page:0x0002u8]
 
-mov [page:0x0001] b0l
+mov [page:0x0001u8] b0l
 brr 0x0003 eq
-mov b0l [page:0x0000]
+mov b0l [page:0x0000u8]
 clr b0 always
-mov b0l [page:0x0001]
+mov b0l [page:0x0001u8]
 
-mov [page:0x0000] b0l
+mov [page:0x0000u8] b0l
 br 0x00000000 eq
 data 1000
 
@@ -164,12 +164,12 @@ push r5
 push r6 
 push r7   
 
-load 0x0000 page
-mov [page:0x0003] b0l
+load 0x0000u8 page
+mov [page:0x0003u8] b0l
 brr 0x0003 eq
 clr b0 always
-mov b0l [page:0x0000]
-mov b0l [page:0x0003]
+mov b0l [page:0x0000u8]
+mov b0l [page:0x0003u8]
 
 br 0x00000000 always
 data 1000

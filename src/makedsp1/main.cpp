@@ -40,14 +40,14 @@ std::vector<std::string> StringToTokens(const std::string& in) {
 }
 
 int main(int argc, char** argv) {
+    auto parser = Teakra::GenerateParser();
+
     if (argc < 3)
         throw "nope";
 
     std::ifstream in(argv[1]);
     if (!in.is_open())
         throw "fail";
-
-    auto parser = Teakra::GenerateParser();
 
     std::string line;
     std::vector<Segment> segments;

@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 #include "common_types.h"
 #include "crash.h"
@@ -19,7 +20,8 @@ std::string ToHex(T i) {
 
 template <unsigned bits>
 std::string Dsm(Imm<bits> a) {
-    return ToHex(a.storage);
+    std::string eight_mark = bits == 8 ? "u8" : "";
+    return ToHex(a.storage) + eight_mark;
 }
 
 template <unsigned bits>
@@ -29,7 +31,7 @@ std::string Dsm(Imms<bits> a) {
     if (negative) {
         value = (~value) + 1;
     }
-    return (negative ? "-" : "") + ToHex(value);
+    return (negative ? "-" : "+") + ToHex(value);
 }
 
 std::string Dsm(MemImm8 a) {
@@ -44,7 +46,7 @@ std::string Dsm(MemR7Imm16 a) {
     return "[r7+" + Dsm((Imm16)a) + "]";
 }
 std::string Dsm(MemR7Imm7s a) {
-    return "[r7+" + Dsm((Imm7s)a) + "]";
+    return "[r7" + Dsm((Imm7s)a) + "s7]";
 }
 
 std::string DsmReg(RegName a) {
@@ -161,7 +163,7 @@ std::string DsmReg(RegName a) {
     case RegName::st2:
         return "st2";
     default:
-        return "???" + std::to_string((int)a);
+        return "[ERROR]" + std::to_string((int)a);
     }
 }
 
@@ -442,20 +444,20 @@ std::vector<std::string> D(T... t) {
 }
 
 std::string Mul(bool x_sign, bool y_sign) {
-    return std::string("mpy ") + (x_sign ? "sx " : "ux ") + (y_sign ? "sy" : "uy");
+    return std::string("mpy") + (x_sign ? "sx" : "ux") + (y_sign ? "sy" : "uy");
 }
 
 std::string PA(SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_align) {
     std::string result;
     switch (base) {
     case SumBase::Zero:
-        result = "0  ";
+        result = "0";
         break;
     case SumBase::Acc:
         result = "acc";
         break;
     case SumBase::Sv:
-        result = "sv ";
+        result = "sv";
         break;
     case SumBase::SvRnd:
         result = "svr";
@@ -463,10 +465,10 @@ std::string PA(SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_al
     }
     result += sub_p0 ? "-" : "+";
     result += "p0";
-    result += p0_align ? "a" : " ";
+    result += p0_align ? "a" : "";
     result += sub_p1 ? "-" : "+";
     result += "p1";
-    result += p1_align ? "a" : " ";
+    result += p1_align ? "a" : "";
     return result;
 }
 
@@ -475,7 +477,7 @@ public:
     using instruction_return_type = std::vector<std::string>;
 
     std::vector<std::string> undefined(u16 opcode) {
-        return D("[undefined]");
+        return D("[ERROR]");
     }
 
     std::vector<std::string> nop() {
@@ -531,7 +533,7 @@ public:
             desc = "b1->a1->b0";
             break;
         default:
-            desc = "?";
+            desc = "[ERROR]";
         }
         return D("swap", desc);
     }
@@ -1132,7 +1134,11 @@ public:
         return D("mov", R(a), MemR(b, bs));
     }
     std::vector<std::string> mov(Register a, Bx b) {
-        return D("mov", R(a), R(b));
+        std::string a_mark;
+        if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
+            a_mark = "?";
+        }
+        return D("mov" + a_mark, R(a), R(b));
     }
     std::vector<std::string> mov(Register a, Register b) {
         return D("mov", R(a), R(b));
@@ -1683,7 +1689,7 @@ private:
             u16 s = (ar_arp->ar[1] >> (5 - 5 * a.storage)) & 31;
             return ConvertArStepAndOffset(s);
         }
-        return "+ars" + std::to_string(a.storage);
+        return "+ars" + std::to_string(a.storage + 2);
     }
 
     template <typename ArpRn>
@@ -1722,11 +1728,10 @@ private:
 
     template <typename ArRn, typename ArStep>
     std::string MemARS(ArRn reg, ArStep step) {
+        if constexpr (std::is_same_v<ArStep, ArStep1Alt>) {
+            return "[" + DsmArRn(reg) + DsmArStepAlt(step) + "]";
+        }
         return "[" + DsmArRn(reg) + DsmArStep(step) + "]";
-    }
-
-    std::string MemARSAlt(ArRn1 reg, ArStep1Alt step) {
-        return "[" + DsmArRn(reg) + DsmArStepAlt(step) + "]";
     }
 
     template <typename ArpRn, typename ArpStep>

@@ -1,9 +1,11 @@
+#include <algorithm>
 #include <functional>
 #include <optional>
 #include <unordered_map>
 #include <variant>
 #include "../include/teakra/disassembler.h"
 #include "common_types.h"
+#include "crash.h"
 #include "parser.h"
 
 using NodeAsConst = std::string;
@@ -63,6 +65,11 @@ std::unique_ptr<Parser> GenerateParser() {
         bool expansion = Disassembler::NeedExpansion(o);
         auto tokens = Disassembler::GetTokenList(o);
 
+        if (std::any_of(tokens.begin(), tokens.end(), [](const auto& token) {
+                return token.find("[ERROR]") != std::string::npos;
+            }))
+            continue;
+
         ParserImpl::Node* current = &parser->root;
         for (const auto& token : tokens) {
             auto& next = current->children[token];
@@ -71,8 +78,10 @@ std::unique_ptr<Parser> GenerateParser() {
             current = next.get();
         }
 
-        if (current->end)
+        if (current->end) {
+            ASSERT((current->opcode & (u16)(~o)) == 0);
             continue;
+        }
         current->end = true;
         current->opcode = o;
         current->expansion = expansion;
