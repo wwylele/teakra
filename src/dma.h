@@ -174,6 +174,8 @@ public:
 
     void DoDma();
 
+    std::function<void()> handler;
+
 private:
     u16 enable_channel = 0;
     u16 active_channel = 0;

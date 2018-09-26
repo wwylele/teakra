@@ -4,7 +4,7 @@ import sys
 import socket
 import struct
 
-for UDP_IP in ["10.42.0.241", "127.0.0.1"]:
+for UDP_IP in ["192.168.1.158", "127.0.0.1"]:
     UDP_PORT = 8888
     MESSAGE = struct.pack('<H', 0xD590)
 

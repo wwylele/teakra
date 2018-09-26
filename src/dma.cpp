@@ -12,6 +12,7 @@ void Dma::DoDma() {
     auto data = read_callback(src, channels[active_channel].length * 2 *
                                        (channels[active_channel].f[0] + 1));
     std::memcpy(shared_memory.raw.data() + dst * 2, data.data(), data.size());
+    handler();
 }
 
 } // namespace Teakra

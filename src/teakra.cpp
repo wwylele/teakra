@@ -46,6 +46,8 @@ struct Teakra::Impl {
 
         btdmp[0].handler = [this]() { icu.TriggerSingle(0xB); };
         btdmp[1].handler = [this]() { icu.TriggerSingle(0xB); };
+
+        dma.handler = [this]() { icu.TriggerSingle(0xF); };
     }
 };
 
