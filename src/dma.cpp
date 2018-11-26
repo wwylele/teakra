@@ -5,14 +5,108 @@
 namespace Teakra {
 
 void Dma::DoDma() {
-    u32 src =
-        channels[active_channel].addr_src_low | ((u32)channels[active_channel].addr_src_high << 16);
-    u32 dst =
-        channels[active_channel].addr_dst_low | ((u32)channels[active_channel].addr_dst_high << 16);
-    auto data = read_callback(src, channels[active_channel].length * 2 *
-                                       (channels[active_channel].f[0] + 1));
-    std::memcpy(shared_memory.raw.data() + dst * 2, data.data(), data.size());
+    channels[active_channel].Start();
+
+    // TODO: actually Tick this according to global Tick;
+    while (channels[active_channel].running)
+        channels[active_channel].Tick(*this);
+
     handler();
+}
+
+void Dma::Channel::Start() {
+    running = 1;
+    current_src = addr_src_low | ((u32)addr_src_high << 16);
+    current_dst = addr_dst_low | ((u32)addr_dst_high << 16);
+    counter0 = 0;
+    counter1 = 0;
+    counter2 = 0;
+}
+
+void Dma::Channel::Tick(Dma& parent) {
+    static constexpr u32 DataMemoryOffset = 0x20000;
+    if (dword_mode) {
+        u32 value = 0;
+        switch (src_space) {
+        case 0: {
+            u32 l = current_src & 0xFFFFFFFE;
+            u32 h = current_src | 1;
+            value = parent.shared_memory.ReadWord(DataMemoryOffset + l) |
+                    ((u32)parent.shared_memory.ReadWord(DataMemoryOffset + h) << 16);
+            break;
+        }
+        case 7:
+            value = parent.ahbm.read32(current_src);
+            break;
+        default:
+            std::printf("Unknown SrcSpace %04X\n", src_space);
+        }
+
+        switch (dst_space) {
+        case 0: {
+            u32 l = current_dst & 0xFFFFFFFE;
+            u32 h = current_dst | 1;
+            parent.shared_memory.WriteWord(DataMemoryOffset + l, (u16)value);
+            parent.shared_memory.WriteWord(DataMemoryOffset + h, (u16)(value >> 16));
+            break;
+        }
+
+        case 7:
+            parent.ahbm.write32(current_dst, value);
+            break;
+        default:
+            std::printf("Unknown DstSpace %04X\n", dst_space);
+        }
+
+        counter0 += 2;
+    } else {
+        u16 value = 0;
+        switch (src_space) {
+        case 0:
+            value = parent.shared_memory.ReadWord(DataMemoryOffset + current_src);
+            break;
+        case 7:
+            value = parent.ahbm.read16(current_src);
+            break;
+        default:
+            std::printf("Unknown SrcSpace %04X\n", src_space);
+        }
+
+        switch (dst_space) {
+        case 0:
+            parent.shared_memory.WriteWord(DataMemoryOffset + current_dst, value);
+            break;
+        case 7:
+            parent.ahbm.write16(current_dst, value);
+            break;
+        default:
+            std::printf("Unknown DstSpace %04X\n", dst_space);
+        }
+
+        counter0 += 1;
+    }
+
+    if (counter0 >= size0) {
+        counter0 = 0;
+        counter1 += 1;
+        if (counter1 >= size1) {
+            counter1 = 0;
+            counter2 += 1;
+            if (counter2 >= size2) {
+                running = 0;
+                return;
+            } else {
+                current_src += src_step2;
+                current_dst += dst_step2;
+            }
+        } else {
+            current_src += src_step1;
+            current_dst += dst_step1;
+        }
+    } else {
+        current_src += src_step0;
+        current_dst += dst_step0;
+    }
 }
 
 } // namespace Teakra

@@ -7,6 +7,14 @@
 #include <vector>
 
 namespace Teakra {
+
+struct AHBMCallback {
+    std::function<u16(u32 address)> read16;
+    std::function<u32(u32 address)> read32;
+    std::function<void(u32 address, u16 value)> write16;
+    std::function<void(u32 address, u32 value)> write32;
+};
+
 class Teakra {
 public:
     Teakra();
@@ -29,8 +37,7 @@ public:
     // core
     void Run(unsigned cycle);
 
-    void SetDmaReadCallback(
-        std::function<std::vector<uint8_t>(std::uint32_t address, std::uint32_t size)> callback);
+    void SetAHBMCallback(const AHBMCallback& callback);
 
 private:
     struct Impl;

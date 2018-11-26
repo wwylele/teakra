@@ -228,9 +228,7 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x184].set = std::bind(&Dma::EnableChannel, &dma, _1);
     impl->cells[0x184].get = std::bind(&Dma::GetChannelEnabled, &dma);
 
-    impl->cells[0x18C].get = []() -> u16 {
-        return 0xFFFF;
-    }; // SEOX ?
+    impl->cells[0x18C].get = []() -> u16 { return 0xFFFF; }; // SEOX ?
 
     impl->cells[0x1BE].set = std::bind(&Dma::ActivateChannel, &dma, _1);
     impl->cells[0x1BE].get = std::bind(&Dma::GetActiveChannel, &dma);
@@ -242,26 +240,33 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x1C4].get = std::bind(&Dma::GetAddrDstLow, &dma);
     impl->cells[0x1C6].set = std::bind(&Dma::SetAddrDstHigh, &dma, _1);
     impl->cells[0x1C6].get = std::bind(&Dma::GetAddrDstHigh, &dma);
-    impl->cells[0x1C8].set = std::bind(&Dma::SetLength, &dma, _1);
-    impl->cells[0x1C8].get = std::bind(&Dma::GetLength, &dma);
-    impl->cells[0x1CA].set = std::bind(&Dma::SetF, &dma, 0, _1);
-    impl->cells[0x1CA].get = std::bind(&Dma::GetF, &dma, 0);
-    impl->cells[0x1CC].set = std::bind(&Dma::SetF, &dma, 1, _1);
-    impl->cells[0x1CC].get = std::bind(&Dma::GetF, &dma, 1);
-    impl->cells[0x1CE].set = std::bind(&Dma::SetSrcA, &dma, _1);
-    impl->cells[0x1CE].get = std::bind(&Dma::GetSrcA, &dma);
-    impl->cells[0x1D0].set = std::bind(&Dma::SetDstA, &dma, _1);
-    impl->cells[0x1D0].get = std::bind(&Dma::GetDstA, &dma);
-    impl->cells[0x1D2].set = std::bind(&Dma::SetSrcB, &dma, _1);
-    impl->cells[0x1D2].get = std::bind(&Dma::GetSrcB, &dma);
-    impl->cells[0x1D4].set = std::bind(&Dma::SetDstB, &dma, _1);
-    impl->cells[0x1D4].get = std::bind(&Dma::GetDstB, &dma);
-    impl->cells[0x1D6].set = std::bind(&Dma::SetSrcC, &dma, _1);
-    impl->cells[0x1D6].get = std::bind(&Dma::GetSrcC, &dma);
-    impl->cells[0x1D8].set = std::bind(&Dma::SetDstC, &dma, _1);
-    impl->cells[0x1D8].get = std::bind(&Dma::GetDstC, &dma);
-    impl->cells[0x1DA].set = std::bind(&Dma::SetX, &dma, _1);
-    impl->cells[0x1DA].get = std::bind(&Dma::GetX, &dma);
+    impl->cells[0x1C8].set = std::bind(&Dma::SetSize0, &dma, _1);
+    impl->cells[0x1C8].get = std::bind(&Dma::GetSize0, &dma);
+    impl->cells[0x1CA].set = std::bind(&Dma::SetSize1, &dma, _1);
+    impl->cells[0x1CA].get = std::bind(&Dma::GetSize1, &dma);
+    impl->cells[0x1CC].set = std::bind(&Dma::SetSize2, &dma, _1);
+    impl->cells[0x1CC].get = std::bind(&Dma::GetSize2, &dma);
+    impl->cells[0x1CE].set = std::bind(&Dma::SetSrcStep0, &dma, _1);
+    impl->cells[0x1CE].get = std::bind(&Dma::GetSrcStep0, &dma);
+    impl->cells[0x1D0].set = std::bind(&Dma::SetDstStep0, &dma, _1);
+    impl->cells[0x1D0].get = std::bind(&Dma::GetDstStep0, &dma);
+    impl->cells[0x1D2].set = std::bind(&Dma::SetSrcStep1, &dma, _1);
+    impl->cells[0x1D2].get = std::bind(&Dma::GetSrcStep1, &dma);
+    impl->cells[0x1D4].set = std::bind(&Dma::SetDstStep1, &dma, _1);
+    impl->cells[0x1D4].get = std::bind(&Dma::GetDstStep1, &dma);
+    impl->cells[0x1D6].set = std::bind(&Dma::SetSrcStep2, &dma, _1);
+    impl->cells[0x1D6].get = std::bind(&Dma::GetSrcStep2, &dma);
+    impl->cells[0x1D8].set = std::bind(&Dma::SetDstStep2, &dma, _1);
+    impl->cells[0x1D8].get = std::bind(&Dma::GetDstStep2, &dma);
+    impl->cells[0x1DA] = Cell::BitFieldCell({
+        BitFieldSlot{0, 4, std::bind(&Dma::SetSrcSpace, &dma, _1),
+                     std::bind(&Dma::GetSrcSpace, &dma)},
+        BitFieldSlot{4, 4, std::bind(&Dma::SetDstSpace, &dma, _1),
+                     std::bind(&Dma::GetDstSpace, &dma)},
+        // BitFieldSlot{9, 1, ?, ?},
+        BitFieldSlot{10, 1, std::bind(&Dma::SetDwordMode, &dma, _1),
+                     std::bind(&Dma::GetDwordMode, &dma)},
+    });
     impl->cells[0x1DC].set = std::bind(&Dma::SetY, &dma, _1);
     impl->cells[0x1DC].get = std::bind(&Dma::GetY, &dma);
     impl->cells[0x1DE].set = std::bind(&Dma::SetZ, &dma, _1);

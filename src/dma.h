@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <functional>
 #include "common_types.h"
+#include "teakra/teakra.h"
 
 namespace Teakra {
 
@@ -65,85 +66,112 @@ public:
         return channels[active_channel].addr_dst_high;
     }
 
-    void SetLength(u16 value) {
-        std::printf("DMA: SetLength %04X\n", value);
-        channels[active_channel].length = value;
+    void SetSize0(u16 value) {
+        std::printf("DMA: SetSize0 %04X\n", value);
+        channels[active_channel].size0 = value;
     }
-    u16 GetLength() {
-        std::printf("DMA: GetLength\n");
-        return channels[active_channel].length;
-    }
-
-    void SetF(int i, u16 value) {
-        std::printf("DMA: SetF[%d] %04X\n", i, value);
-        channels[active_channel].f[i] = value;
-    }
-    u16 GetF(int i) {
-        std::printf("DMA: GetF[%d]\n", i);
-        return channels[active_channel].f[i];
+    u16 GetSize0() {
+        std::printf("DMA: GetSize0\n");
+        return channels[active_channel].size0;
     }
 
-    void SetSrcA(u16 value) {
-        std::printf("DMA: SetSrcA %04X\n", value);
-        channels[active_channel].src_a = value;
+    void SetSize1(u16 value) {
+        std::printf("DMA: SetSize1 %04X\n", value);
+        channels[active_channel].size1 = value;
     }
-    u16 GetSrcA() {
-        std::printf("DMA: GetSrcA\n");
-        return channels[active_channel].src_a;
-    }
-
-    void SetDstA(u16 value) {
-        std::printf("DMA: SetDstA %04X\n", value);
-        channels[active_channel].dst_a = value;
-    }
-    u16 GetDstA() {
-        std::printf("DMA: GetDstA\n");
-        return channels[active_channel].dst_a;
+    u16 GetSize1() {
+        std::printf("DMA: GetSize1\n");
+        return channels[active_channel].size1;
     }
 
-    void SetSrcB(u16 value) {
-        std::printf("DMA: SetSrcB %04X\n", value);
-        channels[active_channel].src_b = value;
+    void SetSize2(u16 value) {
+        std::printf("DMA: SetSize2 %04X\n", value);
+        channels[active_channel].size2 = value;
     }
-    u16 GetSrcB() {
-        std::printf("DMA: GetSrcB\n");
-        return channels[active_channel].src_b;
-    }
-
-    void SetDstB(u16 value) {
-        std::printf("DMA: SetDstB %04X\n", value);
-        channels[active_channel].dst_b = value;
-    }
-    u16 GetDstB() {
-        std::printf("DMA: GetDstB\n");
-        return channels[active_channel].dst_b;
+    u16 GetSize2() {
+        std::printf("DMA: GetSize2\n");
+        return channels[active_channel].size2;
     }
 
-    void SetSrcC(u16 value) {
-        std::printf("DMA: SetSrcC %04X\n", value);
-        channels[active_channel].src_c = value;
+    void SetSrcStep0(u16 value) {
+        std::printf("DMA: SetSrcStep0 %04X\n", value);
+        channels[active_channel].src_step0 = value;
     }
-    u16 GetSrcC() {
-        std::printf("DMA: GetSrcC\n");
-        return channels[active_channel].src_c;
-    }
-
-    void SetDstC(u16 value) {
-        std::printf("DMA: SetDstC %04X\n", value);
-        channels[active_channel].dst_c = value;
-    }
-    u16 GetDstC() {
-        std::printf("DMA: GetDstC\n");
-        return channels[active_channel].dst_c;
+    u16 GetSrcStep0() {
+        std::printf("DMA: GetSrcStep0\n");
+        return channels[active_channel].src_step0;
     }
 
-    void SetX(u16 value) {
-        std::printf("DMA: SetX %04X\n", value);
-        channels[active_channel].x = value;
+    void SetDstStep0(u16 value) {
+        std::printf("DMA: SetDstStep0 %04X\n", value);
+        channels[active_channel].dst_step0 = value;
     }
-    u16 GetX() {
-        std::printf("DMA: GetX\n");
-        return channels[active_channel].x;
+    u16 GetDstStep0() {
+        std::printf("DMA: GetDstStep0\n");
+        return channels[active_channel].dst_step0;
+    }
+
+    void SetSrcStep1(u16 value) {
+        std::printf("DMA: SetSrcStep1 %04X\n", value);
+        channels[active_channel].src_step1 = value;
+    }
+    u16 GetSrcStep1() {
+        std::printf("DMA: GetSrcStep1\n");
+        return channels[active_channel].src_step1;
+    }
+
+    void SetDstStep1(u16 value) {
+        std::printf("DMA: SetDstStep1 %04X\n", value);
+        channels[active_channel].dst_step1 = value;
+    }
+    u16 GetDstStep1() {
+        std::printf("DMA: GetDstStep1\n");
+        return channels[active_channel].dst_step1;
+    }
+
+    void SetSrcStep2(u16 value) {
+        std::printf("DMA: SetSrcStep2 %04X\n", value);
+        channels[active_channel].src_step2 = value;
+    }
+    u16 GetSrcStep2() {
+        std::printf("DMA: GetSrcStep2\n");
+        return channels[active_channel].src_step2;
+    }
+
+    void SetDstStep2(u16 value) {
+        std::printf("DMA: SetDstStep2 %04X\n", value);
+        channels[active_channel].dst_step2 = value;
+    }
+    u16 GetDstStep2() {
+        std::printf("DMA: GetDstStep2\n");
+        return channels[active_channel].dst_step2;
+    }
+
+    void SetSrcSpace(u16 value) {
+        std::printf("DMA: SetSrcSpace %04X\n", value);
+        channels[active_channel].src_space = value;
+    }
+    u16 GetSrcSpace() {
+        std::printf("DMA: GetSrcSpace\n");
+        return channels[active_channel].src_space;
+    }
+
+    void SetDstSpace(u16 value) {
+        std::printf("DMA: SetDstSpace %04X\n", value);
+        channels[active_channel].dst_space = value;
+    }
+    u16 GetDstSpace() {
+        std::printf("DMA: GetDstSpace\n");
+        return channels[active_channel].dst_space;
+    }
+
+    void SetDwordMode(u16 value) {
+        std::printf("DMA: SetDwordMode %04X\n", value);
+        channels[active_channel].dword_mode = value;
+    }
+    u16 GetDwordMode() {
+        std::printf("DMA: GetDwordMode\n");
+        return channels[active_channel].dword_mode;
     }
 
     void SetY(u16 value) {
@@ -168,9 +196,7 @@ public:
         return channels[active_channel].z;
     }
 
-    void SetReadCallback(std::function<std::vector<u8>(u32 address, u32 size)> callback) {
-        read_callback = std::move(callback);
-    }
+    AHBMCallback ahbm;
 
     void DoDma();
 
@@ -183,17 +209,25 @@ private:
     struct Channel {
         u16 addr_src_low = 0, addr_src_high = 0;
         u16 addr_dst_low = 0, addr_dst_high = 0;
-        u16 length = 0;
-        u16 f[2]{};
-        u16 src_a = 0, dst_a = 0;
-        u16 src_b = 0, dst_b = 0;
-        u16 src_c = 0, dst_c = 0;
-        u16 x = 0, y = 0, z = 0;
+        u16 size0 = 0, size1 = 0, size2 = 0;
+        u16 src_step0 = 0, dst_step0 = 0;
+        u16 src_step1 = 0, dst_step1 = 0;
+        u16 src_step2 = 0, dst_step2 = 0;
+        u16 src_space = 0, dst_space = 0;
+        u16 dword_mode;
+        u16 y = 0;
+        u16 z = 0;
+
+        u32 current_src = 0, current_dst = 0;
+        u16 counter0 = 0, counter1 = 0, counter2 = 0;
+        u16 running = 0;
+
+        void Start();
+        void Tick(Dma& parent);
     };
 
     std::array<Channel, 8> channels;
 
-    std::function<std::vector<u8>(u32 address, u32 size)> read_callback;
     SharedMemory& shared_memory;
 };
 

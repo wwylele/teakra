@@ -93,9 +93,8 @@ std::uint16_t Teakra::GetSemaphore() {
     return impl->apbp_from_dsp.GetSemaphore();
 }
 
-void Teakra::SetDmaReadCallback(
-    std::function<std::vector<uint8_t>(std::uint32_t address, std::uint32_t size)> callback) {
-    impl->dma.SetReadCallback(std::move(callback));
+void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
+    impl->dma.ahbm = callback;
 }
 
 } // namespace Teakra
