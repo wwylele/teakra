@@ -9,10 +9,10 @@
 namespace Teakra {
 
 struct AHBMCallback {
-    std::function<u16(u32 address)> read16;
-    std::function<u32(u32 address)> read32;
-    std::function<void(u32 address, u16 value)> write16;
-    std::function<void(u32 address, u32 value)> write32;
+    std::function<std::uint16_t(std::uint32_t address)> read16;
+    std::function<std::uint32_t(std::uint32_t address)> read32;
+    std::function<void(std::uint32_t address, std::uint16_t value)> write16;
+    std::function<void(std::uint32_t address, std::uint32_t value)> write32;
 };
 
 class Teakra {
