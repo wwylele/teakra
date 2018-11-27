@@ -40,7 +40,8 @@ if (MSVC)
         /EHsc
         /Zc:throwingNew # Assumes new never returns null
         /Zc:inline # Omits inline functions from object-file output
-        /DNOMINMAX)
+        /DNOMINMAX
+        /D_CRT_SECURE_NO_WARNINGS)
 
     if (TEAKRA_WARNINGS_AS_ERRORS)
         list(APPEND TEAKRA_CXX_FLAGS

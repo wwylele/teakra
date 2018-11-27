@@ -42,7 +42,6 @@ target_include_directories(teakra
                            PUBLIC ../include
                            PRIVATE .)
 target_compile_options(teakra PRIVATE ${TEAKRA_CXX_FLAGS})
-target_compile_definitions(teakra PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 add_subdirectory(coff_reader)
 add_subdirectory(dsp1_reader)
