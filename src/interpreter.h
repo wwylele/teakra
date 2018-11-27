@@ -955,7 +955,7 @@ public:
         if (regs.lp) {
             ASSERT(regs.bcn <= 3);
             std::copy_backward(regs.bkrep_stack.begin(), regs.bkrep_stack.begin() + regs.bcn,
-                               regs.bkrep_stack.begin() + 1);
+                               regs.bkrep_stack.begin() + regs.bcn + 1);
             ++regs.bcn;
         }
         u32 flag = mem.DataRead(address_reg++);
