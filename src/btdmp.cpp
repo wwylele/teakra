@@ -1,4 +1,5 @@
 #include "btdmp.h"
+#include <string>
 
 namespace Teakra {
 
