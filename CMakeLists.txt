@@ -8,6 +8,8 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
 endif()
 
+option(TEAKRA_WARNINGS_AS_ERRORS "Warnings as errors" ${MASTER_PROJECT})
+
 # Set hard requirements for C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,6 +49,11 @@ if (MSVC)
         /Zc:throwingNew # Assumes new never returns null
         /Zc:inline # Omits inline functions from object-file output
         /DNOMINMAX)
+
+    if (TEAKRA_WARNINGS_AS_ERRORS)
+        list(APPEND TEAKRA_CXX_FLAGS
+             /WX)
+    endif()
 else()
     set(TEAKRA_CXX_FLAGS
         -Wall
@@ -57,6 +64,11 @@ else()
         -Wfatal-errors
         -Wno-missing-braces
         -Wno-unused-parameter)
+
+    if (TEAKRA_WARNINGS_AS_ERRORS)
+        list(APPEND TEAKRA_CXX_FLAGS
+             -Werror)
+    endif()
 endif()
 
 # Prefer the -pthread flag on Linux.
