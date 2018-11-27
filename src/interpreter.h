@@ -563,7 +563,7 @@ public:
     void alb(Alb op, Imm16 a, Register b) {
         u16 bv;
         if (b.GetName() == RegName::p) {
-            bv = ProductToBus40(RegName::p0) >> 16;
+            bv = (u16)(ProductToBus40(RegName::p0) >> 16);
         } else if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
             throw UnimplementedException(); // weird effect;
         } else {
@@ -2023,7 +2023,7 @@ public:
         u16 address2 = OffsetAddress(unit, address, GetArOffset(as));
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
-        u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
+        u32 value = ((u32)h << 16) | l;
         ProductFromBus32(b.GetName(), value);
     }
     void mova(Ab a, ArRn2 b, ArStep2 bs) {
@@ -2177,7 +2177,7 @@ public:
 
     void ShiftBus40(u64 value, u16 sv, RegName dest) {
         value &= 0xFF'FFFF'FFFF;
-        u16 original_sign = value >> 39;
+        u64 original_sign = value >> 39;
         if ((sv >> 15) == 0) {
             // left shift
             if (sv >= 40) {
@@ -2272,7 +2272,7 @@ public:
         // Do 16-bit arithmetic. Flag C is set according to bit 16 but Flag V is always cleared
         // Looks like a hardware bug to me
         u64 result = (u64)value16 + 0x8000;
-        regs.fc[0] = result >> 16;
+        regs.fc[0] = (u16)(result >> 16);
         regs.fv = 0;
         result &= 0xFFFF;
         SatAndSetAccAndFlag(b.GetName(), result);
@@ -2288,7 +2288,7 @@ public:
         } else {
             u16 value16 = RegToBus16(a.GetName());
             result = (u64)value16 + 0x8000;
-            regs.fc[0] = result >> 16;
+            regs.fc[0] = (u16)(result >> 16);
             regs.fv = 0;
             result &= 0xFFFF;
         }
@@ -2302,7 +2302,7 @@ public:
     void movr_r6_to(Ax b) {
         u16 value16 = regs.r[6];
         u64 result = (u64)value16 + 0x8000;
-        regs.fc[0] = result >> 16;
+        regs.fc[0] = (u16)(result >> 16);
         regs.fv = 0;
         result &= 0xFFFF;
         SatAndSetAccAndFlag(b.GetName(), result);

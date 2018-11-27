@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
                       memory_interface.DataRead(TestSpaceY + offset));
             }
             ++total;
-        } catch (const Teakra::UnimplementedException& e) {
+        } catch (const Teakra::UnimplementedException&) {
             std::printf("Skipped one unimplemented case\n");
             pass = false;
         }

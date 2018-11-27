@@ -33,14 +33,14 @@ int main(int argc, char** argv) {
             }
             is_prog = true;
             addr = section.prog_addr;
-            prog_grow = section.prog_addr + section.data.size() / 2;
+            prog_grow = section.prog_addr + (u32)section.data.size() / 2;
         } else {
             if (section.data_addr < data_grow) {
                 throw "overlap";
             }
             is_prog = false;
             addr = section.data_addr;
-            data_grow = section.data_addr + section.data.size() / 2;
+            data_grow = section.data_addr + (u32)section.data.size() / 2;
         }
 
         fprintf(out, "\n===Section===\n");
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
         std::memcpy(data.data(), section.data.data(), section.data.size());
 
         for (auto iter = data.begin(); iter != data.end(); ++iter) {
-            u32 current_rel_addr = iter - data.begin();
+            u32 current_rel_addr = (u32)(iter - data.begin());
             u32 current_addr = current_rel_addr + addr;
 
             if (coff.symbols_lut.count(current_addr)) {

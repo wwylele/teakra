@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
         fseek(out, 0x120 + i * 0x30, SEEK_SET);
         fwrite(&data_ptr, 4, 1, out);
         fwrite(&segments[i].target, 4, 1, out);
-        u32 size = segments[i].data.size() * 2;
+        u32 size = (u32)segments[i].data.size() * 2;
         fwrite(&size, 4, 1, out);
         u32 memory_type = segments[i].memory_type << 24;
         fwrite(&memory_type, 4, 1, out);
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
     fwrite(&data_ptr, 4, 1, out);
     u32 memory_layout = 0x0000FFFF;
     fwrite(&memory_layout, 4, 1, out);
-    u32 misc = segments.size() << 16;
+    u32 misc = (u32)segments.size() << 16;
     fwrite(&misc, 4, 1, out);
     u32 zero = 0;
     fwrite(&zero, 4, 1, out);

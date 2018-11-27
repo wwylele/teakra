@@ -136,15 +136,15 @@ struct Config {
         }
         for (std::size_t i = 0; i < rp.size(); ++i) {
             if (rp[i] == RegConfig::Memory) {
-                state.r[i] =
-                    (i < 4 ? TestSpaceX : TestSpaceY) + Random::uniform(10, TestSpaceSize - 10);
+                state.r[i] = (i < 4 ? TestSpaceX : TestSpaceY) +
+                             (u16)Random::uniform(10, TestSpaceSize - 10);
                 if (!((state.mod2 >> i) & 1) && (((state.mod2 >> (i + 8)) & 1))) {
                     state.r[i] = BitReverse(state.r[i]);
                 }
             }
         }
         if (lock_r7) {
-            state.r[7] = TestSpaceY + Random::uniform(10, TestSpaceSize - 10);
+            state.r[7] = TestSpaceY + (u16)Random::uniform(10, TestSpaceSize - 10);
         }
         return state;
     }
@@ -1459,7 +1459,7 @@ void GenerateTestCasesToFile(const char* path) {
                 test_case.expand = Random::bit16();
                 break;
             case ExpandConfig::Memory:
-                test_case.expand = TestSpaceX + Random::uniform(10, TestSpaceSize - 10);
+                test_case.expand = TestSpaceX + (u16)Random::uniform(10, TestSpaceSize - 10);
                 break;
             }
             std::fwrite(&test_case, sizeof(test_case), 1, f);

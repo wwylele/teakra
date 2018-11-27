@@ -103,7 +103,7 @@ public:
     std::array<Cell, 0x800> cells{};
     Impl() {
         for (std::size_t i = 0; i < cells.size(); ++i) {
-            cells[i].index = i;
+            cells[i].index = (u16)i;
         }
     }
 };
