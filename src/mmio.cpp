@@ -111,8 +111,7 @@ public:
 MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, Apbp& apbp_from_dsp,
                        std::array<Timer, 2>& timer, Dma& dma, Ahbm& ahbm,
                        std::array<Btdmp, 2>& btdmp)
-    : impl(new Impl), miu(miu), icu(icu), apbp_from_cpu(apbp_from_cpu),
-      apbp_from_dsp(apbp_from_dsp), timer(timer), dma(dma), ahbm(ahbm), btdmp(btdmp) {
+    : impl(new Impl) {
     using namespace std::placeholders;
 
     impl->cells[0x01A] = Cell::ConstCell(0xC902); // chip detect
@@ -128,9 +127,9 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
             BitFieldSlot::RefSlot(8, 1, timer[i].pause),       // PC
             BitFieldSlot::RefSlot(9, 1, timer[i].update_mmio), // MU
             BitFieldSlot{10, 1,
-                         [this, i](u16 v) {
+                         [&timer, i](u16 v) {
                              if (v)
-                                 this->timer[i].Restart();
+                                 timer[i].Restart();
                          },
                          []() -> u16 { return 0; }}, // RES
             BitFieldSlot{11, 1, {}, {}},             // BP
@@ -139,9 +138,9 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
             BitFieldSlot{14, 2, {}, {}},             // TM
         });
 
-        impl->cells[0x22 + i * 0x10].set = [this, i](u16 v) {
+        impl->cells[0x22 + i * 0x10].set = [&timer, i](u16 v) {
             if (v)
-                this->timer[i].TickEvent();
+                timer[i].TickEvent();
         }; // TIMERx_EW
         impl->cells[0x22 + i * 0x10].get = []() -> u16 { return 0; };
         impl->cells[0x24 + i * 0x10] = Cell::RefCell(timer[i].start_low);    // TIMERx_SCL
@@ -169,14 +168,14 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
     // impl->cells[0x0D4]; // interrupt mask?
     impl->cells[0x0D6] = Cell::BitFieldCell({
-        BitFieldSlot{5, 1, {}, [this]() -> u16 { return this->apbp_from_dsp.IsDataReady(0); }},
-        BitFieldSlot{6, 1, {}, [this]() -> u16 { return this->apbp_from_dsp.IsDataReady(1); }},
-        BitFieldSlot{7, 1, {}, [this]() -> u16 { return this->apbp_from_dsp.IsDataReady(2); }},
-        BitFieldSlot{8, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsDataReady(0); }},
+        BitFieldSlot{5, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(0); }},
+        BitFieldSlot{6, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(1); }},
+        BitFieldSlot{7, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(2); }},
+        BitFieldSlot{8, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(0); }},
         BitFieldSlot{
-            9, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsSemaphoreSignaled(); }},
-        BitFieldSlot{12, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsDataReady(1); }},
-        BitFieldSlot{13, 1, {}, [this]() -> u16 { return this->apbp_from_cpu.IsDataReady(2); }},
+            9, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsSemaphoreSignaled(); }},
+        BitFieldSlot{12, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(1); }},
+        BitFieldSlot{13, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(2); }},
     });
 
     // AHBM

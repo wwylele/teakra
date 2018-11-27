@@ -24,15 +24,6 @@ public:
 private:
     class Impl;
     std::unique_ptr<Impl> impl;
-
-    MemoryInterfaceUnit& miu;
-    ICU& icu;
-    Apbp& apbp_from_cpu;
-    Apbp& apbp_from_dsp;
-    std::array<Timer, 2>& timer;
-    Dma& dma;
-    Ahbm& ahbm;
-    std::array<Btdmp, 2>& btdmp;
 };
 
 } // namespace Teakra
