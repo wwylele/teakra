@@ -181,11 +181,19 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     // AHBM
     impl->cells[0x0E0].set = NoSet("AHBM::BusyFlag");
     impl->cells[0x0E0].get = std::bind(&Ahbm::GetBusyFlag, &ahbm);
-    for (u16 i = 0; i < 6; ++i) {
-        impl->cells[0x0E2 + i * 6].set = std::bind(&Ahbm::SetA, &ahbm, i, _1);
-        impl->cells[0x0E2 + i * 6].get = std::bind(&Ahbm::GetA, &ahbm, i);
-        impl->cells[0x0E4 + i * 6].set = std::bind(&Ahbm::SetB, &ahbm, i, _1);
-        impl->cells[0x0E4 + i * 6].get = std::bind(&Ahbm::GetB, &ahbm, i);
+    for (u16 i = 0; i < 3; ++i) {
+        impl->cells[0x0E2 + i * 6] = Cell::BitFieldCell({
+            // BitFieldSlot{0, 1, ?, ?},
+            BitFieldSlot{1, 2, std::bind(&Ahbm::SetBurstSize, &ahbm, i, _1),
+                         std::bind(&Ahbm::GetBurstSize, &ahbm, i)},
+            BitFieldSlot{4, 2, std::bind(&Ahbm::SetUnitSize, &ahbm, i, _1),
+                         std::bind(&Ahbm::GetUnitSize, &ahbm, i)},
+        });
+        impl->cells[0x0E4 + i * 6] = Cell::BitFieldCell({
+            BitFieldSlot{8, 1, std::bind(&Ahbm::SetDirection, &ahbm, i, _1),
+                         std::bind(&Ahbm::GetDirection, &ahbm, i)},
+            // BitFieldSlot{9, 1, ?, ?},
+        });
         impl->cells[0x0E6 + i * 6].set = std::bind(&Ahbm::SetDmaChannel, &ahbm, i, _1);
         impl->cells[0x0E6 + i * 6].get = std::bind(&Ahbm::GetDmaChannel, &ahbm, i);
     }

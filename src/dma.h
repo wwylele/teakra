@@ -8,10 +8,11 @@
 namespace Teakra {
 
 struct SharedMemory;
+class Ahbm;
 
 class Dma {
 public:
-    Dma(SharedMemory& shared_memory) : shared_memory(shared_memory) {}
+    Dma(SharedMemory& shared_memory, Ahbm& ahbm) : shared_memory(shared_memory), ahbm(ahbm) {}
     void EnableChannel(u16 value) {
         std::printf("DMA: enable channel %04X\n", value);
         enable_channel = value;
@@ -188,7 +189,7 @@ public:
         channels[active_channel].z = value;
 
         if (value == 0x40C0) {
-            DoDma();
+            DoDma(active_channel);
         }
     }
     u16 GetZ() {
@@ -196,9 +197,7 @@ public:
         return channels[active_channel].z;
     }
 
-    AHBMCallback ahbm;
-
-    void DoDma();
+    void DoDma(u16 channel);
 
     std::function<void()> handler;
 
@@ -221,6 +220,7 @@ private:
         u32 current_src = 0, current_dst = 0;
         u16 counter0 = 0, counter1 = 0, counter2 = 0;
         u16 running = 0;
+        u16 ahbm_channel = 0;
 
         void Start();
         void Tick(Dma& parent);
@@ -229,6 +229,7 @@ private:
     std::array<Channel, 8> channels;
 
     SharedMemory& shared_memory;
+    Ahbm& ahbm;
 };
 
 } // namespace Teakra

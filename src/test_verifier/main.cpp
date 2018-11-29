@@ -40,8 +40,8 @@ int main(int argc, char** argv) {
     Teakra::ICU icu;
     Teakra::Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
     std::array<Teakra::Timer, 2> timer;
-    Teakra::Dma dma{shared_memory};
     Teakra::Ahbm ahbm;
+    Teakra::Dma dma{shared_memory, ahbm};
     std::array<Teakra::Btdmp, 2> btdmp{{{"0"}, {"1"}}};
     Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     Teakra::MemoryInterface memory_interface{shared_memory, miu, mmio};

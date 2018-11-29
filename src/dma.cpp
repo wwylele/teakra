@@ -1,15 +1,18 @@
 #include <cstring>
+#include "ahbm.h"
 #include "dma.h"
 #include "shared_memory.h"
 
 namespace Teakra {
 
-void Dma::DoDma() {
-    channels[active_channel].Start();
+void Dma::DoDma(u16 channel) {
+    channels[channel].Start();
+
+    channels[channel].ahbm_channel = ahbm.GetChannelForDma(channel);
 
     // TODO: actually Tick this according to global Tick;
-    while (channels[active_channel].running)
-        channels[active_channel].Tick(*this);
+    while (channels[channel].running)
+        channels[channel].Tick(*this);
 
     handler();
 }
@@ -36,7 +39,7 @@ void Dma::Channel::Tick(Dma& parent) {
             break;
         }
         case 7:
-            value = parent.ahbm.read32(current_src);
+            value = parent.ahbm.Read32(ahbm_channel, current_src);
             break;
         default:
             std::printf("Unknown SrcSpace %04X\n", src_space);
@@ -52,7 +55,7 @@ void Dma::Channel::Tick(Dma& parent) {
         }
 
         case 7:
-            parent.ahbm.write32(current_dst, value);
+            parent.ahbm.Write32(ahbm_channel, current_dst, value);
             break;
         default:
             std::printf("Unknown DstSpace %04X\n", dst_space);
@@ -66,7 +69,7 @@ void Dma::Channel::Tick(Dma& parent) {
             value = parent.shared_memory.ReadWord(DataMemoryOffset + current_src);
             break;
         case 7:
-            value = parent.ahbm.read16(current_src);
+            value = parent.ahbm.Read16(ahbm_channel, current_src);
             break;
         default:
             std::printf("Unknown SrcSpace %04X\n", src_space);
@@ -77,7 +80,7 @@ void Dma::Channel::Tick(Dma& parent) {
             parent.shared_memory.WriteWord(DataMemoryOffset + current_dst, value);
             break;
         case 7:
-            parent.ahbm.write16(current_dst, value);
+            parent.ahbm.Write16(ahbm_channel, current_dst, value);
             break;
         default:
             std::printf("Unknown DstSpace %04X\n", dst_space);

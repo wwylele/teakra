@@ -3,6 +3,7 @@ include(CreateDirectoryGroups)
 add_library(teakra
     ../include/teakra/disassembler.h
     ../include/teakra/teakra.h
+    ahbm.cpp
     ahbm.h
     apbp.cpp
     apbp.h

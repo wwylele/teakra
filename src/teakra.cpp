@@ -20,8 +20,8 @@ struct Teakra::Impl {
     ICU icu;
     Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
     std::array<Timer, 2> timer;
-    Dma dma{shared_memory};
     Ahbm ahbm;
+    Dma dma{shared_memory, ahbm};
     std::array<Btdmp, 2> btdmp{{{"0"}, {"1"}}};
     MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     MemoryInterface memory_interface{shared_memory, miu, mmio};
@@ -94,7 +94,8 @@ std::uint16_t Teakra::GetSemaphore() {
 }
 
 void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
-    impl->dma.ahbm = callback;
+    impl->ahbm.read_external = callback.read8;
+    impl->ahbm.write_external = callback.write8;
 }
 
 } // namespace Teakra
