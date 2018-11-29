@@ -7,10 +7,10 @@ namespace Teakra {
 
 class MemoryInterface;
 
-class Core {
+class Processor {
 public:
-    Core(MemoryInterface& memory_interface);
-    ~Core();
+    Processor(MemoryInterface& memory_interface);
+    ~Processor();
     void Reset();
     void Run(unsigned cycles);
     void SignalInterrupt(u32 i);

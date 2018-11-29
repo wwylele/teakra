@@ -3,11 +3,11 @@
 #include "ahbm.h"
 #include "apbp.h"
 #include "btdmp.h"
-#include "core.h"
 #include "dma.h"
 #include "icu.h"
 #include "memory_interface.h"
 #include "mmio.h"
+#include "processor.h"
 #include "shared_memory.h"
 #include "teakra/teakra.h"
 #include "timer.h"
@@ -25,12 +25,12 @@ struct Teakra::Impl {
     std::array<Btdmp, 2> btdmp{{{"0"}, {"1"}}};
     MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     MemoryInterface memory_interface{shared_memory, miu, mmio};
-    Core core{memory_interface};
+    Processor processor{memory_interface};
 
     Impl() {
         using namespace std::placeholders;
-        icu.OnInterrupt = std::bind(&Core::SignalInterrupt, &core, _1);
-        icu.OnVectoredInterrupt = std::bind(&Core::SignalVectoredInterrupt, &core, _1);
+        icu.OnInterrupt = std::bind(&Processor::SignalInterrupt, &processor, _1);
+        icu.OnVectoredInterrupt = std::bind(&Processor::SignalVectoredInterrupt, &processor, _1);
 
         timer[0].handler = [this]() { icu.TriggerSingle(0xA); };
 
@@ -59,7 +59,7 @@ std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
 
 void Teakra::Run(unsigned cycle) {
     for (unsigned i = 0; i < cycle; ++i) {
-        impl->core.Run(1);
+        impl->processor.Run(1);
         impl->timer[0].Tick();
         impl->timer[1].Tick();
         impl->btdmp[0].Tick();

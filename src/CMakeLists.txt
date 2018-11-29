@@ -10,8 +10,6 @@ add_library(teakra
     btdmp.cpp
     btdmp.h
     common_types.h
-    core.cpp
-    core.h
     crash.h
     decoder.h
     disassembler.cpp
@@ -28,6 +26,8 @@ add_library(teakra
     mmio.h
     oprand.h
     parser.cpp
+    processor.cpp
+    processor.h
     register.h
     shared_memory.h
     teakra.cpp

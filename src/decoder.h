@@ -54,7 +54,7 @@ struct MatcherCreator {
 
     static Matcher<V> Create(const char* name, F func) {
         // Oprands shouldn't overlap each other, nor overlap with the expected ones
-        static_assert(NoOverlap<u16, expected, OprandAtT::Mask ...>, "Error");
+        static_assert(NoOverlap<u16, expected, OprandAtT::Mask...>, "Error");
 
         Proxy<typename FilterOprand<OprandAtT...>::result> proxy{func};
 

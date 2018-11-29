@@ -1,30 +1,30 @@
-#include "core.h"
 #include "interpreter.h"
+#include "processor.h"
 #include "register.h"
 
 namespace Teakra {
 
-struct Core::Impl {
+struct Processor::Impl {
     Impl(MemoryInterface& memory_interface) : interpreter(regs, memory_interface) {}
     RegisterState regs;
     Interpreter interpreter;
 };
 
-Core::Core(MemoryInterface& memory_interface) : impl(new Impl(memory_interface)) {}
-Core::~Core() = default;
+Processor::Processor(MemoryInterface& memory_interface) : impl(new Impl(memory_interface)) {}
+Processor::~Processor() = default;
 
-void Core::Reset() {
+void Processor::Reset() {
     impl->regs = RegisterState();
 }
 
-void Core::Run(unsigned cycles) {
+void Processor::Run(unsigned cycles) {
     impl->interpreter.Run(cycles);
 }
 
-void Core::SignalInterrupt(u32 i) {
+void Processor::SignalInterrupt(u32 i) {
     impl->interpreter.SignalInterrupt(i);
 }
-void Core::SignalVectoredInterrupt(u32 address) {
+void Processor::SignalVectoredInterrupt(u32 address) {
     impl->interpreter.SignalVectoredInterrupt(address);
 }
 
