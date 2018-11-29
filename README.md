@@ -11,8 +11,8 @@ Many thanks to Martin Korth and many other contributers for their help and their
 Please refer to README.md in the following directories for their detail.
  - `src` contains main source code for compiling portable libraries/tools. Detailed documentation for the Teak architecture and for peripherals is also here.
  - `include` contains the header for the emulator and the disassembler libraries.
- - `dsptest` contains the source code of a 3DS too that tests processor instructions and registers
- - `dspmemorytest` contains the source code of another 3DS tools that tests memory read/write, MMIO and DMA.
+ - `dsptester` contains the source code of a 3DS tool that tests processor instructions and registers
+ - `dspmemorytester` contains the source code of another 3DS tool that tests memory read/write, MMIO and DMA.
 
 ## General Information of the XpertTeak
 
