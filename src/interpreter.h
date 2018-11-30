@@ -937,7 +937,7 @@ public:
 
     void bkrep(Imm8 a, Address16 addr) {
         u16 lc = a.Unsigned16();
-        u32 address = addr.storage | (regs.pc & 0x30000);
+        u32 address = addr.Address32() | (regs.pc & 0x30000);
         BlockRepeat(lc, address);
     }
     void bkrep(Register a, Address18_16 addr_low, Address18_2 addr_high) {
@@ -1062,8 +1062,7 @@ public:
 
     void brr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            regs.pc +=
-                SignExtend<7, u32>(addr.storage); // note: pc is the address of the NEXT instruction
+            regs.pc += addr.Relative32(); // note: pc is the address of the NEXT instruction
         }
     }
 
@@ -1091,7 +1090,7 @@ public:
     void callr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
             PushPC();
-            regs.pc += SignExtend<7, u32>(addr.storage);
+            regs.pc += addr.Relative32();
         }
     }
 

@@ -391,7 +391,7 @@ std::string Dsm(Cond cond) {
 }
 
 std::string Dsm(Address16 addr) {
-    return ToHex((u32)(addr.storage));
+    return ToHex(addr.Address32());
 }
 
 std::string A18(Address18_16 addr_low, Address18_2 addr_high) {

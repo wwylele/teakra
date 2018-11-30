@@ -406,8 +406,17 @@ constexpr u32 Address32(Address18_16 low, Address18_2 high) {
     return low.Address32() | high.Address32();
 }
 
-struct Address16 : Oprand<16> {};
-struct RelAddr7 : Oprand<7> {};
+struct Address16 : Oprand<16> {
+    constexpr u32 Address32() {
+        return this->storage;
+    }
+};
+
+struct RelAddr7 : Oprand<7> {
+    constexpr u32 Relative32() {
+        return SignExtend<7, u32>(this->storage);
+    }
+};
 
 template <unsigned bits>
 struct Imm : Oprand<bits> {
