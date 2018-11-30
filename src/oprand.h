@@ -198,7 +198,12 @@ struct Register : RegOprand<
     RegName::a1h,
     RegName::lc,
     RegName::sv
-> {};
+> {
+    // only used in mov(Register, Register)
+    constexpr RegName GetNameForMovFromP() {
+        return (this->storage & 1) ? RegName::a1 : RegName::a0;
+    }
+};
 struct Ax : RegOprand<
     RegName::a0,
     RegName::a1

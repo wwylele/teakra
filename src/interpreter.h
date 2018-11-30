@@ -1796,7 +1796,7 @@ public:
         // a = a0 or a1 is overrided
         if (a.GetName() == RegName::p) {
             // b loses its typical meaning in this case
-            RegName b_name = (b.storage & 1) ? RegName::a1 : RegName::a0;
+            RegName b_name = b.GetNameForMovFromP();
             u64 value = ProductToBus40(RegName::p0);
             SatAndSetAccAndFlag(b_name, value);
         } else if (a.GetName() == RegName::pc) {
