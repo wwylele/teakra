@@ -630,7 +630,26 @@ enum class CondValue {
 
 using Cond = EnumAllOprand<CondValue>;
 
-struct BankFlags : Oprand<6>{};
+struct BankFlags : Oprand<6>{
+    constexpr bool Cfgi() const {
+        return (this->storage & 1) != 0;
+    }
+    constexpr bool R4() const {
+        return (this->storage & 2) != 0;
+    }
+    constexpr bool R1() const {
+        return (this->storage & 4) != 0;
+    }
+    constexpr bool R0() const {
+        return (this->storage & 8) != 0;
+    }
+    constexpr bool R7() const {
+        return (this->storage & 16) != 0;
+    }
+    constexpr bool Cfgj() const {
+        return (this->storage & 32) != 0;
+    }
+};
 
 enum class CbsCondValue {
     Ge,

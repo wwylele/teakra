@@ -702,17 +702,17 @@ public:
 
     std::vector<std::string> banke(BankFlags flags) {
         std::vector<std::string> s{"banke"};
-        if (flags.storage & 1)
+        if (flags.R0())
             s.push_back("r0");
-        if (flags.storage & 2)
+        if (flags.R1())
             s.push_back("r1");
-        if (flags.storage & 4)
+        if (flags.R4())
             s.push_back("r4");
-        if (flags.storage & 8)
+        if (flags.Cfgi())
             s.push_back("cfgi");
-        if (flags.storage & 16)
+        if (flags.R7())
             s.push_back("r7");
-        if (flags.storage & 32)
+        if (flags.Cfgj())
             s.push_back("cfgj");
         return s;
     }

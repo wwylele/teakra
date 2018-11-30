@@ -1000,25 +1000,25 @@ public:
     }
 
     void banke(BankFlags flags) {
-        if (flags.storage & 1) {
+        if (flags.Cfgi()) {
             std::swap(regs.stepi, regs.stepib);
             std::swap(regs.modi, regs.modib);
             if (regs.stp16)
                 std::swap(regs.stepi0, regs.stepi0b);
         }
-        if (flags.storage & 2) {
+        if (flags.R4()) {
             std::swap(regs.r[4], regs.r4b);
         }
-        if (flags.storage & 4) {
+        if (flags.R1()) {
             std::swap(regs.r[1], regs.r1b);
         }
-        if (flags.storage & 8) {
+        if (flags.R0()) {
             std::swap(regs.r[0], regs.r0b);
         }
-        if (flags.storage & 16) {
+        if (flags.R7()) {
             std::swap(regs.r[7], regs.r7b);
         }
-        if (flags.storage & 32) {
+        if (flags.Cfgj()) {
             std::swap(regs.stepj, regs.stepjb);
             std::swap(regs.modj, regs.modjb);
             if (regs.stp16)
