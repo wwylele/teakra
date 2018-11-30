@@ -942,12 +942,12 @@ public:
     }
     void bkrep(Register a, Address18_16 addr_low, Address18_2 addr_high) {
         u16 lc = RegToBus16(a.GetName());
-        u32 address = addr_low.storage | ((u32)addr_high.storage << 16);
+        u32 address = Address32(addr_low, addr_high);
         BlockRepeat(lc, address);
     }
     void bkrep_r6(Address18_16 addr_low, Address18_2 addr_high) {
         u16 lc = regs.r[6];
-        u32 address = addr_low.storage | ((u32)addr_high.storage << 16);
+        u32 address = Address32(addr_low, addr_high);
         BlockRepeat(lc, address);
     }
 
@@ -1056,7 +1056,7 @@ public:
 
     void br(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         if (regs.ConditionPass(cond)) {
-            SetPC(addr_low.storage | ((u32)addr_high.storage << 16));
+            SetPC(Address32(addr_low, addr_high));
         }
     }
 
@@ -1077,7 +1077,7 @@ public:
     void call(Address18_16 addr_low, Address18_2 addr_high, Cond cond) {
         if (regs.ConditionPass(cond)) {
             PushPC();
-            SetPC(addr_low.storage | ((u32)addr_high.storage << 16));
+            SetPC(Address32(addr_low, addr_high));
         }
     }
     void calla(Axl a) {

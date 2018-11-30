@@ -395,7 +395,7 @@ std::string Dsm(Address16 addr) {
 }
 
 std::string A18(Address18_16 addr_low, Address18_2 addr_high) {
-    return ToHex((u32)(addr_low.storage + (addr_high.storage << 16)));
+    return ToHex(Address32(addr_low, addr_high));
 }
 
 std::string Dsm(StepZIDS step) {

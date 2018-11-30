@@ -391,8 +391,20 @@ struct ArpRn2 : Oprand<2> {};
 struct ArpStep1 : Oprand<1> {};
 struct ArpStep2 : Oprand<2> {};
 
-struct Address18_2 : Oprand<2> {};
-struct Address18_16 : Oprand<16> {};
+struct Address18_2 : Oprand<2> {
+    constexpr u32 Address32() const {
+        return (u32)(this->storage) << 16;
+    }
+};
+struct Address18_16 : Oprand<16> {
+    constexpr u32 Address32() const {
+        return this->storage;
+    }
+};
+
+constexpr u32 Address32(Address18_16 low, Address18_2 high) {
+    return low.Address32() | high.Address32();
+}
 
 struct Address16 : Oprand<16> {};
 struct RelAddr7 : Oprand<7> {};
