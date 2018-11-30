@@ -295,7 +295,7 @@ struct Rn : RegOprand<
     RegName::r7
 > {
     Rn() = default;
-    constexpr Rn(u16 index) {
+    Rn(u16 index) {
         this->storage = index;
     }
     constexpr u16 Index() const {
