@@ -903,27 +903,31 @@ public:
         SatAndSetAccAndFlag(a.GetName(), result);
     }
 
-    void FilterDoubleClr(Ab& a, Ab& b) {
-        if (a.storage == 0) {
-            b.storage = 1;
-        } else if (a.storage == 1) {
-            b.storage = 0;
-        } else if (a.storage == 2) {
-            if (b.storage == 2)
-                b.storage = 3;
+    void FilterDoubleClr(RegName& a, RegName& b) {
+        if (a == RegName::b0) {
+            b = RegName::b1;
+        } else if (a == RegName::b1) {
+            b = RegName::b0;
+        } else if (a == RegName::a0) {
+            if (b == RegName::a0)
+                b = RegName::a1;
         } else
-            b.storage = b.storage == 1 ? 1 : 0;
+            b = b == RegName::b1 ? RegName::b1 : RegName::b0;
     }
 
     void clr(Ab a, Ab b) {
-        FilterDoubleClr(a, b);
-        SatAndSetAccAndFlag(a.GetName(), 0);
-        SatAndSetAccAndFlag(b.GetName(), 0);
+        RegName a_name = a.GetName();
+        RegName b_name = b.GetName();
+        FilterDoubleClr(a_name, b_name);
+        SatAndSetAccAndFlag(a_name, 0);
+        SatAndSetAccAndFlag(b_name, 0);
     }
     void clrr(Ab a, Ab b) {
-        FilterDoubleClr(a, b);
-        SatAndSetAccAndFlag(a.GetName(), 0x8000);
-        SatAndSetAccAndFlag(b.GetName(), 0x8000);
+        RegName a_name = a.GetName();
+        RegName b_name = b.GetName();
+        FilterDoubleClr(a_name, b_name);
+        SatAndSetAccAndFlag(a_name, 0x8000);
+        SatAndSetAccAndFlag(b_name, 0x8000);
     }
 
     void BlockRepeat(u16 lc, u32 address) {
