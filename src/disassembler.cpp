@@ -744,7 +744,7 @@ public:
     }
 
     std::vector<std::string> brr(RelAddr7 addr, Cond cond) {
-        return D("brr", ToHex(addr.storage), cond);
+        return D("brr", ToHex((u16)addr.Relative32()), cond);
     }
 
     std::vector<std::string> break_() {
@@ -761,7 +761,7 @@ public:
         return D("calla", R(a));
     }
     std::vector<std::string> callr(RelAddr7 addr, Cond cond) {
-        return D("callr", ToHex(addr.storage), cond);
+        return D("callr", ToHex((u16)addr.Relative32()), cond);
     }
 
     std::vector<std::string> cntx_s() {

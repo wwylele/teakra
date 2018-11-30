@@ -445,7 +445,6 @@ struct Imms : Oprand<bits> {
 };
 
 struct Imm2 : Imm<2> {};
-struct BitNo : Imm<4> {};
 struct Imm4 : Imm<4> {};
 struct Imm5 : Imm<5> {};
 struct Imm5s : Imms<5> {};
