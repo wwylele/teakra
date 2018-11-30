@@ -1648,9 +1648,9 @@ private:
     std::string DsmArRn(ArRn a) {
         if (ar_arp) {
             return "%r" +
-                   std::to_string((ar_arp->ar[a.storage / 2] >> (13 - 3 * (a.storage % 2))) & 7);
+                   std::to_string((ar_arp->ar[a.Index() / 2] >> (13 - 3 * (a.Index() % 2))) & 7);
         }
-        return "arrn" + std::to_string(a.storage);
+        return "arrn" + std::to_string(a.Index());
     }
 
     std::string ConvertArStepAndOffset(u16 v) {
@@ -1678,59 +1678,48 @@ private:
     template <typename ArStep>
     std::string DsmArStep(ArStep a) {
         if (ar_arp) {
-            u16 s = (ar_arp->ar[a.storage / 2] >> (5 - 5 * (a.storage % 2))) & 31;
+            u16 s = (ar_arp->ar[a.Index() / 2] >> (5 - 5 * (a.Index() % 2))) & 31;
             return ConvertArStepAndOffset(s);
         }
-        return "+ars" + std::to_string(a.storage);
-    }
-
-    std::string DsmArStepAlt(ArStep1Alt a) {
-        if (ar_arp) {
-            u16 s = (ar_arp->ar[1] >> (5 - 5 * a.storage)) & 31;
-            return ConvertArStepAndOffset(s);
-        }
-        return "+ars" + std::to_string(a.storage + 2);
+        return "+ars" + std::to_string(a.Index());
     }
 
     template <typename ArpRn>
     std::string DsmArpRni(ArpRn a) {
         if (ar_arp) {
-            return "%r" + std::to_string((ar_arp->arp[a.storage] >> 10) & 3);
+            return "%r" + std::to_string((ar_arp->arp[a.Index()] >> 10) & 3);
         }
-        return "arprni" + std::to_string(a.storage);
+        return "arprni" + std::to_string(a.Index());
     }
 
     template <typename ArpStep>
     std::string DsmArpStepi(ArpStep a) {
         if (ar_arp) {
-            u16 s = ar_arp->arp[a.storage] & 31;
+            u16 s = ar_arp->arp[a.Index()] & 31;
             return ConvertArStepAndOffset(s);
         }
-        return "+arpsi" + std::to_string(a.storage);
+        return "+arpsi" + std::to_string(a.Index());
     }
 
     template <typename ArpRn>
     std::string DsmArpRnj(ArpRn a) {
         if (ar_arp) {
-            return "%r" + std::to_string(((ar_arp->arp[a.storage] >> 13) & 3) + 4);
+            return "%r" + std::to_string(((ar_arp->arp[a.Index()] >> 13) & 3) + 4);
         }
-        return "arprnj" + std::to_string(a.storage);
+        return "arprnj" + std::to_string(a.Index());
     }
 
     template <typename ArpStep>
     std::string DsmArpStepj(ArpStep a) {
         if (ar_arp) {
-            u16 s = (ar_arp->arp[a.storage] >> 5) & 31;
+            u16 s = (ar_arp->arp[a.Index()] >> 5) & 31;
             return ConvertArStepAndOffset(s);
         }
-        return "+arpsj" + std::to_string(a.storage);
+        return "+arpsj" + std::to_string(a.Index());
     }
 
     template <typename ArRn, typename ArStep>
     std::string MemARS(ArRn reg, ArStep step) {
-        if constexpr (std::is_same_v<ArStep, ArStep1Alt>) {
-            return "[" + DsmArRn(reg) + DsmArStepAlt(step) + "]";
-        }
         return "[" + DsmArRn(reg) + DsmArStep(step) + "]";
     }
 

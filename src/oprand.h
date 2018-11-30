@@ -386,15 +386,22 @@ using StepZIDS = EnumOprand<StepValue,
     StepValue::PlusStep
 >;
 
-struct ArRn1 : Oprand<1> {};
-struct ArRn2 : Oprand<2> {};
-struct ArStep1 : Oprand<1> {};
-struct ArStep1Alt : Oprand<1> {};
-struct ArStep2 : Oprand<2> {};
-struct ArpRn1 : Oprand<1> {};
-struct ArpRn2 : Oprand<2> {};
-struct ArpStep1 : Oprand<1> {};
-struct ArpStep2 : Oprand<2> {};
+template<unsigned bits, u16 offset = 0>
+struct ArIndex : Oprand<bits>{
+    constexpr u16 Index() const {
+        return this->storage + offset;
+    }
+};
+
+struct ArRn1 : ArIndex<1> {};
+struct ArRn2 : ArIndex<2> {};
+struct ArStep1 : ArIndex<1> {};
+struct ArStep1Alt : ArIndex<1, 2> {};
+struct ArStep2 : ArIndex<2> {};
+struct ArpRn1 : ArIndex<1> {};
+struct ArpRn2 : ArIndex<2> {};
+struct ArpStep1 : ArIndex<1> {};
+struct ArpStep2 : ArIndex<2> {};
 
 struct Address18_2 : Oprand<2> {
     constexpr u32 Address32() const {

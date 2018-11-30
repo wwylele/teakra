@@ -3328,13 +3328,13 @@ private:
     template <typename ArRnX>
     u16 GetArRnUnit(ArRnX arrn) const {
         static_assert(std::is_same_v<ArRnX, ArRn1> || std::is_same_v<ArRnX, ArRn2>);
-        return regs.arrn[arrn.storage];
+        return regs.arrn[arrn.Index()];
     }
 
     template <typename ArpRnX>
     std::tuple<u16, u16> GetArpRnUnit(ArpRnX arprn) const {
         static_assert(std::is_same_v<ArpRnX, ArpRn1> || std::is_same_v<ArpRnX, ArpRn2>);
-        return std::make_tuple(regs.arprni[arprn.storage], regs.arprnj[arprn.storage] + 4);
+        return std::make_tuple(regs.arprni[arprn.Index()], regs.arprnj[arprn.Index()] + 4);
     }
 
     static StepValue ConvertArStep(u16 arvalue) {
@@ -3362,19 +3362,16 @@ private:
 
     template <typename ArStepX>
     StepValue GetArStep(ArStepX arstep) const {
-        if constexpr (std::is_same_v<ArStepX, ArStep1Alt>) {
-            return ConvertArStep(regs.arstep[arstep.storage + 2]);
-        } else {
-            static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
-            return ConvertArStep(regs.arstep[arstep.storage]);
-        }
+        static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep1Alt> ||
+                      std::is_same_v<ArStepX, ArStep2>);
+        return ConvertArStep(regs.arstep[arstep.Index()]);
     }
 
     template <typename ArpStepX>
     std::tuple<StepValue, StepValue> GetArpStep(ArpStepX arpstepi, ArpStepX arpstepj) const {
         static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
-        return std::make_tuple(ConvertArStep(regs.arpstepi[arpstepi.storage]),
-                               ConvertArStep(regs.arpstepj[arpstepj.storage]));
+        return std::make_tuple(ConvertArStep(regs.arpstepi[arpstepi.Index()]),
+                               ConvertArStep(regs.arpstepj[arpstepj.Index()]));
     }
 
     enum class OffsetValue : u16 {
@@ -3387,14 +3384,14 @@ private:
     template <typename ArStepX>
     OffsetValue GetArOffset(ArStepX arstep) const {
         static_assert(std::is_same_v<ArStepX, ArStep1> || std::is_same_v<ArStepX, ArStep2>);
-        return (OffsetValue)regs.aroffset[arstep.storage];
+        return (OffsetValue)regs.aroffset[arstep.Index()];
     }
 
     template <typename ArpStepX>
     std::tuple<OffsetValue, OffsetValue> GetArpOffset(ArpStepX arpstepi, ArpStepX arpstepj) const {
         static_assert(std::is_same_v<ArpStepX, ArpStep1> || std::is_same_v<ArpStepX, ArpStep2>);
-        return std::make_tuple((OffsetValue)regs.arpoffseti[arpstepi.storage],
-                               (OffsetValue)regs.arpoffsetj[arpstepj.storage]);
+        return std::make_tuple((OffsetValue)regs.arpoffseti[arpstepi.Index()],
+                               (OffsetValue)regs.arpoffsetj[arpstepj.Index()]);
     }
 
     u16 RnAddress(unsigned unit, unsigned value) {
