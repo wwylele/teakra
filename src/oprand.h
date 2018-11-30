@@ -411,18 +411,12 @@ struct Imm4 : Imm<4> {};
 struct Imm5 : Imm<5> {};
 struct Imm5s : Imms<5> {};
 struct Imm6s : Imms<6> {};
-struct Imm7 : Imm<7> {};
 struct Imm7s : Imms<7> {};
 struct Imm8 : Imm<8> {};
 struct Imm8s : Imms<8> {};
 struct Imm9 : Imm<9> {};
 struct Imm16 : Imm<16> {};
 
-//struct MemRn : Rn {};
-//struct ProgMemRn : Rn {};
-//struct ProgMemAxl : Axl {};
-//struct ProgMemAx : Ax {};
-// struct ProgMemAx_
 struct MemImm8 : Imm8 {};
 struct MemImm16 : Imm16 {};
 struct MemR7Imm7s : Imm7s {};
