@@ -1029,14 +1029,14 @@ public:
         regs.SwapAllArArp();
     }
     void bankr(Ar a) {
-        regs.SwapAr(a.storage);
+        regs.SwapAr(a.Index());
     }
     void bankr(Ar a, Arp b) {
-        regs.SwapAr(a.storage);
-        regs.SwapArp(b.storage);
+        regs.SwapAr(a.Index());
+        regs.SwapArp(b.Index());
     }
     void bankr(Arp a) {
-        regs.SwapArp(a.storage);
+        regs.SwapArp(a.Index());
     }
 
     void bitrev(Rn a) {

@@ -334,16 +334,26 @@ struct SttMod : RegOprand<
     RegName::mod2,
     RegName::mod3
 > {};
+
 struct Ar : RegOprand<
     RegName::ar0,
     RegName::ar1
-> {};
+> {
+    constexpr u16 Index() const {
+        return this->storage;
+    }
+};
+
 struct Arp : RegOprand<
     RegName::arp0,
     RegName::arp1,
     RegName::arp2,
     RegName::arp3
-> {};
+> {
+    constexpr u16 Index() const {
+        return this->storage;
+    }
+};
 
 enum SwapTypeValue {
     a0b0,
