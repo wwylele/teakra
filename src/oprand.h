@@ -8,7 +8,15 @@ template <unsigned bits>
 struct Oprand {
     static_assert(bits > 0 && bits <= 16, "!");
     static constexpr unsigned Bits = bits;
+
+protected:
     u16 storage;
+
+    template <typename OprandT, unsigned pos>
+    friend struct At;
+
+    template <typename OprandT, u16 value>
+    friend struct Const;
 };
 
 template <typename OprandT, unsigned pos>
@@ -285,17 +293,36 @@ struct Rn : RegOprand<
     RegName::r5,
     RegName::r6,
     RegName::r7
-> {};
+> {
+    Rn() = default;
+    constexpr Rn(u16 index) {
+        this->storage = index;
+    }
+    constexpr u16 Index() const {
+        return this->storage;
+    }
+};
+
 struct R45 : RegOprand<
     RegName::r4,
     RegName::r5
-> {};
+> {
+    constexpr u16 Index() const {
+        return this->storage + 4;
+    }
+};
+
 struct R0123 : RegOprand<
     RegName::r0,
     RegName::r1,
     RegName::r2,
     RegName::r3
-> {};
+> {
+    constexpr u16 Index() const {
+        return this->storage;
+    }
+};
+
 struct ArArpSttMod : RegOprand<
     RegName::ar0,
     RegName::ar1,

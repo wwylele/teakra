@@ -155,7 +155,7 @@ Config AnyConfig{true};
 
 Config ConfigWithAddress(Rn r) {
     Config config{true};
-    config.r[r.storage] = RegConfig::Memory;
+    config.r[r.Index()] = RegConfig::Memory;
     return config;
 }
 
@@ -163,7 +163,7 @@ template <typename ArRnX>
 Config ConfigWithArAddress(ArRnX r) {
     static_assert(std::is_same_v<ArRnX, ArRn1> || std::is_same_v<ArRnX, ArRn2>);
     Config config{true};
-    config.ar[r.storage] = RegConfig::Memory;
+    config.ar[r.Index()] = RegConfig::Memory;
     return config;
 }
 
@@ -171,7 +171,7 @@ template <typename ArpRnX>
 Config ConfigWithArpAddress(ArpRnX r) {
     static_assert(std::is_same_v<ArpRnX, ArpRn1> || std::is_same_v<ArpRnX, ArpRn2>);
     Config config{true};
-    config.arp[r.storage] = RegConfig::Memory;
+    config.arp[r.Index()] = RegConfig::Memory;
     return config;
 }
 
@@ -181,7 +181,7 @@ Config ConfigWithImm8(Imm8 imm) {
         35,
         0xE3,
     };
-    if (random_pos.count(imm.storage)) {
+    if (random_pos.count(imm.Unsigned16())) {
         return AnyConfig;
     } else {
         return DisabledConfig;
@@ -194,7 +194,7 @@ Config ConfigWithMemImm8(MemImm8 mem) {
         0x88,
         0xFF,
     };
-    if (random_pos.count(mem.storage)) {
+    if (random_pos.count(mem.Unsigned16())) {
         Config c = AnyConfig;
         c.lock_page = true;
         return c;
@@ -213,9 +213,9 @@ Config ConfigWithMemR7Imm7s(MemR7Imm7s mem) {
     std::unordered_set<u16> random_pos = {
         0,
         4,
-        0x7E,
+        0xFFFE,
     };
-    if (random_pos.count(mem.storage)) {
+    if (random_pos.count(mem.Signed16())) {
         Config c = AnyConfig;
         c.lock_r7 = true;
         return c;
