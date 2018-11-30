@@ -528,7 +528,7 @@ int main() {
     grid[9][3] = MakeBinReg("ar1", 0x26, "RRRRRRoosssoosss");
     grid[8][3] = MakeBinReg("ar0", 0x27, "RRRRRRoosssoosss");
     grid[7][3] = MakeBinReg("mod2", 0x28, "7654321m7654321M");
-    grid[6][3] = MakeBinReg("mod1", 0x29, "???B####pppppppp");
+    grid[6][3] = MakeBinReg("mod1", 0x29, "jicB####pppppppp");
     grid[5][3] = MakeBinReg("mod0", 0x2A, "#QQ#PPooSYY###SS");
     grid[4][3] = MakeBinReg("stt2", 0x2B, "LBBB####mm##V21I");
     grid[3][3] = MakeBinReg("stt1", 0x2C, "QP#########R####");
