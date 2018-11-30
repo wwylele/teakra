@@ -446,11 +446,11 @@ public:
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, Imm16 a, Ax b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, Imm8 a, Ax b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         u64 and_backup = 0;
         if (op.GetName() == AlmOp::And) {
             // AND instruction has a special treatment:
@@ -549,14 +549,14 @@ public:
 
     void alb(Alb op, Imm16 a, MemImm8 b) {
         u16 bv = LoadFromMemory(b);
-        u16 result = GenericAlb(op, a.storage, bv);
+        u16 result = GenericAlb(op, a.Unsigned16(), bv);
         if (IsAlbModifying(op))
             StoreToMemory(b, result);
     }
     void alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
         u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
         u16 bv = mem.DataRead(address);
-        u16 result = GenericAlb(op, a.storage, bv);
+        u16 result = GenericAlb(op, a.Unsigned16(), bv);
         if (IsAlbModifying(op))
             mem.DataWrite(address, result);
     }
@@ -569,7 +569,7 @@ public:
         } else {
             bv = RegToBus16(b.GetName());
         }
-        u16 result = GenericAlb(op, a.storage, bv);
+        u16 result = GenericAlb(op, a.Unsigned16(), bv);
         if (IsAlbModifying(op)) {
             switch (b.GetName()) {
             case RegName::a0:
@@ -607,13 +607,13 @@ public:
     }
     void alb_r6(Alb op, Imm16 a) {
         u16 bv = regs.r[6];
-        u16 result = GenericAlb(op, a.storage, bv);
+        u16 result = GenericAlb(op, a.Unsigned16(), bv);
         if (IsAlbModifying(op))
             regs.r[6] = result;
     }
     void alb(Alb op, Imm16 a, SttMod b) {
         u16 bv = RegToBus16(b.GetName());
-        u16 result = GenericAlb(op, a.storage, bv);
+        u16 result = GenericAlb(op, a.Unsigned16(), bv);
         if (IsAlbModifying(op))
             RegFromBus16(b.GetName(), result);
     }
@@ -936,7 +936,7 @@ public:
     }
 
     void bkrep(Imm8 a, Address16 addr) {
-        u16 lc = a.storage;
+        u16 lc = a.Unsigned16();
         u32 address = addr.storage | (regs.pc & 0x30000);
         BlockRepeat(lc, address);
     }
@@ -1162,37 +1162,38 @@ public:
     }
     void rets(Imm8 a) {
         PopPC();
-        regs.sp += a.storage;
+        regs.sp += a.Unsigned16();
     }
 
     void load_ps(Imm2 a) {
-        regs.ps[0] = a.storage;
+        regs.ps[0] = a.Unsigned16();
     }
     void load_stepi(Imm7s a) {
-        regs.stepi = a.storage;
+        // Although this is signed, we still only store the lower 7 bits
+        regs.stepi = a.Signed16() & 0x7F;
     }
     void load_stepj(Imm7s a) {
-        regs.stepj = a.storage;
+        regs.stepj = a.Signed16() & 0x7F;
     }
     void load_page(Imm8 a) {
-        regs.page = a.storage;
+        regs.page = a.Unsigned16();
     }
     void load_modi(Imm9 a) {
-        regs.modi = a.storage;
+        regs.modi = a.Unsigned16();
     }
     void load_modj(Imm9 a) {
-        regs.modj = a.storage;
+        regs.modj = a.Unsigned16();
     }
     void load_movpd(Imm2 a) {
-        regs.pcmhi = a.storage;
+        regs.pcmhi = a.Unsigned16();
     }
     void load_ps01(Imm4 a) {
-        regs.ps[0] = a.storage & 3;
-        regs.ps[1] = a.storage >> 2;
+        regs.ps[0] = a.Unsigned16() & 3;
+        regs.ps[1] = a.Unsigned16() >> 2;
     }
 
     void push(Imm16 a) {
-        mem.DataWrite(--regs.sp, a.storage);
+        mem.DataWrite(--regs.sp, a.Unsigned16());
     }
     void push(Register a) {
         u16 value = RegToBus16(a.GetName(), true);
@@ -1310,7 +1311,7 @@ public:
     }
 
     void rep(Imm8 a) {
-        Repeat(a.storage);
+        Repeat(a.Unsigned16());
     }
     void rep(Register a) {
         Repeat(RegToBus16(a.GetName()));
@@ -1328,7 +1329,7 @@ public:
     }
     void shfi(Ab a, Ab b, Imm6s s) {
         u64 value = GetAcc(a.GetName());
-        u16 sv = SignExtend<6, u16>(s.storage);
+        u16 sv = s.Signed16();
         ShiftBus40(value, sv, b.GetName());
     }
 
@@ -1361,24 +1362,24 @@ public:
     }
     void tstb(MemImm8 a, Imm4 b) {
         u16 value = LoadFromMemory(a);
-        regs.fz = (value >> b.storage) & 1;
+        regs.fz = (value >> b.Unsigned16()) & 1;
     }
     void tstb(Rn a, StepZIDS as, Imm4 b) {
         u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
         u16 value = mem.DataRead(address);
-        regs.fz = (value >> b.storage) & 1;
+        regs.fz = (value >> b.Unsigned16()) & 1;
     }
     void tstb(Register a, Imm4 b) {
         u16 value = RegToBus16(a.GetName());
-        regs.fz = (value >> b.storage) & 1;
+        regs.fz = (value >> b.Unsigned16()) & 1;
     }
     void tstb_r6(Imm4 b) {
         u16 value = regs.r[6];
-        regs.fz = (value >> b.storage) & 1;
+        regs.fz = (value >> b.Unsigned16()) & 1;
     }
     void tstb(SttMod a, Imm16 b) {
         u16 value = RegToBus16(a.GetName());
-        regs.fz = (value >> b.storage) & 1;
+        regs.fz = (value >> b.Unsigned16()) & 1;
     }
 
     void and_(Ab a, Ab b, Ax c) {
@@ -1429,7 +1430,7 @@ public:
     void mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
         u16 address = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
         regs.y[0] = mem.DataRead(address);
-        regs.x[0] = x.storage;
+        regs.x[0] = x.Unsigned16();
         MulGeneric(op.GetName(), a);
     }
     void mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
@@ -1458,7 +1459,7 @@ public:
     }
 
     void mpyi(Imm8s x) {
-        regs.x[0] = SignExtend<8, u16>(x.storage);
+        regs.x[0] = x.Signed16();
         DoMultiplication(0, true, true);
     }
 
@@ -1480,7 +1481,7 @@ public:
         u64 result = AddSub(value, product, true);
         SatAndSetAccAndFlag(a.GetName(), result);
         regs.y[0] = mem.DataRead(yi);
-        regs.x[0] = x.storage;
+        regs.x[0] = x.Unsigned16();
         DoMultiplication(0, true, true);
     }
     void msusu(ArRn2 x, ArStep2 xs, Ax a) {
@@ -1629,16 +1630,16 @@ public:
     }
 
     void StoreToMemory(MemImm8 addr, u16 value) {
-        mem.DataWrite(addr.storage + (regs.page << 8), value);
+        mem.DataWrite(addr.Unsigned16() + (regs.page << 8), value);
     }
     void StoreToMemory(MemImm16 addr, u16 value) {
-        mem.DataWrite(addr.storage, value);
+        mem.DataWrite(addr.Unsigned16(), value);
     }
     void StoreToMemory(MemR7Imm16 addr, u16 value) {
-        mem.DataWrite(addr.storage + regs.r[7], value);
+        mem.DataWrite(addr.Unsigned16() + regs.r[7], value);
     }
     void StoreToMemory(MemR7Imm7s addr, u16 value) {
-        mem.DataWrite(SignExtend<7, u16>(addr.storage) + regs.r[7], value);
+        mem.DataWrite(addr.Signed16() + regs.r[7], value);
     }
 
     void mov(Ablh a, MemImm8 b) {
@@ -1659,16 +1660,16 @@ public:
     }
 
     u16 LoadFromMemory(MemImm8 addr) {
-        return mem.DataRead(addr.storage + (regs.page << 8));
+        return mem.DataRead(addr.Unsigned16() + (regs.page << 8));
     }
     u16 LoadFromMemory(MemImm16 addr) {
-        return mem.DataRead(addr.storage);
+        return mem.DataRead(addr.Unsigned16());
     }
     u16 LoadFromMemory(MemR7Imm16 addr) {
-        return mem.DataRead(addr.storage + regs.r[7]);
+        return mem.DataRead(addr.Unsigned16() + regs.r[7]);
     }
     u16 LoadFromMemory(MemR7Imm7s addr) {
-        return mem.DataRead(SignExtend<7, u16>(addr.storage) + regs.r[7]);
+        return mem.DataRead(addr.Signed16() + regs.r[7]);
     }
 
     void mov(MemImm16 a, Ax b) {
@@ -1706,33 +1707,33 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, Bx b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, Register b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         RegFromBus16(b.GetName(), value);
     }
     void mov_icr(Imm5 a) {
         u16 value = regs.Get<icr>();
         value &= ~0x1F;
-        value |= a.storage;
+        value |= a.Unsigned16();
         regs.Set<icr>(value);
     }
     void mov(Imm8s a, Axh b) {
-        u16 value = SignExtend<8, u16>(a.storage);
+        u16 value = a.Signed16();
         RegFromBus16(b.GetName(), value);
     }
     void mov(Imm8s a, RnOld b) {
-        u16 value = SignExtend<8, u16>(a.storage);
+        u16 value = a.Signed16();
         RegFromBus16(b.GetName(), value);
     }
     void mov_sv(Imm8s a) {
-        u16 value = SignExtend<8, u16>(a.storage);
+        u16 value = a.Signed16();
         regs.sv = value;
     }
     void mov(Imm8 a, Axl b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         RegFromBus16(b.GetName(), value);
     }
     void mov(MemR7Imm16 a, Ax b) {
@@ -1831,31 +1832,31 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov(Imm16 a, ArArp b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         RegFromBus16(b.GetName(), value);
     }
     void mov_r6(Imm16 a) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         regs.r[6] = value;
     }
     void mov_repc(Imm16 a) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         regs.repc = value;
     }
     void mov_stepi0(Imm16 a) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         regs.stepi0 = value;
     }
     void mov_stepj0(Imm16 a) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         regs.stepj0 = value;
     }
     void mov(Imm16 a, SttMod b) {
-        u16 value = a.storage;
+        u16 value = a.Unsigned16();
         RegFromBus16(b.GetName(), value);
     }
     void mov_prpage(Imm4 a) {
-        regs.prpage = a.storage;
+        regs.prpage = a.Unsigned16();
     }
 
     void mov_a0h_stepi0() {
@@ -2257,7 +2258,7 @@ public:
     }
     void movsi(RnOld a, Ab b, Imm5s s) {
         u64 value = SignExtend<16, u64>(RegToBus16(a.GetName()));
-        u16 sv = SignExtend<5, u16>(s.storage);
+        u16 sv = s.Signed16();
         ShiftBus40(value, sv, b.GetName());
     }
 
@@ -2871,16 +2872,16 @@ public:
     }
 
     void mov_ext0(Imm8s a) {
-        regs.ext[0] = SignExtend<8>(a.storage);
+        regs.ext[0] = a.Signed16();
     }
     void mov_ext1(Imm8s a) {
-        regs.ext[1] = SignExtend<8>(a.storage);
+        regs.ext[1] = a.Signed16();
     }
     void mov_ext2(Imm8s a) {
-        regs.ext[2] = SignExtend<8>(a.storage);
+        regs.ext[2] = a.Signed16();
     }
     void mov_ext3(Imm8s a) {
-        regs.ext[3] = SignExtend<8>(a.storage);
+        regs.ext[3] = a.Signed16();
     }
 
 private:

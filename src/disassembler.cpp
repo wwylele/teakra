@@ -21,12 +21,12 @@ std::string ToHex(T i) {
 template <unsigned bits>
 std::string Dsm(Imm<bits> a) {
     std::string eight_mark = bits == 8 ? "u8" : "";
-    return ToHex(a.storage) + eight_mark;
+    return ToHex(a.Unsigned16()) + eight_mark;
 }
 
 template <unsigned bits>
 std::string Dsm(Imms<bits> a) {
-    u16 value = SignExtend<bits, u16>(a.storage);
+    u16 value = a.Signed16();
     bool negative = (value >> 15) != 0;
     if (negative) {
         value = (~value) + 1;

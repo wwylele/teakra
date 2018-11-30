@@ -399,10 +399,16 @@ struct RelAddr7 : Oprand<7> {};
 
 template <unsigned bits>
 struct Imm : Oprand<bits> {
+    constexpr u16 Unsigned16() const {
+        return this->storage;
+    }
 };
 
 template <unsigned bits>
 struct Imms : Oprand<bits> {
+    constexpr u16 Signed16() const {
+        return SignExtend<bits, u16>(this->storage);
+    }
 };
 
 struct Imm2 : Imm<2> {};
