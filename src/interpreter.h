@@ -136,7 +136,7 @@ public:
             regs.fc[0] = (value & ((u64)1 << 40)) != 0;
             value = SignExtend<40>(value);
             SetAccAndFlag(a.GetName(), value);
-            u32 unit = GetRnUnit(b.GetName());
+            u32 unit = b.Index();
             RnAndModify(unit, bs.GetName());
             regs.fr = regs.r[unit] == 0;
         }
@@ -402,7 +402,7 @@ public:
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
     void alm(Alm op, Rn a, StepZIDS as, Ax b) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u16 value = mem.DataRead(address);
         AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
     }
@@ -554,7 +554,7 @@ public:
             StoreToMemory(b, result);
     }
     void alb(Alb op, Imm16 a, Rn b, StepZIDS bs) {
-        u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        u16 address = RnAddressAndModify(b.Index(), bs.GetName());
         u16 bv = mem.DataRead(address);
         u16 result = GenericAlb(op, a.Unsigned16(), bv);
         if (IsAlbModifying(op))
@@ -1044,16 +1044,16 @@ public:
     }
 
     void bitrev(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         regs.r[unit] = BitReverse(regs.r[unit]);
     }
     void bitrev_dbrv(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         regs.r[unit] = BitReverse(regs.r[unit]);
         regs.br[unit] = 0;
     }
     void bitrev_ebrv(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         regs.r[unit] = BitReverse(regs.r[unit]);
         regs.br[unit] = 1;
     }
@@ -1368,7 +1368,7 @@ public:
         regs.fz = (value >> b.Unsigned16()) & 1;
     }
     void tstb(Rn a, StepZIDS as, Imm4 b) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u16 value = mem.DataRead(address);
         regs.fz = (value >> b.Unsigned16()) & 1;
     }
@@ -1431,13 +1431,13 @@ public:
     }
 
     void mul(Mul3 op, Rn y, StepZIDS ys, Imm16 x, Ax a) {
-        u16 address = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
+        u16 address = RnAddressAndModify(y.Index(), ys.GetName());
         regs.y[0] = mem.DataRead(address);
         regs.x[0] = x.Unsigned16();
         MulGeneric(op.GetName(), a);
     }
     void mul_y0(Mul3 op, Rn x, StepZIDS xs, Ax a) {
-        u16 address = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
+        u16 address = RnAddressAndModify(x.Index(), xs.GetName());
         regs.x[0] = mem.DataRead(address);
         MulGeneric(op.GetName(), a);
     }
@@ -1446,8 +1446,8 @@ public:
         MulGeneric(op.GetName(), a);
     }
     void mul(Mul3 op, R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
-        u16 address_y = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
-        u16 address_x = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
+        u16 address_y = RnAddressAndModify(y.Index(), ys.GetName());
+        u16 address_x = RnAddressAndModify(x.Index(), xs.GetName());
         regs.y[0] = mem.DataRead(address_y);
         regs.x[0] = mem.DataRead(address_x);
         MulGeneric(op.GetName(), a);
@@ -1467,8 +1467,8 @@ public:
     }
 
     void msu(R45 y, StepZIDS ys, R0123 x, StepZIDS xs, Ax a) {
-        u16 yi = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
-        u16 xi = RnAddressAndModify(GetRnUnit(x.GetName()), xs.GetName());
+        u16 yi = RnAddressAndModify(y.Index(), ys.GetName());
+        u16 xi = RnAddressAndModify(x.Index(), xs.GetName());
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p0);
         u64 result = AddSub(value, product, true);
@@ -1478,7 +1478,7 @@ public:
         DoMultiplication(0, true, true);
     }
     void msu(Rn y, StepZIDS ys, Imm16 x, Ax a) {
-        u16 yi = RnAddressAndModify(GetRnUnit(y.GetName()), ys.GetName());
+        u16 yi = RnAddressAndModify(y.Index(), ys.GetName());
         u64 value = GetAcc(a.GetName());
         u64 product = ProductToBus40(RegName::p0);
         u64 result = AddSub(value, product, true);
@@ -1519,32 +1519,32 @@ public:
     }
 
     void modr(Rn a, StepZIDS as) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         RnAndModify(unit, as.GetName());
         regs.fr = regs.r[unit] == 0;
     }
     void modr_dmod(Rn a, StepZIDS as) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         RnAndModify(unit, as.GetName(), true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_i2(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         RnAndModify(unit, StepValue::Increase2Mode1);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_i2_dmod(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         RnAndModify(unit, StepValue::Increase2Mode1, true);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_d2(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         RnAndModify(unit, StepValue::Decrease2Mode1);
         regs.fr = regs.r[unit] == 0;
     }
     void modr_d2_dmod(Rn a) {
-        u32 unit = GetRnUnit(a.GetName());
+        u32 unit = a.Index();
         RnAndModify(unit, StepValue::Decrease2Mode1, true);
         regs.fr = regs.r[unit] == 0;
     }
@@ -1582,8 +1582,8 @@ public:
     }
 
     void movd(R0123 a, StepZIDS as, R45 b, StepZIDS bs) {
-        u16 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u32 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        u16 address_s = RnAddressAndModify(a.Index(), as.GetName());
+        u32 address_d = RnAddressAndModify(b.Index(), bs.GetName());
         address_d |= (u32)regs.pcmhi << 16;
         mem.ProgramWrite(address_d, mem.DataRead(address_s));
     }
@@ -1599,8 +1599,8 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void movp(Rn a, StepZIDS as, R0123 b, StepZIDS bs) {
-        u32 address_s = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
-        u16 address_d = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        u32 address_s = RnAddressAndModify(a.Index(), as.GetName());
+        u16 address_d = RnAddressAndModify(b.Index(), bs.GetName());
         address_s |= (u32)regs.pcmhi << 16;
         mem.DataWrite(address_d, mem.ProgramRead(address_s));
     }
@@ -1748,12 +1748,12 @@ public:
         RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Bx b) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
     void mov(Rn a, StepZIDS as, Register b) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u16 value = mem.DataRead(address);
         RegFromBus16(b.GetName(), value);
     }
@@ -1780,7 +1780,7 @@ public:
     void mov(Register a, Rn b, StepZIDS bs) {
         // a = a0 or a1 is overrided
         u16 value = RegToBus16(a.GetName(), true);
-        u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        u16 address = RnAddressAndModify(b.Index(), bs.GetName());
         mem.DataWrite(address, value);
     }
     void mov(Register a, Bx b) {
@@ -2074,11 +2074,11 @@ public:
     }
     void mov_r6_to(Rn b, StepZIDS bs) {
         u16 value = regs.r[6];
-        u16 address = RnAddressAndModify(GetRnUnit(b.GetName()), bs.GetName());
+        u16 address = RnAddressAndModify(b.Index(), bs.GetName());
         mem.DataWrite(address, value);
     }
     void mov_r6(Rn a, StepZIDS as) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u16 value = mem.DataRead(address);
         regs.r[6] = value;
     }
@@ -2244,7 +2244,7 @@ public:
         ShiftBus40(value, sv, b.GetName());
     }
     void movs(Rn a, StepZIDS as, Ab b) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u64 value = SignExtend<16, u64>(mem.DataRead(address));
         u16 sv = regs.sv;
         ShiftBus40(value, sv, b.GetName());
@@ -2272,7 +2272,7 @@ public:
         SatAndSetAccAndFlag(b.GetName(), result);
     }
     void movr(Rn a, StepZIDS as, Ax b) {
-        u16 value16 = mem.DataRead(RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName()));
+        u16 value16 = mem.DataRead(RnAddressAndModify(a.Index(), as.GetName()));
         // Do 16-bit arithmetic. Flag C is set according to bit 16 but Flag V is always cleared
         // Looks like a hardware bug to me
         u64 result = (u64)value16 + 0x8000;
@@ -2339,7 +2339,7 @@ public:
         ExpStore(b);
     }
     void exp(Rn a, StepZIDS as) {
-        u16 address = RnAddressAndModify(GetRnUnit(a.GetName()), as.GetName());
+        u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u64 value = SignExtend<32>((u64)mem.DataRead(address) << 16);
         regs.sv = Exp(value);
     }
@@ -3292,37 +3292,6 @@ private:
             break;
         case RegName::mod3:
             regs.Set<mod3>(value);
-            break;
-        default:
-            UNREACHABLE();
-        }
-    }
-
-    static u16 GetRnUnit(RegName reg) {
-        switch (reg) {
-        case RegName::r0:
-            return 0;
-            break;
-        case RegName::r1:
-            return 1;
-            break;
-        case RegName::r2:
-            return 2;
-            break;
-        case RegName::r3:
-            return 3;
-            break;
-        case RegName::r4:
-            return 4;
-            break;
-        case RegName::r5:
-            return 5;
-            break;
-        case RegName::r6:
-            return 6;
-            break;
-        case RegName::r7:
-            return 7;
             break;
         default:
             UNREACHABLE();
