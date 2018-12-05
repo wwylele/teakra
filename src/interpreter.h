@@ -1262,7 +1262,7 @@ public:
     void pop(Abe a) {
         u32 value32 = SignExtend<8, u32>(mem.DataRead(regs.sp++) & 0xFF);
         u64 acc = GetAcc(a.GetName());
-        SatAndSetAccAndFlag(a.GetName(), (acc & 0xFFFFFFFF) | (u64)value32 << 32);
+        SetAccAndFlag(a.GetName(), (acc & 0xFFFFFFFF) | (u64)value32 << 32);
     }
     void pop(ArArpSttMod a) {
         u16 value = mem.DataRead(regs.sp++);
@@ -1305,7 +1305,7 @@ public:
         u16 h = mem.DataRead(regs.sp++);
         u16 l = mem.DataRead(regs.sp++);
         u64 value = SignExtend<32, u64>(((u64)h << 16) | l);
-        SatAndSetAccAndFlag(a.GetName(), value);
+        SetAccAndFlag(a.GetName(), value);
     }
 
     void Repeat(u16 repc) {
