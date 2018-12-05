@@ -262,8 +262,8 @@ struct RegisterState {
             std::swap(self->arprnj[index], rnj);
             std::swap(self->arpstepi[index], stepi);
             std::swap(self->arpstepj[index], stepj);
-            std::swap(self->arpstepi[index], offseti);
-            std::swap(self->arpstepj[index], offsetj);
+            std::swap(self->arpoffseti[index], offseti);
+            std::swap(self->arpoffsetj[index], offsetj);
         }
 
     private:
