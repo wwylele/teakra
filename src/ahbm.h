@@ -27,39 +27,39 @@ public:
     };
 
     u16 GetBusyFlag() {
-        std::printf("AHBM: GetBusyFlag\n");
+        // std::printf("AHBM: GetBusyFlag\n");
         return busy_flag;
     }
     void SetUnitSize(u16 i, u16 value) {
-        std::printf("AHBM: SetUnitSize[%u] : %04X\n", i, value);
+        // std::printf("AHBM: SetUnitSize[%u] : %04X\n", i, value);
         channels[i].unit_size = static_cast<UnitSize>(value);
     }
     u16 GetUnitSize(u16 i) {
-        std::printf("AHBM: GetUnitSize[%u]\n", i);
+        // std::printf("AHBM: GetUnitSize[%u]\n", i);
         return static_cast<u16>(channels[i].unit_size);
     }
     void SetBurstSize(u16 i, u16 value) {
-        std::printf("AHBM: SetBurstSize[%u] : %04X\n", i, value);
+        // std::printf("AHBM: SetBurstSize[%u] : %04X\n", i, value);
         channels[i].burst_size = static_cast<BurstSize>(value);
     }
     u16 GetBurstSize(u16 i) {
-        std::printf("AHBM: GetBurstSize[%u]\n", i);
+        // std::printf("AHBM: GetBurstSize[%u]\n", i);
         return static_cast<u16>(channels[i].burst_size);
     }
     void SetDirection(u16 i, u16 value) {
-        std::printf("AHBM: SetDirection[%u] : %04X\n", i, value);
+        // std::printf("AHBM: SetDirection[%u] : %04X\n", i, value);
         channels[i].direction = static_cast<Direction>(value);
     }
     u16 GetDirection(u16 i) {
-        std::printf("AHBM: GetDirection[%u]\n", i);
+        // std::printf("AHBM: GetDirection[%u]\n", i);
         return static_cast<u16>(channels[i].direction);
     }
     void SetDmaChannel(u16 i, u16 value) {
-        std::printf("AHBM: SetDmaChannelB[%u] : %04X\n", i, value);
+        // std::printf("AHBM: SetDmaChannelB[%u] : %04X\n", i, value);
         channels[i].dma_channel = value;
     }
     u16 GetDmaChannel(u16 i) {
-        std::printf("AHBM: GetDmaChannel[%u]\n", i);
+        // std::printf("AHBM: GetDmaChannel[%u]\n", i);
         return channels[i].dma_channel;
     }
 

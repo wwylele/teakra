@@ -15,7 +15,7 @@ public:
     }
     void Acknowledge(u16 irq_bits) {
         if (irq_bits) {
-            printf("ICU: Acknowledge %04X\n", irq_bits);
+            // printf("ICU: Acknowledge %04X\n", irq_bits);
         }
         request &= ~IrqBits(irq_bits);
     }
@@ -24,7 +24,7 @@ public:
     }
     void Trigger(u16 irq_bits) {
         if (irq_bits) {
-            printf("ICU: Trigger %04X\n", irq_bits);
+            // printf("ICU: Trigger %04X\n", irq_bits);
         }
         IrqBits bits(irq_bits);
         request |= bits;

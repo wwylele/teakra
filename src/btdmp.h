@@ -13,37 +13,37 @@ public:
     ~Btdmp();
 
     void SetTransmitPeriod(u16 value) {
-        std::printf("BTDMP%s: SetTransmitPeriod %04X\n", debug_string, value);
+        // std::printf("BTDMP%s: SetTransmitPeriod %04X\n", debug_string, value);
         transmit_period = value;
     }
 
     u16 GetTransmitPeriod() {
-        std::printf("BTDMP%s: GetTransmitPeriod\n", debug_string);
+        // std::printf("BTDMP%s: GetTransmitPeriod\n", debug_string);
         return transmit_period;
     }
 
     void SetTransmitEnable(u16 value) {
-        std::printf("BTDMP%s: SetTransmitEnable %04X\n", debug_string, value);
+        // std::printf("BTDMP%s: SetTransmitEnable %04X\n", debug_string, value);
         transmit_enable = value;
     }
 
     u16 GetTransmitEnable() {
-        std::printf("BTDMP%s: GetTransmitEnable\n", debug_string);
+        // std::printf("BTDMP%s: GetTransmitEnable\n", debug_string);
         return transmit_enable;
     }
 
     u16 GetTransmitEmpty() {
-        std::printf("BTDMP%s: GetTransmitEmpty\n", debug_string);
+        // std::printf("BTDMP%s: GetTransmitEmpty\n", debug_string);
         return transmit_empty;
     }
 
     u16 GetTransmitFull() {
-        std::printf("BTDMP%s: GetTransmitFull\n", debug_string);
+        // std::printf("BTDMP%s: GetTransmitFull\n", debug_string);
         return transmit_full;
     }
 
     void Send(u16 value) {
-        std::printf("BTDMP%s: Send %04X\n", debug_string, value);
+        // std::printf("BTDMP%s: Send %04X\n", debug_string, value);
         if (transmit_queue.size() == 16) {
             std::printf("BTDMP%s: transmit buufer overrun", debug_string);
         } else {
@@ -54,14 +54,14 @@ public:
     }
 
     void SetTransmitFlush(u16 value) {
-        std::printf("BTDMP%s: SetTransmitFlush %04X\n", debug_string, value);
+        // std::printf("BTDMP%s: SetTransmitFlush %04X\n", debug_string, value);
         transmit_queue = {};
         transmit_empty = true;
         transmit_full = false;
     }
 
     u16 GetTransmitFlush() {
-        std::printf("BTDMP%s: GetTransmitFlush\n", debug_string);
+        // std::printf("BTDMP%s: GetTransmitFlush\n", debug_string);
         return 0;
     }
 

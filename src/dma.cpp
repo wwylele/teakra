@@ -38,6 +38,10 @@ void Dma::Channel::Tick(Dma& parent) {
                     ((u32)parent.shared_memory.ReadWord(DataMemoryOffset + h) << 16);
             break;
         }
+        case 1:
+            std::printf("Unimplemented MMIO space");
+            value = 0;
+            break;
         case 7:
             value = parent.ahbm.Read32(ahbm_channel, current_src);
             break;
@@ -53,7 +57,10 @@ void Dma::Channel::Tick(Dma& parent) {
             parent.shared_memory.WriteWord(DataMemoryOffset + h, (u16)(value >> 16));
             break;
         }
-
+        case 1:
+            std::printf("Unimplemented MMIO space");
+            value = 0;
+            break;
         case 7:
             parent.ahbm.Write32(ahbm_channel, current_dst, value);
             break;
@@ -68,6 +75,10 @@ void Dma::Channel::Tick(Dma& parent) {
         case 0:
             value = parent.shared_memory.ReadWord(DataMemoryOffset + current_src);
             break;
+        case 1:
+            std::printf("Unimplemented MMIO space");
+            value = 0;
+            break;
         case 7:
             value = parent.ahbm.Read16(ahbm_channel, current_src);
             break;
@@ -78,6 +89,10 @@ void Dma::Channel::Tick(Dma& parent) {
         switch (dst_space) {
         case 0:
             parent.shared_memory.WriteWord(DataMemoryOffset + current_dst, value);
+            break;
+        case 1:
+            std::printf("Unimplemented MMIO space");
+            value = 0;
             break;
         case 7:
             parent.ahbm.Write16(ahbm_channel, current_dst, value);
