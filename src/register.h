@@ -234,8 +234,8 @@ struct RegisterState {
         ShadowSwapRegister<&RegisterState::cmd>, ShadowSwapArrayRegister<8, &RegisterState::m>,
         ShadowSwapArrayRegister<8, &RegisterState::br>,
         ShadowSwapArrayRegister<3, &RegisterState::im>, // ?
-        ShadowSwapRegister<&RegisterState::imv>         // ?
-        >
+        ShadowSwapRegister<&RegisterState::imv>,        // ?
+        ShadowSwapRegister<&RegisterState::epi>, ShadowSwapRegister<&RegisterState::epj>>
         shadow_swap_registers;
 
     template <unsigned index>
