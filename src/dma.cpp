@@ -5,6 +5,12 @@
 
 namespace Teakra {
 
+void Dma::Reset() {
+    enable_channel = 0;
+    active_channel = 0;
+    channels = {};
+}
+
 void Dma::DoDma(u16 channel) {
     channels[channel].Start();
 

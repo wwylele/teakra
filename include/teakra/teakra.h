@@ -18,6 +18,8 @@ public:
     Teakra();
     ~Teakra();
 
+    void Reset();
+
     std::array<std::uint8_t, 0x80000>& GetDspMemory();
 
     // APBP Data

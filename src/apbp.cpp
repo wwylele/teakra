@@ -7,6 +7,11 @@
 namespace Teakra {
 class DataChannel {
 public:
+    void Reset() {
+        ready = false;
+        data = 0;
+    }
+
     void Send(u16 data) {
         {
             std::lock_guard lock(mutex);
@@ -40,10 +45,22 @@ public:
     u16 semaphore_mask = 0;
     bool semaphore_master_signal = false;
     std::function<void()> semaphore_handler;
+
+    void Reset() {
+        for (auto& c : data_channels)
+            c.Reset();
+        semaphore = 0;
+        semaphore_mask = 0;
+        semaphore_master_signal = false;
+    }
 };
 
 Apbp::Apbp(const char* debug_string) : impl(new Impl), debug_string(debug_string) {}
 Apbp::~Apbp() = default;
+
+void Apbp::Reset() {
+    impl->Reset();
+}
 
 void Apbp::SendData(unsigned channel, u16 data) {
     // printf("SendData %s %u %04X\n", debug_string, channel, data);

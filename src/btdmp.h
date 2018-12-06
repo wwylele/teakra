@@ -12,6 +12,8 @@ public:
     Btdmp(const char* debug_string);
     ~Btdmp();
 
+    void Reset();
+
     void SetTransmitPeriod(u16 value) {
         // std::printf("BTDMP%s: SetTransmitPeriod %04X\n", debug_string, value);
         transmit_period = value;

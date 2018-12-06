@@ -10,6 +10,19 @@ enum CountMode : u32 {
     EventCount = 3,
 };
 
+void Timer::Reset() {
+    update_mmio = 0;
+    pause = 0;
+    count_mode = 0;
+    scale = 0;
+
+    start_high = 0;
+    start_low = 0;
+    counter = 0;
+    counter_high = 0;
+    counter_low = 0;
+}
+
 void Timer::Restart() {
     ASSERT(count_mode < 4);
     if (count_mode != CountMode::FreeRunning) {

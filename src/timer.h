@@ -14,6 +14,8 @@ public:
         EventCount = 3,
     };
 
+    void Reset();
+
     void Restart();
     void Tick();
     void TickEvent();

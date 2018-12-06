@@ -3,6 +3,11 @@
 
 namespace Teakra {
 
+void Ahbm::Reset() {
+    busy_flag = 0;
+    channels = {};
+}
+
 unsigned Ahbm::Channel::GetBurstSize() {
     switch (burst_size) {
     case Ahbm::BurstSize::X1:

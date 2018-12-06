@@ -13,6 +13,9 @@ class Ahbm;
 class Dma {
 public:
     Dma(SharedMemory& shared_memory, Ahbm& ahbm) : shared_memory(shared_memory), ahbm(ahbm) {}
+
+    void Reset();
+
     void EnableChannel(u16 value) {
         // std::printf("DMA: enable channel %04X\n", value);
         enable_channel = value;

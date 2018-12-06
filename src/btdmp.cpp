@@ -7,10 +7,20 @@ Btdmp::Btdmp(const char* debug_string) : debug_string(debug_string) {
     file = std::fopen((std::string("dspout.wav.") + debug_string).c_str(), "wb");
     std::fseek(file, sizeof(wavfileheader), SEEK_SET);
 }
+
 Btdmp::~Btdmp() {
     std::fseek(file, 0, SEEK_SET);
     std::fwrite(&wavfileheader, 1, sizeof(wavfileheader), file);
     std::fclose(file);
+}
+
+void Btdmp::Reset() {
+    transmit_period = 0;
+    transmit_timer = 0;
+    transmit_enable = 0;
+    transmit_empty = true;
+    transmit_full = false;
+    transmit_queue = {};
 }
 
 void Btdmp::SendSample(u16 value) {

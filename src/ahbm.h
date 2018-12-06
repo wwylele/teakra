@@ -26,6 +26,8 @@ public:
         Write = 1,
     };
 
+    void Reset();
+
     u16 GetBusyFlag() {
         // std::printf("AHBM: GetBusyFlag\n");
         return busy_flag;

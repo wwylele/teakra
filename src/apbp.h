@@ -10,6 +10,8 @@ public:
     Apbp(const char* debug_string);
     ~Apbp();
 
+    void Reset();
+
     void SendData(unsigned channel, u16 data);
     u16 RecvData(unsigned channel);
     bool IsDataReady(unsigned channel) const;

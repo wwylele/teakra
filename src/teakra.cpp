@@ -49,10 +49,29 @@ struct Teakra::Impl {
 
         dma.handler = [this]() { icu.TriggerSingle(0xF); };
     }
+
+    void Reset() {
+        shared_memory.raw.fill(0);
+        miu.Reset();
+        apbp_from_cpu.Reset();
+        apbp_from_dsp.Reset();
+        timer[0].Reset();
+        timer[1].Reset();
+        ahbm.Reset();
+        dma.Reset();
+        btdmp[0].Reset();
+        btdmp[1].Reset();
+        processor.Reset();
+    }
 };
 
 Teakra::Teakra() : impl(new Impl) {}
 Teakra::~Teakra() = default;
+
+void Teakra::Reset() {
+    impl->Reset();
+}
+
 std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
     return impl->shared_memory.raw;
 }

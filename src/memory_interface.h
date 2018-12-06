@@ -19,6 +19,10 @@ public:
     static constexpr u32 DataMemoryOffset = 0x20000;
     static constexpr u32 DataMemoryBankSize = 0x10000;
 
+    void Reset() {
+        *this = MemoryInterfaceUnit();
+    }
+
     bool InMMIO(u16 addr) const {
         return addr >= mmio_base && addr < mmio_base + MMIOSize;
     }
