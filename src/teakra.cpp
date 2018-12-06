@@ -117,4 +117,8 @@ void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
     impl->ahbm.write_external = callback.write8;
 }
 
+void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) {
+    impl->btdmp[0].SetAudioCallback(callback);
+}
+
 } // namespace Teakra

@@ -67,29 +67,10 @@ public:
         return 0;
     }
 
-    void SendSample(u16 value);
+    void Tick();
 
-    void Tick() {
-        if (transmit_enable) {
-            ++transmit_timer;
-            if (transmit_timer >= transmit_period) {
-                transmit_timer = 0;
-                for (int i = 0; i < 2; ++i) {
-                    if (transmit_queue.empty()) {
-                        std::printf("BTDMP%s: transmit buffer underrun", debug_string);
-                        SendSample(0);
-                    } else {
-                        SendSample(transmit_queue.front());
-                        transmit_queue.pop();
-                        transmit_empty = transmit_queue.empty();
-                        transmit_full = false;
-                        if (transmit_empty) {
-                            handler();
-                        }
-                    }
-                }
-            }
-        }
+    void SetAudioCallback(std::function<void(std::array<std::int16_t, 2>)> callback) {
+        audio_callback = callback;
     }
 
     std::function<void()> handler;
@@ -102,37 +83,7 @@ private:
     bool transmit_empty = true;
     bool transmit_full = false;
     std::queue<u16> transmit_queue;
-
-    std::FILE* file;
-
-    struct WAVFILEHEADER {
-        u32 _RIFF;
-        u32 dataSize;
-        u32 _WAVE;
-        u32 _fmt_;
-
-        u32 _10H;
-        u16 format;
-        u16 channel;
-        u32 sampleRate;
-        u32 dataRate;
-
-        u16 blockSize;
-        u16 bitSize;
-        u32 _data;
-        u32 dataSize2;
-
-    } wavfileheader{
-        0x46464952, 36 /*sampleCount*2+36*/,
-        0x45564157, 0x20746D66,
-
-        0x00000010, 1,
-        2,          32728,
-        32728 * 4,
-
-        4,          16,
-        0x61746164, 0 /*sampleCount*2*/
-    };
+    std::function<void(std::array<std::int16_t, 2>)> audio_callback;
 };
 
 } // namespace Teakra

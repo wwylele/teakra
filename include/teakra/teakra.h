@@ -39,6 +39,8 @@ public:
 
     void SetAHBMCallback(const AHBMCallback& callback);
 
+    void SetAudioCallback(std::function<void(std::array<std::int16_t, 2>)> callback);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;
