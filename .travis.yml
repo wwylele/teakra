@@ -4,7 +4,8 @@ matrix:
   include:
     - env: NAME="Linux Build"
       os: linux
-      dist: trusty
+      dist: xenial
+      sudo: false
       addons:
         apt:
           sources:
@@ -18,3 +19,6 @@ matrix:
       sudo: false
       osx_image: xcode10
       script: ./.travis/macos-build.sh
+    - env: NAME="Windows Build"
+      os: windows
+      script: ./.travis/windows-build.sh
