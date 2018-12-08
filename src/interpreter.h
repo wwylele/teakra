@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include "bit.h"
 #include "core_timing.h"
 #include "crash.h"
 #include "decoder.h"
@@ -3518,11 +3519,8 @@ private:
                         m |= s;
                     }
 
-                    u16 mask = 0;
-                    for (unsigned i = 0; i < 9; ++i) {
-                        mask |= m >> i;
-                    }
-
+                    // mod can't be zero so we don't need to worry about handling that edgecase
+                    u16 mask = (1 << (Common::MostSignificantSetBit(m) + 1)) - 1;
                     u16 next;
                     if (!negative) {
                         if ((address & mask) == mod && (!step2_mode2 || mod != mask)) {
@@ -3540,11 +3538,8 @@ private:
                     address &= ~mask;
                     address |= next;
                 } else {
-                    u16 mask = 0;
-                    for (unsigned i = 0; i < 9; ++i) {
-                        mask |= mod >> i;
-                    }
-
+                    // mod can't be zero so we don't need to worry about handling that edgecase
+                    u16 mask = (1 << (Common::MostSignificantSetBit(mod) + 1)) - 1;
                     u16 next;
                     if (s < 0x8000) {
                         next = (address + s) & mask;
