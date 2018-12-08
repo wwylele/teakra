@@ -3,6 +3,7 @@
 #include "ahbm.h"
 #include "apbp.h"
 #include "btdmp.h"
+#include "core_timing.h"
 #include "dma.h"
 #include "icu.h"
 #include "memory_interface.h"
@@ -15,17 +16,18 @@
 namespace Teakra {
 
 struct Teakra::Impl {
+    CoreTiming core_timing;
     SharedMemory shared_memory;
     MemoryInterfaceUnit miu;
     ICU icu;
     Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
-    std::array<Timer, 2> timer;
+    std::array<Timer, 2> timer{{{core_timing}, {core_timing}}};
     Ahbm ahbm;
     Dma dma{shared_memory, ahbm};
-    std::array<Btdmp, 2> btdmp{{{"0"}, {"1"}}};
+    std::array<Btdmp, 2> btdmp{{{core_timing, "0"}, {core_timing, "1"}}};
     MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     MemoryInterface memory_interface{shared_memory, miu, mmio};
-    Processor processor{memory_interface};
+    Processor processor{core_timing, memory_interface};
 
     Impl() {
         using namespace std::placeholders;
@@ -77,13 +79,7 @@ std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
 }
 
 void Teakra::Run(unsigned cycle) {
-    for (unsigned i = 0; i < cycle; ++i) {
-        impl->processor.Run(1);
-        impl->timer[0].Tick();
-        impl->timer[1].Tick();
-        impl->btdmp[0].Tick();
-        impl->btdmp[1].Tick();
-    }
+    impl->processor.Run(cycle);
 }
 
 bool Teakra::SendDataIsEmpty(std::uint8_t index) const {

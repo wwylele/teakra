@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "common_types.h"
+#include "core_timing.h"
 
 namespace Teakra {
 
@@ -9,7 +10,7 @@ class MemoryInterface;
 
 class Processor {
 public:
-    Processor(MemoryInterface& memory_interface);
+    Processor(CoreTiming& core_timing, MemoryInterface& memory_interface);
     ~Processor();
     void Reset();
     void Run(unsigned cycles);

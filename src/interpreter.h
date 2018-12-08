@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include "core_timing.h"
 #include "crash.h"
 #include "decoder.h"
 #include "memory_interface.h"
@@ -19,7 +20,8 @@ public:
 
 class Interpreter {
 public:
-    Interpreter(RegisterState& regs, MemoryInterface& mem) : regs(regs), mem(mem) {}
+    Interpreter(CoreTiming& core_timing, RegisterState& regs, MemoryInterface& mem)
+        : core_timing(core_timing), regs(regs), mem(mem) {}
 
     void PushPC() {
         u16 l = (u16)(regs.pc & 0xFFFF);
@@ -54,8 +56,20 @@ public:
         UNREACHABLE();
     }
 
-    void Run(unsigned cycles) {
-        for (unsigned i = 0; i < cycles; ++i) {
+    void Run(u64 cycles) {
+        idle = false;
+        for (u64 i = 0; i < cycles; ++i) {
+            if (idle) {
+                u64 skipped = core_timing.Skip(cycles - i - 1);
+                i += skipped;
+
+                // Skip additional tick so to let components fire interrupts
+                if (i < cycles - 1) {
+                    ++i;
+                    core_timing.Tick();
+                }
+            }
+
             u16 opcode = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
             auto& decoder = decoders[opcode];
             u16 expand_value = 0;
@@ -94,6 +108,7 @@ public:
                         regs.ie = 0;
                         PushPC();
                         regs.pc = 0x0006 + i * 8;
+                        idle = false;
                         interrupt_handled = true;
                         if (regs.ic[i]) {
                             ContextStore();
@@ -106,8 +121,11 @@ public:
                     regs.ie = 0;
                     PushPC();
                     regs.pc = regs.viaddr;
+                    idle = false;
                 }
             }
+
+            core_timing.Tick();
         }
     }
 
@@ -1067,6 +1085,9 @@ public:
     void brr(RelAddr7 addr, Cond cond) {
         if (regs.ConditionPass(cond)) {
             regs.pc += addr.Relative32(); // note: pc is the address of the NEXT instruction
+            if (addr.Relative32() == 0xFFFFFFFF) {
+                idle = true;
+            }
         }
     }
 
@@ -2888,8 +2909,11 @@ public:
     }
 
 private:
+    CoreTiming& core_timing;
     RegisterState& regs;
     MemoryInterface& mem;
+
+    bool idle = false;
 
     u64 GetAcc(RegName name) const {
         switch (name) {

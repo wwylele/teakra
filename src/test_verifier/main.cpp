@@ -6,6 +6,7 @@
 #include "../ahbm.h"
 #include "../apbp.h"
 #include "../btdmp.h"
+#include "../core_timing.h"
 #include "../dma.h"
 #include "../icu.h"
 #include "../interpreter.h"
@@ -35,18 +36,19 @@ std::string ToHex(T i) {
 int main(int argc, char** argv) {
     if (argc < 2)
         throw;
+    Teakra::CoreTiming core_timing;
     Teakra::SharedMemory shared_memory;
     Teakra::MemoryInterfaceUnit miu;
     Teakra::ICU icu;
     Teakra::Apbp apbp_from_cpu{"cpu->dsp"}, apbp_from_dsp{"dsp->cpu"};
-    std::array<Teakra::Timer, 2> timer;
+    std::array<Teakra::Timer, 2> timer{{{core_timing}, {core_timing}}};
     Teakra::Ahbm ahbm;
     Teakra::Dma dma{shared_memory, ahbm};
-    std::array<Teakra::Btdmp, 2> btdmp{{{"0"}, {"1"}}};
+    std::array<Teakra::Btdmp, 2> btdmp{{{core_timing, "0"}, {core_timing, "1"}}};
     Teakra::MMIORegion mmio{miu, icu, apbp_from_cpu, apbp_from_dsp, timer, dma, ahbm, btdmp};
     Teakra::MemoryInterface memory_interface{shared_memory, miu, mmio};
     Teakra::RegisterState regs;
-    Teakra::Interpreter interpreter(regs, memory_interface);
+    Teakra::Interpreter interpreter(core_timing, regs, memory_interface);
 
     std::FILE* file = std::fopen(argv[1], "rb");
 

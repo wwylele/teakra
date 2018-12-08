@@ -4,12 +4,13 @@
 #include <functional>
 #include <queue>
 #include "common_types.h"
+#include "core_timing.h"
 
 namespace Teakra {
 
 class Btdmp {
 public:
-    Btdmp(const char* debug_string);
+    Btdmp(CoreTiming& core_timing, const char* debug_string);
     ~Btdmp();
 
     void Reset();
@@ -76,6 +77,7 @@ public:
     std::function<void()> handler;
 
 private:
+    CoreTiming& core_timing;
     const char* debug_string;
     u16 transmit_period = 0;
     u16 transmit_timer = 0;
@@ -84,6 +86,8 @@ private:
     bool transmit_full = false;
     std::queue<u16> transmit_queue;
     std::function<void(std::array<std::int16_t, 2>)> audio_callback;
+
+    class BtdmpTimingCallbacks;
 };
 
 } // namespace Teakra

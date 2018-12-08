@@ -5,12 +5,15 @@
 namespace Teakra {
 
 struct Processor::Impl {
-    Impl(MemoryInterface& memory_interface) : interpreter(regs, memory_interface) {}
+    Impl(CoreTiming& core_timing, MemoryInterface& memory_interface)
+        : core_timing(core_timing), interpreter(core_timing, regs, memory_interface) {}
+    CoreTiming& core_timing;
     RegisterState regs;
     Interpreter interpreter;
 };
 
-Processor::Processor(MemoryInterface& memory_interface) : impl(new Impl(memory_interface)) {}
+Processor::Processor(CoreTiming& core_timing, MemoryInterface& memory_interface)
+    : impl(new Impl(core_timing, memory_interface)) {}
 Processor::~Processor() = default;
 
 void Processor::Reset() {

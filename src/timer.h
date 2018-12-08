@@ -2,11 +2,14 @@
 
 #include <functional>
 #include "common_types.h"
+#include "core_timing.h"
 
 namespace Teakra {
 
 class Timer {
 public:
+    Timer(CoreTiming& core_timing);
+
     enum CountMode : u32 {
         Single = 0,
         AutoRestart = 1,
@@ -34,7 +37,10 @@ public:
     u16 counter_low = 0;
 
 private:
+    CoreTiming& core_timing;
     void UpdateMMIO();
+
+    class TimerTimingCallbacks;
 };
 
 } // namespace Teakra
