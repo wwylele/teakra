@@ -14,18 +14,12 @@ public:
         return (u16)request.to_ulong();
     }
     void Acknowledge(u16 irq_bits) {
-        if (irq_bits) {
-            // printf("ICU: Acknowledge %04X\n", irq_bits);
-        }
         request &= ~IrqBits(irq_bits);
     }
     u16 GetAcknowledge() {
         return 0;
     }
     void Trigger(u16 irq_bits) {
-        if (irq_bits) {
-            // printf("ICU: Trigger %04X\n", irq_bits);
-        }
         IrqBits bits(irq_bits);
         request |= bits;
         for (u32 irq = 0; irq < 16; ++irq) {
@@ -48,11 +42,9 @@ public:
         Trigger(1 << irq);
     }
     void SetEnable(u32 interrupt_index, u16 irq_bits) {
-        printf("ICU: SetEnable[%u] %04X\n", interrupt_index, irq_bits);
         enabled[interrupt_index] = IrqBits(irq_bits);
     }
     void SetEnableVectored(u16 irq_bits) {
-        printf("ICU: SetEnableVectored %04X\n", irq_bits);
         vectored_enabled = IrqBits(irq_bits);
     }
     u16 GetEnable(u32 interrupt_index) const {

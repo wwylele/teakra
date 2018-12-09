@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstring>
 #include "ahbm.h"
 #include "dma.h"

@@ -18,7 +18,6 @@ u16 MemoryInterface::DataRead(u16 address) {
     }
     u32 converted = memory_interface_unit.ConvertDataAddress(address);
     u16 value = shared_memory.ReadWord(converted);
-    // printf("READ @ %04X -> %04X\n", address, value);
     return value;
 }
 void MemoryInterface::DataWrite(u16 address, u16 value) {
@@ -26,7 +25,6 @@ void MemoryInterface::DataWrite(u16 address, u16 value) {
         return mmio.Write(memory_interface_unit.ToMMIO(address), value);
     }
     u32 converted = memory_interface_unit.ConvertDataAddress(address);
-    // printf("READ @ %04X <- %04X\n", address, value);
     shared_memory.WriteWord(converted, value);
 }
 
