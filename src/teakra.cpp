@@ -45,7 +45,7 @@ struct Teakra::Impl {
         btdmp[0].SetInterruptHandler([this]() { icu.TriggerSingle(0xB); });
         btdmp[1].SetInterruptHandler([this]() { icu.TriggerSingle(0xB); });
 
-        dma.handler = [this]() { icu.TriggerSingle(0xF); };
+        dma.SetInterruptHandler([this]() { icu.TriggerSingle(0xF); });
     }
 
     void Reset() {

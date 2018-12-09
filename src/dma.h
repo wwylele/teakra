@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <functional>
+#include <utility>
 #include "common_types.h"
 #include "teakra/teakra.h"
 
@@ -161,9 +162,13 @@ public:
 
     void DoDma(u16 channel);
 
-    std::function<void()> handler;
+    void SetInterruptHandler(std::function<void()> handler) {
+        interrupt_handler = std::move(handler);
+    }
 
 private:
+    std::function<void()> interrupt_handler;
+
     u16 enable_channel = 0;
     u16 active_channel = 0;
 

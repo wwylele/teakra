@@ -21,7 +21,7 @@ void Dma::DoDma(u16 channel) {
     while (channels[channel].running)
         channels[channel].Tick(*this);
 
-    handler();
+    interrupt_handler();
 }
 
 void Dma::Channel::Start() {
