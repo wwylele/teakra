@@ -31,6 +31,6 @@ if(TEAKRA_RUN_TESTS)
       message(FATAL_ERROR "Unit test sample broken. Please remove the file and re-run CMake.")
     endif()
   endif()
-endif(TEAKRA_RUN_TESTS)
 
-add_test(NAME tests COMMAND test_verifier "${TEAKRA_TEST_ASSETS_DIR}/teaklite2_tests_result")
+  add_test(NAME tests COMMAND test_verifier "${TEAKRA_TEST_ASSETS_DIR}/teaklite2_tests_result")
+endif(TEAKRA_RUN_TESTS)
