@@ -8,5 +8,5 @@ export MACOSX_DEPLOYMENT_TARGET=10.14
 
 mkdir build && cd build
 cmake .. -GXcode -DCMAKE_BUILD_TYPE=Release
-xcodebuild -configuration Release
+xcodebuild -configuration Release -jobs "$(nproc)"
 ctest
