@@ -109,8 +109,7 @@ std::uint16_t Teakra::GetSemaphore() {
 }
 
 void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
-    impl->ahbm.read_external = callback.read8;
-    impl->ahbm.write_external = callback.write8;
+    impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8);
 }
 
 void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) {

@@ -55,15 +55,18 @@ public:
         return channels[i].dma_channel;
     }
 
-    std::function<u8(u32)> read_external;
-    std::function<void(u32, u8)> write_external;
-
     u16 Read16(u16 channel, u32 address);
     u32 Read32(u16 channel, u32 address);
     void Write16(u16 channel, u32 address, u16 value);
     void Write32(u16 channel, u32 address, u32 value);
 
     u16 GetChannelForDma(u16 dma_channel);
+
+    void SetExternalMemoryCallback(std::function<u8(u32)> read,
+                                   std::function<void(u32, u8)> write) {
+        read_external = std::move(read);
+        write_external = std::move(write);
+    }
 
 private:
     u16 busy_flag = 0;
@@ -78,6 +81,9 @@ private:
         unsigned GetBurstSize();
     };
     std::array<Channel, 3> channels;
+
+    std::function<u8(u32)> read_external;
+    std::function<void(u32, u8)> write_external;
 
     void WriteInternal(u16 channel, u32 address, u32 value);
 };
