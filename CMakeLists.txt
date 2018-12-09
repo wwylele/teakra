@@ -9,6 +9,7 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 option(TEAKRA_WARNINGS_AS_ERRORS "Warnings as errors" ${MASTER_PROJECT})
+option(TEAKRA_BUILD_TOOLS "Build tools" ${MASTER_PROJECT})
 
 # Set hard requirements for C++
 set(CMAKE_CXX_STANDARD 17)
