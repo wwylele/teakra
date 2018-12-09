@@ -21,6 +21,7 @@ public:
     void Reset();
 
     std::array<std::uint8_t, 0x80000>& GetDspMemory();
+    const std::array<std::uint8_t, 0x80000>& GetDspMemory() const;
 
     // APBP Data
     bool SendDataIsEmpty(std::uint8_t index) const;

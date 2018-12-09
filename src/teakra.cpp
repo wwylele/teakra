@@ -74,6 +74,10 @@ std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
     return impl->shared_memory.raw;
 }
 
+const std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() const {
+    return impl->shared_memory.raw;
+}
+
 void Teakra::Run(unsigned cycle) {
     impl->processor.Run(cycle);
 }
