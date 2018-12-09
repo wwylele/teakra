@@ -124,7 +124,7 @@ void Timer::UpdateMMIO() {
     counter_low = counter & 0xFFFF;
 }
 
-Timer::Timer(CoreTiming& core_timing) : core_timing(core_timing) {
+Timer::Timer(CoreTiming& core_timing) {
     core_timing.RegisterCallbacks(std::make_unique<TimerTimingCallbacks>(*this));
 }
 

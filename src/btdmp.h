@@ -68,7 +68,6 @@ public:
     std::function<void()> handler;
 
 private:
-    CoreTiming& core_timing;
     u16 transmit_period = 0;
     u16 transmit_timer = 0;
     u16 transmit_enable = 0;

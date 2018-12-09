@@ -37,7 +37,6 @@ public:
     u16 counter_low = 0;
 
 private:
-    CoreTiming& core_timing;
     void UpdateMMIO();
 
     class TimerTimingCallbacks;

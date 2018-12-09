@@ -62,7 +62,7 @@ private:
     Btdmp& parent;
 };
 
-Btdmp::Btdmp(CoreTiming& core_timing) : core_timing(core_timing) {
+Btdmp::Btdmp(CoreTiming& core_timing) {
     core_timing.RegisterCallbacks(std::make_unique<BtdmpTimingCallbacks>(*this));
 }
 
