@@ -254,4 +254,11 @@ int main(int argc, char** argv) {
     std::printf("%d / %d passed, %d skipped\n", passed, total, skipped);
 
     std::fclose(file);
+
+    if (passed < total) {
+      return 1;
+    }
+
+    return 0;
+
 }
