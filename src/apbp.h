@@ -7,7 +7,7 @@
 namespace Teakra {
 class Apbp {
 public:
-    Apbp(const char* debug_string);
+    Apbp();
     ~Apbp();
 
     void Reset();
@@ -29,6 +29,5 @@ public:
 private:
     class Impl;
     std::unique_ptr<Impl> impl;
-    const char* debug_string;
 };
 } // namespace Teakra

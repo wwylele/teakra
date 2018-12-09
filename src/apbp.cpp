@@ -55,7 +55,7 @@ public:
     }
 };
 
-Apbp::Apbp(const char* debug_string) : impl(new Impl), debug_string(debug_string) {}
+Apbp::Apbp() : impl(new Impl) {}
 Apbp::~Apbp() = default;
 
 void Apbp::Reset() {
@@ -63,12 +63,10 @@ void Apbp::Reset() {
 }
 
 void Apbp::SendData(unsigned channel, u16 data) {
-    // printf("SendData %s %u %04X\n", debug_string, channel, data);
     impl->data_channels[channel].Send(data);
 }
 
 u16 Apbp::RecvData(unsigned channel) {
-    // printf("RecvData %s %u\n", debug_string, channel);
     return impl->data_channels[channel].Recv();
 }
 
@@ -81,7 +79,6 @@ void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {
 }
 
 void Apbp::SetSemaphore(u16 bits) {
-    // printf("SetSemaphore %s 0x%04X\n", debug_string, bits);
     impl->semaphore |= bits;
     bool new_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
     if (new_signal && impl->semaphore_handler) {
@@ -91,7 +88,6 @@ void Apbp::SetSemaphore(u16 bits) {
 }
 
 void Apbp::ClearSemaphore(u16 bits) {
-    // printf("ClearSemaphore %s 0x%04X\n", debug_string, bits);
     impl->semaphore &= ~bits;
     impl->semaphore_master_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
 }

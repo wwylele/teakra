@@ -36,9 +36,9 @@ public:
         if (parent.transmit_timer >= parent.transmit_period)
             parent.transmit_timer = 0;
 
-        parent.transmit_timer += ticks;
-        u64 cycles = parent.transmit_timer / parent.transmit_period;
-        parent.transmit_timer %= parent.transmit_period;
+        u64 future_timer = parent.transmit_timer + ticks;
+        u64 cycles = future_timer / parent.transmit_period;
+        parent.transmit_timer = (u16)(future_timer % parent.transmit_period);
 
         for (u64 c = 0; c < cycles; ++c) {
             std::array<std::int16_t, 2> sample;
@@ -62,8 +62,7 @@ private:
     Btdmp& parent;
 };
 
-Btdmp::Btdmp(CoreTiming& core_timing, const char* debug_string)
-    : core_timing(core_timing), debug_string(debug_string) {
+Btdmp::Btdmp(CoreTiming& core_timing) : core_timing(core_timing) {
     core_timing.RegisterCallbacks(std::make_unique<BtdmpTimingCallbacks>(*this));
 }
 
@@ -86,7 +85,7 @@ void Btdmp::Tick() {
             std::array<std::int16_t, 2> sample;
             for (int i = 0; i < 2; ++i) {
                 if (transmit_queue.empty()) {
-                    std::printf("BTDMP%s: transmit buffer underrun", debug_string);
+                    std::printf("BTDMP: transmit buffer underrun\n");
                     sample[i] = 0;
                 } else {
                     sample[i] = static_cast<s16>(transmit_queue.front());

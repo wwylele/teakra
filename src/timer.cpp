@@ -41,10 +41,10 @@ public:
                 return;
             }
             ASSERT(reset >= ticks);
-            parent.counter = reset - (ticks - 1);
+            parent.counter = reset - ((u32)ticks - 1);
         } else {
             ASSERT(parent.counter > ticks);
-            parent.counter -= ticks;
+            parent.counter -= (u32)ticks;
         }
 
         parent.UpdateMMIO();
