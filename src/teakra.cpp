@@ -31,11 +31,11 @@ struct Teakra::Impl {
 
     Impl() {
         using namespace std::placeholders;
-        icu.OnInterrupt = std::bind(&Processor::SignalInterrupt, &processor, _1);
-        icu.OnVectoredInterrupt = std::bind(&Processor::SignalVectoredInterrupt, &processor, _1);
+        icu.SetInterruptHandler(std::bind(&Processor::SignalInterrupt, &processor, _1),
+                                std::bind(&Processor::SignalVectoredInterrupt, &processor, _1));
 
-        timer[0].handler = [this]() { icu.TriggerSingle(0xA); };
-        timer[1].handler = [this]() { icu.TriggerSingle(0x9); };
+        timer[0].SetInterruptHandler([this]() { icu.TriggerSingle(0xA); });
+        timer[1].SetInterruptHandler([this]() { icu.TriggerSingle(0x9); });
 
         apbp_from_cpu.SetDataHandler(0, [this]() { icu.TriggerSingle(0xE); });
         apbp_from_cpu.SetDataHandler(1, [this]() { icu.TriggerSingle(0xE); });

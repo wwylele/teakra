@@ -3,6 +3,7 @@
 #include <array>
 #include <bitset>
 #include <functional>
+#include <utility>
 #include "common_types.h"
 
 namespace Teakra {
@@ -26,11 +27,11 @@ public:
             if (bits[irq]) {
                 for (u32 interrupt = 0; interrupt < enabled.size(); ++interrupt) {
                     if (enabled[interrupt][irq]) {
-                        OnInterrupt(interrupt);
+                        on_interrupt(interrupt);
                     }
                 }
                 if (vectored_enabled[irq]) {
-                    OnVectoredInterrupt(GetVector(irq));
+                    on_vectored_interrupt(GetVector(irq));
                 }
             }
         }
@@ -58,12 +59,18 @@ public:
         return vector_low[irq] | ((u32)vector_high[irq] << 16);
     }
 
-    std::function<void(u32)> OnInterrupt;
-    std::function<void(u32)> OnVectoredInterrupt;
+    void SetInterruptHandler(std::function<void(u32)> interrupt,
+                             std::function<void(u32)> vectored_interrupt) {
+        on_interrupt = std::move(interrupt);
+        on_vectored_interrupt = std::move(vectored_interrupt);
+    }
 
     std::array<u16, 16> vector_low, vector_high;
 
 private:
+    std::function<void(u32)> on_interrupt;
+    std::function<void(u32)> on_vectored_interrupt;
+
     IrqBits request;
     std::array<IrqBits, 3> enabled;
     IrqBits vectored_enabled;

@@ -100,7 +100,7 @@ void Timer::Tick() {
         --counter;
         UpdateMMIO();
         if (counter == 0)
-            handler();
+            interrupt_handler();
     }
 }
 
@@ -114,7 +114,7 @@ void Timer::TickEvent() {
     --counter;
     UpdateMMIO();
     if (counter == 0)
-        handler();
+        interrupt_handler();
 }
 
 void Timer::UpdateMMIO() {

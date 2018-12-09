@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <utility>
 #include "common_types.h"
 #include "core_timing.h"
 
@@ -23,8 +24,6 @@ public:
     void Tick();
     void TickEvent();
 
-    std::function<void()> handler;
-
     u16 update_mmio = 0;
     u16 pause = 0;
     u16 count_mode = 0;
@@ -36,7 +35,13 @@ public:
     u16 counter_high = 0;
     u16 counter_low = 0;
 
+    void SetInterruptHandler(std::function<void()> handler) {
+        interrupt_handler = std::move(handler);
+    }
+
 private:
+    std::function<void()> interrupt_handler;
+
     void UpdateMMIO();
 
     class TimerTimingCallbacks;
