@@ -7,6 +7,6 @@ export CC=gcc-7
 export CXX=g++-7
 
 mkdir build && cd build
-cmake ..
-make
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -- -j"$(nproc)"
 ctest
