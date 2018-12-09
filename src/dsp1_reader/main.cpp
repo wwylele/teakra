@@ -81,8 +81,11 @@ int main(int argc, char** argv) {
         return -1;
 
     FILE* file = fopen(argv[1], "rb");
-    std::vector<u8> raw(217976);
-    fread(raw.data(), raw.size(), 1, file);
+    std::vector<u8> raw;
+    u8 ch;
+    while (fread(&ch, 1, 1, file) == 1) {
+        raw.push_back(ch);
+    }
     fclose(file);
     Dsp1 dsp(raw);
 

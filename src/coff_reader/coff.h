@@ -34,7 +34,8 @@ struct NameOrIndex {
             char c;
             std::string ret;
             while (true) {
-                std::fread(&c, 1, 1, file);
+                if (std::fread(&c, 1, 1, file) != 1)
+                    throw "unexpected end";
                 if (c == '\0')
                     break;
                 ret += c;
@@ -156,7 +157,8 @@ public:
     Coff(std::FILE* in) {
         fseek(in, 0, SEEK_SET);
         Header header;
-        fread(&header, 1, sizeof(header), in);
+        if (fread(&header, sizeof(header), 1, in) != 1)
+            throw "failed to read header";
         u32 string_offset = header.offset_symbol + header.num_symbol * sizeof(Symbol);
 
         sections.resize(header.num_section);
@@ -164,7 +166,8 @@ public:
         for (u32 i = 0; i < header.num_section; ++i) {
             fseek(in, sizeof(header) + header.optheader_size + i * sizeof(SectionHeader), SEEK_SET);
             SectionHeader sheader;
-            fread(&sheader, 1, sizeof(sheader), in);
+            if (fread(&sheader, sizeof(sheader), 1, in) != 1)
+                throw "failed to read sheader";
             sections[i].name = sheader.name.GetString(in, string_offset);
             sections[i].prog_addr = sheader.prog_addr;
             sections[i].data_addr = sheader.data_addr;
@@ -176,7 +179,9 @@ public:
             sections[i].data.resize(sheader.size);
             if ((sheader.flags & SFlag::Dupl) == 0) {
                 fseek(in, sheader.offset_data, SEEK_SET);
-                fread(sections[i].data.data(), 1, sheader.size, in);
+                if (sheader.size != 0)
+                    if (fread(sections[i].data.data(), sheader.size, 1, in) != 1)
+                        throw "failed to read section";
                 expected += sheader.size;
             }
             sections[i].num_rel = sheader.num_rel;
@@ -195,7 +200,8 @@ public:
             u32 current_symbol = 0;
             for (u16 j = 0; j < sheader.num_line; ++j) {
                 Line line;
-                fread(&line, 1, sizeof(line), in);
+                if (fread(&line, sizeof(line), 1, in) != 1)
+                    throw "failed to read line";
                 if (line.line_number == 0) {
                     current_symbol = line.symbol_index_or_addr;
                 } else {
@@ -215,7 +221,8 @@ public:
             // printf("\n");
             for (u16 j = 0; j < sheader.num_rel; ++j) {
                 Relocation relocation;
-                fread(&relocation, 1, sizeof(relocation), in);
+                if (fread(&relocation, sizeof(relocation), 1, in) != 1)
+                    throw "failed to read relocation";
                 // printf("%08X, %08X, %08X\n", relocation.addr, relocation.symbol,
                 // relocation.type);
                 sections[i].relocations[relocation.addr].push_back(relocation);
@@ -225,7 +232,8 @@ public:
         for (u32 i = 0; i < header.num_symbol; ++i) {
             Symbol symbol;
             fseek(in, header.offset_symbol + i * sizeof(symbol), SEEK_SET);
-            fread(&symbol, 1, sizeof(symbol), in);
+            if (fread(&symbol, sizeof(symbol), 1, in) != 1)
+                throw "failed to read symbol";
             i += symbol.num_aux;
             printf("%s\n", symbol.name.GetString(in, string_offset).c_str());
             printf("value = %08X, section = %04X, type = %04X, storage = %02X, aux = %02X\n",
