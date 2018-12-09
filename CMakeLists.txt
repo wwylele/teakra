@@ -10,6 +10,7 @@ endif()
 
 option(TEAKRA_WARNINGS_AS_ERRORS "Warnings as errors" ${MASTER_PROJECT})
 option(TEAKRA_BUILD_TOOLS "Build tools" ${MASTER_PROJECT})
+option(TEAKRA_RUN_TESTS "Run Teakra accuracy tests" OFF)
 
 # Set hard requirements for C++
 set(CMAKE_CXX_STANDARD 17)
@@ -69,5 +70,10 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+enable_testing()
+
+if (NOT TEAKRA_TEST_ASSETS_DIR)
+  set(TEAKRA_TEST_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
 # Teakra project files
 add_subdirectory(src)
