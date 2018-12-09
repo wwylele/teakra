@@ -93,7 +93,7 @@ void Btdmp::Tick() {
                     transmit_empty = transmit_queue.empty();
                     transmit_full = false;
                     if (transmit_empty) {
-                        handler();
+                        interrupt_handler();
                     }
                 }
             }

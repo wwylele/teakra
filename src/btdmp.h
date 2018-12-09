@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdio>
 #include <functional>
+#include <utility>
 #include <queue>
 #include "common_types.h"
 #include "core_timing.h"
@@ -65,7 +66,9 @@ public:
         audio_callback = callback;
     }
 
-    std::function<void()> handler;
+    void SetInterruptHandler(std::function<void()> handler) {
+        interrupt_handler = std::move(handler);
+    }
 
 private:
     u16 transmit_period = 0;
@@ -75,6 +78,7 @@ private:
     bool transmit_full = false;
     std::queue<u16> transmit_queue;
     std::function<void(std::array<std::int16_t, 2>)> audio_callback;
+    std::function<void()> interrupt_handler;
 
     class BtdmpTimingCallbacks;
 };

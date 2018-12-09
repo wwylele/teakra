@@ -35,19 +35,15 @@ struct Teakra::Impl {
         icu.OnVectoredInterrupt = std::bind(&Processor::SignalVectoredInterrupt, &processor, _1);
 
         timer[0].handler = [this]() { icu.TriggerSingle(0xA); };
-
         timer[1].handler = [this]() { icu.TriggerSingle(0x9); };
 
         apbp_from_cpu.SetDataHandler(0, [this]() { icu.TriggerSingle(0xE); });
-
         apbp_from_cpu.SetDataHandler(1, [this]() { icu.TriggerSingle(0xE); });
-
         apbp_from_cpu.SetDataHandler(2, [this]() { icu.TriggerSingle(0xE); });
-
         apbp_from_cpu.SetSemaphoreHandler([this]() { icu.TriggerSingle(0xE); });
 
-        btdmp[0].handler = [this]() { icu.TriggerSingle(0xB); };
-        btdmp[1].handler = [this]() { icu.TriggerSingle(0xB); };
+        btdmp[0].SetInterruptHandler([this]() { icu.TriggerSingle(0xB); });
+        btdmp[1].SetInterruptHandler([this]() { icu.TriggerSingle(0xB); });
 
         dma.handler = [this]() { icu.TriggerSingle(0xF); };
     }
