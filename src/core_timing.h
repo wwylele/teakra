@@ -13,6 +13,7 @@ class CoreTiming {
 public:
     class Callbacks {
     public:
+        virtual ~Callbacks() = default;
         virtual void Tick() = 0;
         virtual u64 GetMaxSkip() = 0;
         virtual void Skip(u64) = 0;
