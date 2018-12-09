@@ -34,3 +34,6 @@ Thumbs.db
 
 teakra.out
 teakra.out.*
+
+# cmake and ctest temporary files
+/Testing

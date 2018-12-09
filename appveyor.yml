@@ -18,8 +18,11 @@ install:
 before_build:
   - mkdir build
   - cd build
-  - cmake .. -G "%cmake_generator%"
+  - cmake .. -G "%cmake_generator%" -DTEAKRA_TEST_ASSETS_DIR="%USERPROFILE%\assets" -DTEAKRA_RUN_TESTS=ON
   - cd ..
+
+cache:
+  - '%USERPROFILE%\assets'
 
 build:
   project: build/teakra.sln
