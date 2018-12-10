@@ -86,8 +86,6 @@ struct Config {
     }
 
     State GenerateRandomState() {
-        static std::random_device rd;
-
         State state;
         state.stepi0 = Random::bit16();
         state.stepj0 = Random::bit16();
