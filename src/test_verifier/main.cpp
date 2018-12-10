@@ -25,13 +25,6 @@ std::string Flag16ToString(u16 value, const char* symbols) {
     return result;
 }
 
-template <typename T>
-std::string ToHex(T i) {
-    u64 v = i;
-    std::stringstream stream;
-    stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << v;
-    return stream.str();
-}
 
 int main(int argc, char** argv) {
     if (argc < 2)
@@ -124,7 +117,7 @@ int main(int argc, char** argv) {
 
             auto CheckAddress = [&](const char* name, u16 address, u16 expected, u16 actual) {
                 if (expected != actual) {
-                    std::printf("Mismatch: %s%s: %04X != %04X\n", name, (ToHex<u16>(address)).c_str(), expected, actual);
+                    std::printf("Mismatch: %s%04X: %04X != %04X\n", name, address, expected, actual);
                     pass = false;
                 }
             };
