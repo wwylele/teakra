@@ -25,13 +25,6 @@ std::string Flag16ToString(u16 value, const char* symbols) {
     return result;
 }
 
-template <typename T>
-std::string ToHex(T i) {
-    u64 v = i;
-    std::stringstream stream;
-    stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << v;
-    return stream.str();
-}
 
 int main(int argc, char** argv) {
     if (argc < 2)
@@ -122,6 +115,13 @@ int main(int argc, char** argv) {
                 }
             };
 
+            auto CheckAddress = [&](const char* name, u16 address, u16 expected, u16 actual) {
+                if (expected != actual) {
+                    std::printf("Mismatch: %s%04X: %04X != %04X\n", name, address, expected, actual);
+                    pass = false;
+                }
+            };
+
             auto CheckFlag = [&](const char* name, u16 expected, u16 actual, const char* symbols) {
                 if (expected != actual) {
                     std::printf("Mismatch: %s: %s != %s\n", name,
@@ -171,10 +171,10 @@ int main(int argc, char** argv) {
             CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRjjjjjiiiii");
 
             for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
-                Check(("memory_" + ToHex<u16>(TestSpaceX + offset)).c_str(),
+                CheckAddress("memory_", (TestSpaceX + offset),
                       test_case.after.test_space_x[offset],
                       memory_interface.DataRead(TestSpaceX + offset));
-                Check(("memory_" + ToHex<u16>(TestSpaceY + offset)).c_str(),
+                CheckAddress("memory_", (TestSpaceY + offset),
                       test_case.after.test_space_y[offset],
                       memory_interface.DataRead(TestSpaceY + offset));
             }
