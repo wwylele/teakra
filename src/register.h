@@ -57,7 +57,7 @@ struct RegisterState {
 
     // 1-bit flags
     u16 fz = 0, fm = 0, fn = 0, fv = 0, fe = 0;
-    std::array<u16, 2> fc;
+    std::array<u16, 2> fc{};
     u16 flm = 0; // set on saturation
     u16 fvl = 0; // latching fv
     u16 fr = 0;
