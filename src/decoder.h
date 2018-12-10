@@ -684,6 +684,9 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     INST(addhp, 0x90E0, At<ArRn2, 2>, At<ArStep2, 0>, At<Px, 4>, At<Ax, 8>),
     };
+
+#undef INST
+#undef EXCEPT
 }
 
 // clang-format on
