@@ -2614,8 +2614,13 @@ public:
         u64 vl = SignExtend<16, u64>(v & 0xFFFF);
         u64 wh = min ? uh - vh : vh - uh;
         u64 wl = min ? ul - vl : vl - ul;
-        wh = (regs.fc[0] = !(wh >> 63)) ? vh : uh;
-        wl = (regs.fc[1] = !(wl >> 63)) ? vl : ul;
+
+        regs.fc[0] = !(wh >> 63);
+        regs.fc[1] = !(wl >> 63);
+
+        wh = regs.fc[0] != 0 ? vh : uh;
+        wl = regs.fc[1] != 0 ? vl : ul;
+
         u64 w = (wh << 16) | (wl & 0xFFFF);
         SetAcc(a, w);
         vtrshr();
