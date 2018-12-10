@@ -3,7 +3,6 @@
 #include <functional>
 #include <utility>
 #include "common_types.h"
-#include "teakra/teakra.h"
 
 namespace Teakra {
 
@@ -19,133 +18,133 @@ public:
     void EnableChannel(u16 value) {
         enable_channel = value;
     }
-    u16 GetChannelEnabled() {
+    u16 GetChannelEnabled() const {
         return enable_channel;
     }
 
     void ActivateChannel(u16 value) {
         active_channel = value;
     }
-    u16 GetActiveChannel() {
+    u16 GetActiveChannel() const {
         return active_channel;
     }
 
     void SetAddrSrcLow(u16 value) {
         channels[active_channel].addr_src_low = value;
     }
-    u16 GetAddrSrcLow() {
+    u16 GetAddrSrcLow() const {
         return channels[active_channel].addr_src_low;
     }
 
     void SetAddrSrcHigh(u16 value) {
         channels[active_channel].addr_src_high = value;
     }
-    u16 GetAddrSrcHigh() {
+    u16 GetAddrSrcHigh() const {
         return channels[active_channel].addr_src_high;
     }
 
     void SetAddrDstLow(u16 value) {
         channels[active_channel].addr_dst_low = value;
     }
-    u16 GetAddrDstLow() {
+    u16 GetAddrDstLow() const {
         return channels[active_channel].addr_dst_low;
     }
 
     void SetAddrDstHigh(u16 value) {
         channels[active_channel].addr_dst_high = value;
     }
-    u16 GetAddrDstHigh() {
+    u16 GetAddrDstHigh() const {
         return channels[active_channel].addr_dst_high;
     }
 
     void SetSize0(u16 value) {
         channels[active_channel].size0 = value;
     }
-    u16 GetSize0() {
+    u16 GetSize0() const {
         return channels[active_channel].size0;
     }
 
     void SetSize1(u16 value) {
         channels[active_channel].size1 = value;
     }
-    u16 GetSize1() {
+    u16 GetSize1() const {
         return channels[active_channel].size1;
     }
 
     void SetSize2(u16 value) {
         channels[active_channel].size2 = value;
     }
-    u16 GetSize2() {
+    u16 GetSize2() const {
         return channels[active_channel].size2;
     }
 
     void SetSrcStep0(u16 value) {
         channels[active_channel].src_step0 = value;
     }
-    u16 GetSrcStep0() {
+    u16 GetSrcStep0() const {
         return channels[active_channel].src_step0;
     }
 
     void SetDstStep0(u16 value) {
         channels[active_channel].dst_step0 = value;
     }
-    u16 GetDstStep0() {
+    u16 GetDstStep0() const {
         return channels[active_channel].dst_step0;
     }
 
     void SetSrcStep1(u16 value) {
         channels[active_channel].src_step1 = value;
     }
-    u16 GetSrcStep1() {
+    u16 GetSrcStep1() const {
         return channels[active_channel].src_step1;
     }
 
     void SetDstStep1(u16 value) {
         channels[active_channel].dst_step1 = value;
     }
-    u16 GetDstStep1() {
+    u16 GetDstStep1() const {
         return channels[active_channel].dst_step1;
     }
 
     void SetSrcStep2(u16 value) {
         channels[active_channel].src_step2 = value;
     }
-    u16 GetSrcStep2() {
+    u16 GetSrcStep2() const {
         return channels[active_channel].src_step2;
     }
 
     void SetDstStep2(u16 value) {
         channels[active_channel].dst_step2 = value;
     }
-    u16 GetDstStep2() {
+    u16 GetDstStep2() const {
         return channels[active_channel].dst_step2;
     }
 
     void SetSrcSpace(u16 value) {
         channels[active_channel].src_space = value;
     }
-    u16 GetSrcSpace() {
+    u16 GetSrcSpace() const {
         return channels[active_channel].src_space;
     }
 
     void SetDstSpace(u16 value) {
         channels[active_channel].dst_space = value;
     }
-    u16 GetDstSpace() {
+    u16 GetDstSpace() const {
         return channels[active_channel].dst_space;
     }
 
     void SetDwordMode(u16 value) {
         channels[active_channel].dword_mode = value;
     }
-    u16 GetDwordMode() {
+    u16 GetDwordMode() const {
         return channels[active_channel].dword_mode;
     }
 
     void SetY(u16 value) {
         channels[active_channel].y = value;
     }
-    u16 GetY() {
+    u16 GetY() const {
         return channels[active_channel].y;
     }
 
@@ -156,7 +155,7 @@ public:
             DoDma(active_channel);
         }
     }
-    u16 GetZ() {
+    u16 GetZ() const {
         return channels[active_channel].z;
     }
 

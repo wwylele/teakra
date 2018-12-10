@@ -147,7 +147,7 @@ void Ahbm::WriteInternal(u16 channel, u32 address, u32 value) {
     }
 }
 
-u16 Ahbm::GetChannelForDma(u16 dma_channel) {
+u16 Ahbm::GetChannelForDma(u16 dma_channel) const {
     for (u16 channel = 0; channel < channels.size(); ++channel) {
         if ((channels[channel].dma_channel >> dma_channel) & 1) {
             return channel;

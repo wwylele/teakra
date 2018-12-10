@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <vector>
 
 namespace Teakra {
 
@@ -33,7 +32,7 @@ public:
     // APBP Semaphore
     void SetSemaphore(std::uint16_t value);
     void SetSemaphoreHandler(std::function<void()> handler);
-    std::uint16_t GetSemaphore();
+    std::uint16_t GetSemaphore() const;
 
     // core
     void Run(unsigned cycle);

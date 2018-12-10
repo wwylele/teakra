@@ -24,7 +24,7 @@ public:
     u16 GetSemaphoreMask() const;
     void SetSemaphoreHandler(std::function<void()> handler);
 
-    bool IsSemaphoreSignaled();
+    bool IsSemaphoreSignaled() const;
 
 private:
     class Impl;

@@ -20,7 +20,7 @@ public:
         transmit_period = value;
     }
 
-    u16 GetTransmitPeriod() {
+    u16 GetTransmitPeriod() const {
         return transmit_period;
     }
 
@@ -28,15 +28,15 @@ public:
         transmit_enable = value;
     }
 
-    u16 GetTransmitEnable() {
+    u16 GetTransmitEnable() const {
         return transmit_enable;
     }
 
-    u16 GetTransmitEmpty() {
+    u16 GetTransmitEmpty() const {
         return transmit_empty;
     }
 
-    u16 GetTransmitFull() {
+    u16 GetTransmitFull() const {
         return transmit_full;
     }
 
@@ -56,7 +56,7 @@ public:
         transmit_full = false;
     }
 
-    u16 GetTransmitFlush() {
+    u16 GetTransmitFlush() const {
         return 0;
     }
 
