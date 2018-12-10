@@ -28,31 +28,31 @@ public:
 
     void Reset();
 
-    u16 GetBusyFlag() {
+    u16 GetBusyFlag() const {
         return busy_flag;
     }
     void SetUnitSize(u16 i, u16 value) {
         channels[i].unit_size = static_cast<UnitSize>(value);
     }
-    u16 GetUnitSize(u16 i) {
+    u16 GetUnitSize(u16 i) const {
         return static_cast<u16>(channels[i].unit_size);
     }
     void SetBurstSize(u16 i, u16 value) {
         channels[i].burst_size = static_cast<BurstSize>(value);
     }
-    u16 GetBurstSize(u16 i) {
+    u16 GetBurstSize(u16 i) const {
         return static_cast<u16>(channels[i].burst_size);
     }
     void SetDirection(u16 i, u16 value) {
         channels[i].direction = static_cast<Direction>(value);
     }
-    u16 GetDirection(u16 i) {
+    u16 GetDirection(u16 i) const {
         return static_cast<u16>(channels[i].direction);
     }
     void SetDmaChannel(u16 i, u16 value) {
         channels[i].dma_channel = value;
     }
-    u16 GetDmaChannel(u16 i) {
+    u16 GetDmaChannel(u16 i) const {
         return channels[i].dma_channel;
     }
 
@@ -61,7 +61,7 @@ public:
     void Write16(u16 channel, u32 address, u16 value);
     void Write32(u16 channel, u32 address, u32 value);
 
-    u16 GetChannelForDma(u16 dma_channel);
+    u16 GetChannelForDma(u16 dma_channel) const;
 
     void SetExternalMemoryCallback(std::function<u8(u32)> read,
                                    std::function<void(u32, u8)> write) {
