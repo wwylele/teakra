@@ -180,7 +180,7 @@ private:
         u16 src_step1 = 0, dst_step1 = 0;
         u16 src_step2 = 0, dst_step2 = 0;
         u16 src_space = 0, dst_space = 0;
-        u16 dword_mode;
+        u16 dword_mode = 0;
         u16 y = 0;
         u16 z = 0;
 
