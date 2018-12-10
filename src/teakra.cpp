@@ -104,7 +104,7 @@ void Teakra::SetSemaphore(std::uint16_t value) {
 void Teakra::SetSemaphoreHandler(std::function<void()> handler) {
     impl->apbp_from_dsp.SetSemaphoreHandler(handler);
 }
-std::uint16_t Teakra::GetSemaphore() {
+std::uint16_t Teakra::GetSemaphore() const {
     return impl->apbp_from_dsp.GetSemaphore();
 }
 
