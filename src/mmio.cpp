@@ -1,5 +1,6 @@
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include "ahbm.h"
 #include "apbp.h"
@@ -27,10 +28,15 @@ struct BitFieldSlot {
     std::function<void(u16)> set;
     std::function<u16(void)> get;
 
-    static BitFieldSlot RefSlot(unsigned pos, unsigned length, u16& var) {
+    template <typename T>
+    static BitFieldSlot RefSlot(unsigned pos, unsigned length, T& var) {
+        static_assert(
+            std::is_same_v<u16,
+                           typename std::conditional_t<std::is_enum_v<T>, std::underlying_type<T>,
+                                                       std::enable_if<true, T>>::type>);
         BitFieldSlot slot{pos, length, {}, {}};
-        slot.set = [&var](u16 value) { var = value; };
-        slot.get = [&var]() -> u16 { return var; };
+        slot.set = [&var](u16 value) { var = static_cast<T>(value); };
+        slot.get = [&var]() -> u16 { return static_cast<u16>(var); };
         return slot;
     }
 };

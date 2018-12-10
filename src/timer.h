@@ -11,7 +11,7 @@ class Timer {
 public:
     Timer(CoreTiming& core_timing);
 
-    enum CountMode : u32 {
+    enum class CountMode : u16 {
         Single = 0,
         AutoRestart = 1,
         FreeRunning = 2,
@@ -26,7 +26,7 @@ public:
 
     u16 update_mmio = 0;
     u16 pause = 0;
-    u16 count_mode = 0;
+    CountMode count_mode = CountMode::Single;
     u16 scale = 0;
 
     u16 start_high = 0;

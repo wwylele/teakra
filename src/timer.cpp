@@ -54,17 +54,10 @@ private:
     Timer& parent;
 };
 
-enum CountMode : u32 {
-    Single = 0,
-    AutoRestart = 1,
-    FreeRunning = 2,
-    EventCount = 3,
-};
-
 void Timer::Reset() {
     update_mmio = 0;
     pause = 0;
-    count_mode = 0;
+    count_mode = CountMode::Single;
     scale = 0;
 
     start_high = 0;
@@ -75,7 +68,7 @@ void Timer::Reset() {
 }
 
 void Timer::Restart() {
-    ASSERT(count_mode < 4);
+    ASSERT(static_cast<u16>(count_mode) < 4);
     if (count_mode != CountMode::FreeRunning) {
         counter = ((u32)start_high << 16) | start_low;
         UpdateMMIO();
@@ -83,7 +76,7 @@ void Timer::Restart() {
 }
 
 void Timer::Tick() {
-    ASSERT(count_mode < 4);
+    ASSERT(static_cast<u16>(count_mode) < 4);
     ASSERT(scale == 0);
     if (pause)
         return;
