@@ -95,14 +95,14 @@ std::uint16_t Teakra::RecvData(std::uint8_t index) {
     return impl->apbp_from_dsp.RecvData(index);
 }
 void Teakra::SetRecvDataHandler(std::uint8_t index, std::function<void()> handler) {
-    impl->apbp_from_dsp.SetDataHandler(index, handler);
+    impl->apbp_from_dsp.SetDataHandler(index, std::move(handler));
 }
 
 void Teakra::SetSemaphore(std::uint16_t value) {
     impl->apbp_from_cpu.SetSemaphore(value);
 }
 void Teakra::SetSemaphoreHandler(std::function<void()> handler) {
-    impl->apbp_from_dsp.SetSemaphoreHandler(handler);
+    impl->apbp_from_dsp.SetSemaphoreHandler(std::move(handler));
 }
 std::uint16_t Teakra::GetSemaphore() {
     return impl->apbp_from_dsp.GetSemaphore();
@@ -113,7 +113,7 @@ void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
 }
 
 void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) {
-    impl->btdmp[0].SetAudioCallback(callback);
+    impl->btdmp[0].SetAudioCallback(std::move(callback));
 }
 
 } // namespace Teakra

@@ -63,7 +63,7 @@ public:
     void Tick();
 
     void SetAudioCallback(std::function<void(std::array<std::int16_t, 2>)> callback) {
-        audio_callback = callback;
+        audio_callback = std::move(callback);
     }
 
     void SetInterruptHandler(std::function<void()> handler) {
