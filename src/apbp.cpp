@@ -108,7 +108,7 @@ void Apbp::SetSemaphoreHandler(std::function<void()> handler) {
     impl->semaphore_handler = std::move(handler);
 }
 
-bool Apbp::IsSemaphoreSignaled() {
+bool Apbp::IsSemaphoreSignaled() const {
     return impl->semaphore_master_signal;
 }
 } // namespace Teakra
