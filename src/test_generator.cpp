@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <memory>
 #include <random>
 #include <unordered_set>
 #include "common_types.h"
@@ -19,8 +20,8 @@ enum class ExpandConfig {
 };
 
 namespace Random {
-
-static std::mt19937 gen(std::random_device{}());
+namespace {
+std::mt19937 gen(std::random_device{}());
 
 u64 uniform(u64 a, u64 b) {
     std::uniform_int_distribution<u64> dist(a, b);
@@ -60,9 +61,10 @@ u16 bit16() {
     static std::uniform_int_distribution<u16> dist;
     return dist(gen);
 }
-
+} // Anonymous namespace
 } // namespace Random
 
+namespace {
 struct Config {
     bool enable = false;
     bool lock_page = false;
@@ -1435,20 +1437,27 @@ public:
         return DisabledConfig;
     }
 };
+} // Anonymous namespace
 
-void GenerateTestCasesToFile(const char* path) {
+bool GenerateTestCasesToFile(const char* path) {
+    std::unique_ptr<std::FILE, decltype(&std::fclose)> f{std::fopen(path, "wb"), std::fclose};
+    if (!f) {
+        return false;
+    }
+
     TestGenerator generator;
-    std::FILE* f = std::fopen(path, "wb");
     for (u32 i = 0; i < 0x10000; ++i) {
         u16 opcode = (u16)i;
         auto decoded = Decode<TestGenerator>(opcode);
         Config config = decoded.call(generator, opcode, 0);
         if (!config.enable)
             continue;
+
         for (int j = 0; j < 4; ++j) {
             TestCase test_case{};
             test_case.before = config.GenerateRandomState();
             test_case.opcode = opcode;
+
             switch (config.expand) {
             case ExpandConfig::None:
                 test_case.expand = 0;
@@ -1460,10 +1469,14 @@ void GenerateTestCasesToFile(const char* path) {
                 test_case.expand = TestSpaceX + (u16)Random::uniform(10, TestSpaceSize - 10);
                 break;
             }
-            std::fwrite(&test_case, sizeof(test_case), 1, f);
+
+            if (std::fwrite(&test_case, sizeof(test_case), 1, f.get()) != sizeof(test_case)) {
+                return false;
+            }
         }
     }
-    std::fclose(f);
+
+    return true;
 }
 
 } // namespace Teakra::Test

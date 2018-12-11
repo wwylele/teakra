@@ -1,5 +1,7 @@
 #pragma once
+
 #include <array>
+#include <type_traits>
 
 #ifndef COMMON_TYPE_3DS
 #include "common_types.h"
@@ -25,9 +27,12 @@ struct State {
     std::array<u16, TestSpaceSize> test_space_y;
 };
 
+static_assert(std::is_trivially_copyable_v<State>);
+
 struct TestCase {
     State before, after;
     u16 opcode, expand;
 };
 
 static_assert(sizeof(TestCase) == 4312);
+static_assert(std::is_trivially_copyable_v<TestCase>);
