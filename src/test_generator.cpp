@@ -19,8 +19,8 @@ enum class ExpandConfig {
 };
 
 namespace Random {
-
-static std::mt19937 gen(std::random_device{}());
+namespace {
+std::mt19937 gen(std::random_device{}());
 
 u64 uniform(u64 a, u64 b) {
     std::uniform_int_distribution<u64> dist(a, b);
@@ -60,9 +60,10 @@ u16 bit16() {
     static std::uniform_int_distribution<u16> dist;
     return dist(gen);
 }
-
+} // Anonymous namespace
 } // namespace Random
 
+namespace {
 struct Config {
     bool enable = false;
     bool lock_page = false;
@@ -1435,6 +1436,7 @@ public:
         return DisabledConfig;
     }
 };
+} // Anonymous namespace
 
 void GenerateTestCasesToFile(const char* path) {
     TestGenerator generator;
