@@ -26,13 +26,15 @@ std::string Flag16ToString(u16 value, const char* symbols) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2)
-        throw;
+    if (argc < 2) {
+        std::fprintf(stderr, "A filename argument must be provided. Exiting...\n");
+        return -1;
+    }
 
     std::unique_ptr<std::FILE, decltype(&std::fclose)> file{std::fopen(argv[1], "rb"), std::fclose};
     if (!file) {
         std::fprintf(stderr, "Unable to open file %s. Exiting...\n", argv[1]);
-        return -1;
+        return -2;
     }
 
     Teakra::CoreTiming core_timing;
