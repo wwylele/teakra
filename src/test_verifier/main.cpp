@@ -1,7 +1,7 @@
 #include <cinttypes>
 #include <cstdio>
 #include <iomanip>
-#include <sstream>
+#include <memory>
 #include <teakra/disassembler.h>
 #include "../ahbm.h"
 #include "../apbp.h"
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     Teakra::RegisterState regs;
     Teakra::Interpreter interpreter(core_timing, regs, memory_interface);
 
-    std::FILE* file = std::fopen(argv[1], "rb");
+    std::unique_ptr<std::FILE, decltype(&std::fclose)> file{std::fopen(argv[1], "rb"), std::fclose};
 
     int i = 0;
     int passed = 0;
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     int skipped = 0;
     while (true) {
         TestCase test_case;
-        if (std::fread(&test_case, sizeof(test_case), 1, file) == 0) {
+        if (std::fread(&test_case, sizeof(test_case), 1, file.get()) == 0) {
             break;
         }
         regs.Reset();
@@ -251,8 +251,6 @@ int main(int argc, char** argv) {
     }
 
     std::printf("%d / %d passed, %d skipped\n", passed, total, skipped);
-
-    std::fclose(file);
 
     if (passed < total) {
         return 1;
