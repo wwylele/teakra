@@ -25,7 +25,6 @@ std::string Flag16ToString(u16 value, const char* symbols) {
     return result;
 }
 
-
 int main(int argc, char** argv) {
     if (argc < 2)
         throw;
@@ -51,8 +50,9 @@ int main(int argc, char** argv) {
     int skipped = 0;
     while (true) {
         TestCase test_case;
-        if (!fread(&test_case, sizeof(test_case), 1, file))
+        if (std::fread(&test_case, sizeof(test_case), 1, file) == 0) {
             break;
+        }
         regs.Reset();
         regs.a = test_case.before.a;
         regs.b = test_case.before.b;
@@ -117,7 +117,8 @@ int main(int argc, char** argv) {
 
             auto CheckAddress = [&](const char* name, u16 address, u16 expected, u16 actual) {
                 if (expected != actual) {
-                    std::printf("Mismatch: %s%04X: %04X != %04X\n", name, address, expected, actual);
+                    std::printf("Mismatch: %s%04X: %04X != %04X\n", name, address, expected,
+                                actual);
                     pass = false;
                 }
             };
@@ -171,12 +172,10 @@ int main(int argc, char** argv) {
             CheckFlag("arp3", test_case.after.arp[3], regs.Get<Teakra::arp3>(), "#RR#RRjjjjjiiiii");
 
             for (u16 offset = 0; offset < TestSpaceSize; ++offset) {
-                CheckAddress("memory_", (TestSpaceX + offset),
-                      test_case.after.test_space_x[offset],
-                      memory_interface.DataRead(TestSpaceX + offset));
-                CheckAddress("memory_", (TestSpaceY + offset),
-                      test_case.after.test_space_y[offset],
-                      memory_interface.DataRead(TestSpaceY + offset));
+                CheckAddress("memory_", (TestSpaceX + offset), test_case.after.test_space_x[offset],
+                             memory_interface.DataRead(TestSpaceX + offset));
+                CheckAddress("memory_", (TestSpaceY + offset), test_case.after.test_space_y[offset],
+                             memory_interface.DataRead(TestSpaceY + offset));
             }
             ++total;
         } catch (const Teakra::UnimplementedException&) {
@@ -256,9 +255,8 @@ int main(int argc, char** argv) {
     std::fclose(file);
 
     if (passed < total) {
-      return 1;
+        return 1;
     }
 
     return 0;
-
 }
