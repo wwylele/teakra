@@ -28,6 +28,13 @@ std::string Flag16ToString(u16 value, const char* symbols) {
 int main(int argc, char** argv) {
     if (argc < 2)
         throw;
+
+    std::unique_ptr<std::FILE, decltype(&std::fclose)> file{std::fopen(argv[1], "rb"), std::fclose};
+    if (!file) {
+        std::fprintf(stderr, "Unable to open file %s. Exiting...\n", argv[1]);
+        return -1;
+    }
+
     Teakra::CoreTiming core_timing;
     Teakra::SharedMemory shared_memory;
     Teakra::MemoryInterfaceUnit miu;
@@ -41,8 +48,6 @@ int main(int argc, char** argv) {
     Teakra::MemoryInterface memory_interface{shared_memory, miu, mmio};
     Teakra::RegisterState regs;
     Teakra::Interpreter interpreter(core_timing, regs, memory_interface);
-
-    std::unique_ptr<std::FILE, decltype(&std::fclose)> file{std::fopen(argv[1], "rb"), std::fclose};
 
     int i = 0;
     int passed = 0;
