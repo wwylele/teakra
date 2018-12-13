@@ -10,7 +10,7 @@ public:
         parent.Tick();
     }
 
-    u64 GetMaxSkip() override {
+    u64 GetMaxSkip() const override {
         if (parent.pause || parent.count_mode == CountMode::EventCount)
             return Infinity;
 

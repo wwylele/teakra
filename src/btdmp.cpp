@@ -11,7 +11,7 @@ public:
         parent.Tick();
     }
 
-    u64 GetMaxSkip() override {
+    u64 GetMaxSkip() const override {
         if (!parent.transmit_enable || parent.transmit_queue.empty()) {
             return Infinity;
         }
