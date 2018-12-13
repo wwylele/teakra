@@ -1,9 +1,19 @@
 #include <cstdio>
+#include <memory>
 #include "../test.h"
 
 int main(int argc, char** argv) {
-    if (argc < 2)
+    if (argc < 2) {
+        std::fprintf(stderr, "A file path argument must be provided. Exiting...\n");
         return -1;
+    }
+
+    std::unique_ptr<std::FILE, decltype(&std::fclose)> f{std::fopen(argv[1], "wb"), std::fclose};
+    if (!f) {
+        std::fprintf(stderr, "Unable to open file %s. Exiting...\n", argv[1]);
+        return -2;
+    }
+
     TestCase test_case{};
     test_case.opcode = 0x4DA0; // mpy  y0, MemR04@3 || mpyus y1, MemR04@3offsZI@2 || sub3  p0, p1,
                                // Ax@4 || R04@3stepII2@2
@@ -12,7 +22,6 @@ int main(int argc, char** argv) {
     for (u16 i = 0; i < TestSpaceSize; ++i) {
         test_case.before.test_space_x[i] = TestSpaceX + i;
     }
-    std::FILE* f = std::fopen(argv[1], "wb");
     for (u16 i = 0; i < 0x20; ++i) {
         test_case.before.r[0] = TestSpaceX + i + 0xF0;
         for (u16 legacy = 0; legacy < 2; ++legacy) {
@@ -31,12 +40,17 @@ int main(int argc, char** argv) {
                         u16 step_true = SignExtend<5>(step) & 0x7F;
                         for (u16 mod = 0; mod < 0x10; ++mod) {
                             test_case.before.cfgi = step_true | (mod << 7);
-                            std::fwrite(&test_case, sizeof(test_case), 1, f);
+                            if (std::fwrite(&test_case, sizeof(test_case), 1, f.get()) == 0) {
+                                std::fprintf(stderr,
+                                             "Unable to completely write test case. Exiting...\n");
+                                return -3;
+                            }
                         }
                     }
                 }
             }
         }
     }
-    std::fclose(f);
+
+    return 0;
 }
