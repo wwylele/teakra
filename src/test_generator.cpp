@@ -1470,7 +1470,7 @@ bool GenerateTestCasesToFile(const char* path) {
                 break;
             }
 
-            if (std::fwrite(&test_case, sizeof(test_case), 1, f.get()) != sizeof(test_case)) {
+            if (std::fwrite(&test_case, sizeof(test_case), 1, f.get()) == 0) {
                 return false;
             }
         }
