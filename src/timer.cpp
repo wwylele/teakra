@@ -11,43 +11,11 @@ public:
     }
 
     u64 GetMaxSkip() const override {
-        if (parent.pause || parent.count_mode == CountMode::EventCount)
-            return Infinity;
-
-        if (parent.counter == 0) {
-            if (parent.count_mode == CountMode::AutoRestart) {
-                return ((u32)parent.start_high << 16) | parent.start_low;
-            } else if (parent.count_mode == CountMode::FreeRunning) {
-                return 0xFFFFFFFF;
-            } else /*Single*/ {
-                return Infinity;
-            }
-        }
-
-        return parent.counter - 1;
+        return parent.GetMaxSkip();
     }
 
     void Skip(u64 ticks) override {
-        if (parent.pause || parent.count_mode == CountMode::EventCount)
-            return;
-
-        if (parent.counter == 0) {
-            u32 reset;
-            if (parent.count_mode == CountMode::AutoRestart) {
-                reset = ((u32)parent.start_high << 16) | parent.start_low;
-            } else if (parent.count_mode == CountMode::FreeRunning) {
-                reset = 0xFFFFFFFF;
-            } else {
-                return;
-            }
-            ASSERT(reset >= ticks);
-            parent.counter = reset - ((u32)ticks - 1);
-        } else {
-            ASSERT(parent.counter > ticks);
-            parent.counter -= (u32)ticks;
-        }
-
-        parent.UpdateMMIO();
+        parent.Skip(ticks);
     }
 
 private:
@@ -115,6 +83,46 @@ void Timer::UpdateMMIO() {
         return;
     counter_high = counter >> 16;
     counter_low = counter & 0xFFFF;
+}
+
+u64 Timer::GetMaxSkip() const {
+    if (pause || count_mode == CountMode::EventCount)
+        return CoreTiming::Callbacks::Infinity;
+
+    if (counter == 0) {
+        if (count_mode == CountMode::AutoRestart) {
+            return ((u32)start_high << 16) | start_low;
+        } else if (count_mode == CountMode::FreeRunning) {
+            return 0xFFFFFFFF;
+        } else /*Single*/ {
+            return CoreTiming::Callbacks::Infinity;
+        }
+    }
+
+    return counter - 1;
+}
+
+void Timer::Skip(u64 ticks) {
+    if (pause || count_mode == CountMode::EventCount)
+        return;
+
+    if (counter == 0) {
+        u32 reset;
+        if (count_mode == CountMode::AutoRestart) {
+            reset = ((u32)start_high << 16) | start_low;
+        } else if (count_mode == CountMode::FreeRunning) {
+            reset = 0xFFFFFFFF;
+        } else {
+            return;
+        }
+        ASSERT(reset >= ticks);
+        counter = reset - ((u32)ticks - 1);
+    } else {
+        ASSERT(counter > ticks);
+        counter -= (u32)ticks;
+    }
+
+    UpdateMMIO();
 }
 
 Timer::Timer(CoreTiming& core_timing) {
