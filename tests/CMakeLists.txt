@@ -1,5 +1,6 @@
 add_executable(teakra_tests
     main.cpp
+    timer.cpp
 )
 
 target_link_libraries(teakra_tests PRIVATE teakra catch)
