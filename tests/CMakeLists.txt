@@ -1,4 +1,5 @@
 add_executable(teakra_tests
+    dma.cpp
     btdmp.cpp
     interpreter.cpp
     main.cpp
