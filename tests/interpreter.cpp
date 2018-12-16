@@ -33,12 +33,12 @@ TEST_CASE("Cycle accuracy", "[interpreter]") {
 
     class InterruptGenerator : public Teakra::CoreTiming::Callbacks {
         Teakra::Interpreter& interpreter;
-        u16 counter = 0;
+        u64 counter = 0;
 
     public:
         InterruptGenerator(Teakra::Interpreter& interpreter) : interpreter(interpreter) {}
 
-        void SetCounter(u16 new_counter) {
+        void SetCounter(u64 new_counter) {
             counter = new_counter;
         }
 
