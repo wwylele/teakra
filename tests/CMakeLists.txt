@@ -1,5 +1,6 @@
 add_executable(teakra_tests
     btdmp.cpp
+    interpreter.cpp
     main.cpp
     timer.cpp
 )
