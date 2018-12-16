@@ -12,50 +12,11 @@ public:
     }
 
     u64 GetMaxSkip() const override {
-        if (!parent.transmit_enable || parent.transmit_queue.empty()) {
-            return Infinity;
-        }
-
-        u64 ticks = 0;
-        if (parent.transmit_timer < parent.transmit_period) {
-            // number of ticks before the tick of the next transmit
-            ticks += parent.transmit_period - parent.transmit_timer - 1;
-        }
-
-        // number of ticks from the next transmit to the one just before the transmit that empties
-        // the buffer
-        ticks += ((parent.transmit_queue.size() + 1) / 2 - 1) * parent.transmit_period;
-
-        return ticks;
+        return parent.GetMaxSkip();
     }
 
     void Skip(u64 ticks) override {
-        if (!parent.transmit_enable)
-            return;
-
-        if (parent.transmit_timer >= parent.transmit_period)
-            parent.transmit_timer = 0;
-
-        u64 future_timer = parent.transmit_timer + ticks;
-        u64 cycles = future_timer / parent.transmit_period;
-        parent.transmit_timer = (u16)(future_timer % parent.transmit_period);
-
-        for (u64 c = 0; c < cycles; ++c) {
-            std::array<std::int16_t, 2> sample;
-            for (int i = 0; i < 2; ++i) {
-                if (parent.transmit_queue.empty()) {
-                    sample[i] = 0;
-                } else {
-                    sample[i] = static_cast<s16>(parent.transmit_queue.front());
-                    parent.transmit_queue.pop();
-                    ASSERT(!parent.transmit_queue.empty());
-                    parent.transmit_full = false;
-                }
-            }
-            if (parent.audio_callback) {
-                parent.audio_callback(sample);
-            }
-        }
+        parent.Skip(ticks);
     }
 
 private:
@@ -100,6 +61,53 @@ void Btdmp::Tick() {
             if (audio_callback) {
                 audio_callback(sample);
             }
+        }
+    }
+}
+
+u64 Btdmp::GetMaxSkip() const {
+    if (!transmit_enable || transmit_queue.empty()) {
+        return CoreTiming::Callbacks::Infinity;
+    }
+
+    u64 ticks = 0;
+    if (transmit_timer < transmit_period) {
+        // number of ticks before the tick of the next transmit
+        ticks += transmit_period - transmit_timer - 1;
+    }
+
+    // number of ticks from the next transmit to the one just before the transmit that empties
+    // the buffer
+    ticks += ((transmit_queue.size() + 1) / 2 - 1) * transmit_period;
+
+    return ticks;
+}
+
+void Btdmp::Skip(u64 ticks) {
+    if (!transmit_enable)
+        return;
+
+    if (transmit_timer >= transmit_period)
+        transmit_timer = 0;
+
+    u64 future_timer = transmit_timer + ticks;
+    u64 cycles = future_timer / transmit_period;
+    transmit_timer = (u16)(future_timer % transmit_period);
+
+    for (u64 c = 0; c < cycles; ++c) {
+        std::array<std::int16_t, 2> sample;
+        for (int i = 0; i < 2; ++i) {
+            if (transmit_queue.empty()) {
+                sample[i] = 0;
+            } else {
+                sample[i] = static_cast<s16>(transmit_queue.front());
+                transmit_queue.pop();
+                ASSERT(!transmit_queue.empty());
+                transmit_full = false;
+            }
+        }
+        if (audio_callback) {
+            audio_callback(sample);
         }
     }
 }
