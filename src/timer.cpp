@@ -3,25 +3,6 @@
 
 namespace Teakra {
 
-class Timer::TimerTimingCallbacks : public CoreTiming::Callbacks {
-public:
-    TimerTimingCallbacks(Timer& parent) : parent(parent) {}
-    void Tick() override {
-        parent.Tick();
-    }
-
-    u64 GetMaxSkip() const override {
-        return parent.GetMaxSkip();
-    }
-
-    void Skip(u64 ticks) override {
-        parent.Skip(ticks);
-    }
-
-private:
-    Timer& parent;
-};
-
 void Timer::Reset() {
     update_mmio = 0;
     pause = 0;
@@ -87,7 +68,7 @@ void Timer::UpdateMMIO() {
 
 u64 Timer::GetMaxSkip() const {
     if (pause || count_mode == CountMode::EventCount)
-        return CoreTiming::Callbacks::Infinity;
+        return Infinity;
 
     if (counter == 0) {
         if (count_mode == CountMode::AutoRestart) {
@@ -95,7 +76,7 @@ u64 Timer::GetMaxSkip() const {
         } else if (count_mode == CountMode::FreeRunning) {
             return 0xFFFFFFFF;
         } else /*Single*/ {
-            return CoreTiming::Callbacks::Infinity;
+            return Infinity;
         }
     }
 
@@ -126,7 +107,7 @@ void Timer::Skip(u64 ticks) {
 }
 
 Timer::Timer(CoreTiming& core_timing) {
-    core_timing.RegisterCallbacks(std::make_unique<TimerTimingCallbacks>(*this));
+    core_timing.RegisterCallbacks(this);
 }
 
 } // namespace Teakra

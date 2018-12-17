@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
-#include <memory>
 #include <vector>
 #include "common_types.h"
 
@@ -37,11 +36,11 @@ public:
         return ticks;
     }
 
-    void RegisterCallbacks(std::unique_ptr<Callbacks> callbacks) {
+    void RegisterCallbacks(Callbacks* callbacks) {
         registered_callbacks.push_back(std::move(callbacks));
     }
 
 private:
-    std::vector<std::unique_ptr<Callbacks>> registered_callbacks;
+    std::vector<Callbacks*> registered_callbacks;
 };
 } // namespace Teakra

@@ -4,27 +4,8 @@
 
 namespace Teakra {
 
-class Btdmp::BtdmpTimingCallbacks : public CoreTiming::Callbacks {
-public:
-    BtdmpTimingCallbacks(Btdmp& parent) : parent(parent) {}
-    void Tick() override {
-        parent.Tick();
-    }
-
-    u64 GetMaxSkip() const override {
-        return parent.GetMaxSkip();
-    }
-
-    void Skip(u64 ticks) override {
-        parent.Skip(ticks);
-    }
-
-private:
-    Btdmp& parent;
-};
-
 Btdmp::Btdmp(CoreTiming& core_timing) {
-    core_timing.RegisterCallbacks(std::make_unique<BtdmpTimingCallbacks>(*this));
+    core_timing.RegisterCallbacks(this);
 }
 
 Btdmp::~Btdmp() = default;
@@ -67,7 +48,7 @@ void Btdmp::Tick() {
 
 u64 Btdmp::GetMaxSkip() const {
     if (!transmit_enable || transmit_queue.empty()) {
-        return CoreTiming::Callbacks::Infinity;
+        return Infinity;
     }
 
     u64 ticks = 0;
