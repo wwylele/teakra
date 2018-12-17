@@ -44,6 +44,12 @@ target_include_directories(teakra
                            PRIVATE .)
 target_compile_options(teakra PRIVATE ${TEAKRA_CXX_FLAGS})
 
+add_library(teakra_c
+    ../include/teakra/teakra_c.h
+    teakra_c.cpp
+)
+target_link_libraries(teakra_c PRIVATE teakra)
+
 if (TEAKRA_BUILD_TOOLS)
     add_subdirectory(coff_reader)
     add_subdirectory(dsp1_reader)
