@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include "bit.h"
 #include "core_timing.h"
 #include "crash.h"
 #include "decoder.h"
@@ -3523,11 +3524,7 @@ private:
                         m |= s;
                     }
 
-                    u16 mask = 0;
-                    for (unsigned i = 0; i < 9; ++i) {
-                        mask |= m >> i;
-                    }
-
+                    u16 mask = (1 << std20::log2p1(m)) - 1;
                     u16 next;
                     if (!negative) {
                         if ((address & mask) == mod && (!step2_mode2 || mod != mask)) {
@@ -3545,11 +3542,7 @@ private:
                     address &= ~mask;
                     address |= next;
                 } else {
-                    u16 mask = 0;
-                    for (unsigned i = 0; i < 9; ++i) {
-                        mask |= mod >> i;
-                    }
-
+                    u16 mask = (1 << std20::log2p1(mod)) - 1;
                     u16 next;
                     if (s < 0x8000) {
                         next = (address + s) & mask;
