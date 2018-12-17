@@ -52,8 +52,8 @@ class MMIORegion;
 
 class MemoryInterface {
 public:
-    MemoryInterface(SharedMemory& shared_memory, MemoryInterfaceUnit& memory_interface_unit,
-                    MMIORegion& mmio);
+    MemoryInterface(SharedMemory& shared_memory, MemoryInterfaceUnit& memory_interface_unit);
+    void SetMMIO(MMIORegion& mmio);
     u16 ProgramRead(u32 address) const;
     void ProgramWrite(u32 address, u16 value);
     u16 DataRead(u16 address); // not const because it can be a FIFO register
@@ -62,7 +62,7 @@ public:
 private:
     SharedMemory& shared_memory;
     MemoryInterfaceUnit& memory_interface_unit;
-    MMIORegion& mmio;
+    MMIORegion* mmio;
 };
 
 } // namespace Teakra

@@ -61,6 +61,8 @@ public:
     }
 
     void Tick();
+    u64 GetMaxSkip() const;
+    void Skip(u64 ticks);
 
     void SetAudioCallback(std::function<void(std::array<std::int16_t, 2>)> callback) {
         audio_callback = std::move(callback);

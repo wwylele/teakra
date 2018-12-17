@@ -23,6 +23,8 @@ public:
     void Restart();
     void Tick();
     void TickEvent();
+    u64 GetMaxSkip() const;
+    void Skip(u64 ticks);
 
     u16 update_mmio = 0;
     u16 pause = 0;

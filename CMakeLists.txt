@@ -75,5 +75,12 @@ enable_testing()
 if (NOT TEAKRA_TEST_ASSETS_DIR)
   set(TEAKRA_TEST_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
+
+# External libraries
+add_subdirectory(externals)
+
 # Teakra project files
 add_subdirectory(src)
+
+# Teakra tests
+add_subdirectory(tests)
