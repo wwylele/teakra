@@ -66,9 +66,9 @@ TEST_CASE("Cycle accuracy", "[interpreter]") {
         }
     };
 
-    auto interrupt_generator = std::make_unique<InterruptGenerator>(interpreter);
-    interrupt_generator->SetCounter(7);
-    core_timing.RegisterCallbacks(std::move(interrupt_generator));
+    InterruptGenerator interrupt_generator(interpreter);
+    interrupt_generator.SetCounter(7);
+    core_timing.RegisterCallbacks(&interrupt_generator);
 
     SECTION("Simple counting") {
         memory_interface.ProgramWrite(0x0001, 0x1000);

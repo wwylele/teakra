@@ -7,7 +7,7 @@
 
 namespace Teakra {
 
-class Timer {
+class Timer : public CoreTiming::Callbacks {
 public:
     Timer(CoreTiming& core_timing);
 
@@ -21,10 +21,10 @@ public:
     void Reset();
 
     void Restart();
-    void Tick();
+    void Tick() override;
     void TickEvent();
-    u64 GetMaxSkip() const;
-    void Skip(u64 ticks);
+    u64 GetMaxSkip() const override;
+    void Skip(u64 ticks) override;
 
     u16 update_mmio = 0;
     u16 pause = 0;
