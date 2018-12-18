@@ -10,6 +10,7 @@ endif()
 
 option(TEAKRA_WARNINGS_AS_ERRORS "Warnings as errors" ${MASTER_PROJECT})
 option(TEAKRA_BUILD_TOOLS "Build tools" ${MASTER_PROJECT})
+option(TEAKRA_BUILD_UNIT_TESTS "Build unit tests" ${MASTER_PROJECT})
 option(TEAKRA_RUN_TESTS "Run Teakra accuracy tests" OFF)
 
 # Set hard requirements for C++
@@ -83,4 +84,6 @@ add_subdirectory(externals)
 add_subdirectory(src)
 
 # Teakra tests
-add_subdirectory(tests)
+if (TEAKRA_BUILD_UNIT_TESTS)
+  add_subdirectory(tests)
+endif()
