@@ -78,9 +78,6 @@ struct RegisterState {
     // interrupt enable master bit
     u16 ie = 0;
 
-    // vectored(?) interrupt handler address;
-    u32 viaddr = 0;
-
     u16 pcmhi = 0;           // 2-bit, higher part of program address for movp/movd
     u16 bcn = 0;             // 3-bit, nest loop counter
     u16 lp = 0;              // 1-bit, set when in a loop

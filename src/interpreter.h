@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <exception>
 #include <tuple>
 #include <type_traits>
@@ -71,6 +72,16 @@ public:
                 }
             }
 
+            for (std::size_t i = 0; i < 3; ++i) {
+                if (interrupt_pending[i].exchange(false)) {
+                    regs.ip[i] = 1;
+                }
+            }
+
+            if (vinterrupt_pending.exchange(false)) {
+                regs.ipv = 1;
+            }
+
             u16 opcode = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
             auto& decoder = decoders[opcode];
             u16 expand_value = 0;
@@ -121,7 +132,7 @@ public:
                     regs.ipv = 0;
                     regs.ie = 0;
                     PushPC();
-                    regs.pc = regs.viaddr;
+                    regs.pc = vinterrupt_address;
                     idle = false;
                 }
             }
@@ -131,11 +142,11 @@ public:
     }
 
     void SignalInterrupt(u32 i) {
-        regs.ip[i] = 1;
+        interrupt_pending[i] = true;
     }
     void SignalVectoredInterrupt(u32 address) {
-        regs.viaddr = address;
-        regs.ipv = 1;
+        vinterrupt_address = address;
+        vinterrupt_pending = true;
     }
 
     using instruction_return_type = void;
@@ -2918,6 +2929,10 @@ private:
     CoreTiming& core_timing;
     RegisterState& regs;
     MemoryInterface& mem;
+
+    std::array<std::atomic<bool>, 3> interrupt_pending{{false, false, false}};
+    std::atomic<bool> vinterrupt_pending{false};
+    std::atomic<u32> vinterrupt_address;
 
     bool idle = false;
 
