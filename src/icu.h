@@ -3,6 +3,7 @@
 #include <array>
 #include <bitset>
 #include <functional>
+#include <mutex>
 #include <utility>
 #include "common_types.h"
 
@@ -12,15 +13,18 @@ class ICU {
 public:
     using IrqBits = std::bitset<16>;
     u16 GetRequest() const {
+        std::lock_guard lock(mutex);
         return (u16)request.to_ulong();
     }
     void Acknowledge(u16 irq_bits) {
+        std::lock_guard lock(mutex);
         request &= ~IrqBits(irq_bits);
     }
     u16 GetAcknowledge() {
         return 0;
     }
     void Trigger(u16 irq_bits) {
+        std::lock_guard lock(mutex);
         IrqBits bits(irq_bits);
         request |= bits;
         for (u32 irq = 0; irq < 16; ++irq) {
@@ -43,15 +47,19 @@ public:
         Trigger(1 << irq);
     }
     void SetEnable(u32 interrupt_index, u16 irq_bits) {
+        std::lock_guard lock(mutex);
         enabled[interrupt_index] = IrqBits(irq_bits);
     }
     void SetEnableVectored(u16 irq_bits) {
+        std::lock_guard lock(mutex);
         vectored_enabled = IrqBits(irq_bits);
     }
     u16 GetEnable(u32 interrupt_index) const {
+        std::lock_guard lock(mutex);
         return (u16)enabled[interrupt_index].to_ulong();
     }
     u16 GetEnableVectored() const {
+        std::lock_guard lock(mutex);
         return (u16)vectored_enabled.to_ulong();
     }
 
@@ -74,6 +82,7 @@ private:
     IrqBits request;
     std::array<IrqBits, 3> enabled;
     IrqBits vectored_enabled;
+    mutable std::mutex mutex;
 };
 
 } // namespace Teakra

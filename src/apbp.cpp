@@ -49,6 +49,7 @@ public:
     u16 semaphore = 0;
     u16 semaphore_mask = 0;
     bool semaphore_master_signal = false;
+    mutable std::recursive_mutex semaphore_mutex;
     std::function<void()> semaphore_handler;
 
     void Reset() {
@@ -88,6 +89,7 @@ void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {
 }
 
 void Apbp::SetSemaphore(u16 bits) {
+    std::lock_guard lock(impl->semaphore_mutex);
     impl->semaphore |= bits;
     bool new_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
     if (new_signal && impl->semaphore_handler) {
@@ -97,27 +99,33 @@ void Apbp::SetSemaphore(u16 bits) {
 }
 
 void Apbp::ClearSemaphore(u16 bits) {
+    std::lock_guard lock(impl->semaphore_mutex);
     impl->semaphore &= ~bits;
     impl->semaphore_master_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
 }
 
 u16 Apbp::GetSemaphore() const {
+    std::lock_guard lock(impl->semaphore_mutex);
     return impl->semaphore;
 }
 
 void Apbp::MaskSemaphore(u16 bits) {
+    std::lock_guard lock(impl->semaphore_mutex);
     impl->semaphore_mask = bits;
 }
 
 u16 Apbp::GetSemaphoreMask() const {
+    std::lock_guard lock(impl->semaphore_mutex);
     return impl->semaphore_mask;
 }
 
 void Apbp::SetSemaphoreHandler(std::function<void()> handler) {
+    std::lock_guard lock(impl->semaphore_mutex);
     impl->semaphore_handler = std::move(handler);
 }
 
 bool Apbp::IsSemaphoreSignaled() const {
+    std::lock_guard lock(impl->semaphore_mutex);
     return impl->semaphore_master_signal;
 }
 } // namespace Teakra
