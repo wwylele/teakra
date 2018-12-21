@@ -108,7 +108,12 @@ void Teakra::SetSemaphoreHandler(std::function<void()> handler) {
 std::uint16_t Teakra::GetSemaphore() const {
     return impl->apbp_from_dsp.GetSemaphore();
 }
-
+void Teakra::ClearSemaphore(std::uint16_t value) {
+    impl->apbp_from_dsp.ClearSemaphore(value);
+}
+void Teakra::MaskSemaphore(std::uint16_t value) {
+    impl->apbp_from_dsp.MaskSemaphore(value);
+}
 void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
     impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8);
 }

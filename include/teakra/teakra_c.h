@@ -25,6 +25,8 @@ void Teakra_SetRecvDataHandler(TeakraContext* context, uint8_t index,
                                Teakra_InterruptCallback handler, void* userdata);
 
 void Teakra_SetSemaphore(TeakraContext* context, uint16_t value);
+void Teakra_ClearSemaphore(TeakraContext* context, uint16_t value);
+void Teakra_MaskSemaphore(TeakraContext* context, uint16_t value);
 void Teakra_SetSemaphoreHandler(TeakraContext* context, Teakra_InterruptCallback handler,
                                 void* userdata);
 uint16_t Teakra_GetSemaphore(const TeakraContext* context);

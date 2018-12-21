@@ -47,6 +47,12 @@ void Teakra_SetRecvDataHandler(TeakraContext* context, uint8_t index,
 void Teakra_SetSemaphore(TeakraContext* context, uint16_t value) {
     context->teakra.SetSemaphore(value);
 }
+void Teakra_ClearSemaphore(TeakraContext* context, uint16_t value) {
+    context->teakra.ClearSemaphore(value);
+}
+void Teakra_MaskSemaphore(TeakraContext* context, uint16_t value) {
+    context->teakra.MaskSemaphore(value);
+}
 
 void Teakra_SetSemaphoreHandler(TeakraContext* context, Teakra_InterruptCallback handler,
                                 void* userdata) {

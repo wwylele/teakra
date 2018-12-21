@@ -26,10 +26,15 @@ public:
         ready = false;
         return data;
     }
+    u16 Peek() const {
+        std::lock_guard lock(mutex);
+        return data;
+    }
     bool IsReady() const {
         std::lock_guard lock(mutex);
         return ready;
     }
+
     std::function<void()> handler;
 
 private:
@@ -68,6 +73,10 @@ void Apbp::SendData(unsigned channel, u16 data) {
 
 u16 Apbp::RecvData(unsigned channel) {
     return impl->data_channels[channel].Recv();
+}
+
+u16 Apbp::PeekData(unsigned channel) const {
+    return impl->data_channels[channel].Peek();
 }
 
 bool Apbp::IsDataReady(unsigned channel) const {

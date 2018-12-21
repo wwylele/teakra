@@ -14,6 +14,7 @@ public:
 
     void SendData(unsigned channel, u16 data);
     u16 RecvData(unsigned channel);
+    u16 PeekData(unsigned channel) const;
     bool IsDataReady(unsigned channel) const;
     void SetDataHandler(unsigned channel, std::function<void()> handler);
 

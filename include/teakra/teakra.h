@@ -31,6 +31,8 @@ public:
 
     // APBP Semaphore
     void SetSemaphore(std::uint16_t value);
+    void ClearSemaphore(std::uint16_t value);
+    void MaskSemaphore(std::uint16_t value);
     void SetSemaphoreHandler(std::function<void()> handler);
     std::uint16_t GetSemaphore() const;
 

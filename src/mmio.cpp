@@ -160,8 +160,8 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     // APBP
     for (unsigned i = 0; i < 3; ++i) {
         impl->cells[0x0C0 + i * 4].set = std::bind(&Apbp::SendData, &apbp_from_dsp, i, _1);
-        impl->cells[0x0C0 + i * 4].get = NoGet("Apbp::SendData" + std::to_string(i));
-        impl->cells[0x0C2 + i * 4].set = NoSet("Apbp::RecvData" + std::to_string(i));
+        impl->cells[0x0C0 + i * 4].get = std::bind(&Apbp::PeekData, &apbp_from_dsp, i);
+        impl->cells[0x0C2 + i * 4].set = [](u16) {};
         impl->cells[0x0C2 + i * 4].get = std::bind(&Apbp::RecvData, &apbp_from_cpu, i);
     }
     impl->cells[0x0CC].set = std::bind(&Apbp::SetSemaphore, &apbp_from_dsp, _1);
@@ -169,10 +169,14 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x0CE].set = std::bind(&Apbp::MaskSemaphore, &apbp_from_cpu, _1);
     impl->cells[0x0CE].get = std::bind(&Apbp::GetSemaphoreMask, &apbp_from_cpu);
     impl->cells[0x0D0].set = std::bind(&Apbp::ClearSemaphore, &apbp_from_cpu, _1);
-    impl->cells[0x0D0].get = NoGet("Apbp::ClearSemaphore");
-    impl->cells[0x0D2].set = NoSet("Apbp::GetSemaphore");
+    impl->cells[0x0D0].get = []() -> u16 { return 0; };
+    impl->cells[0x0D2].set = [](u16) {};
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
-    // impl->cells[0x0D4]; // interrupt mask?
+    impl->cells[0x0D4] = Cell::BitFieldCell({
+        BitFieldSlot{2, 1, {}, {}}, // ARM side endianness flag
+        BitFieldSlot{8, 1, {}, {}},
+        BitFieldSlot{12, 2, {}, {}},
+    });
     impl->cells[0x0D6] = Cell::BitFieldCell({
         BitFieldSlot{5, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(0); }},
         BitFieldSlot{6, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(1); }},
@@ -182,6 +186,18 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
             9, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsSemaphoreSignaled(); }},
         BitFieldSlot{12, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(1); }},
         BitFieldSlot{13, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(2); }},
+    });
+
+    // This register is a mirror of CPU side register DSP_PSTS
+    impl->cells[0x0D8] = Cell::BitFieldCell({
+        BitFieldSlot{
+            9, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsSemaphoreSignaled(); }},
+        BitFieldSlot{10, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(0); }},
+        BitFieldSlot{11, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(1); }},
+        BitFieldSlot{12, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(2); }},
+        BitFieldSlot{13, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(0); }},
+        BitFieldSlot{14, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(1); }},
+        BitFieldSlot{15, 1, {}, [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.IsDataReady(2); }},
     });
 
     // AHBM
