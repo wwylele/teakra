@@ -182,24 +182,26 @@ void CheckPackage() {
             break;
         }
         case 2: {
-            if (command_package.size() != 2) {
-                printf("Wrong length for Read\n");
+            if (command_package.size() != 3) {
+                printf("Wrong length for CPU Read\n");
                 break;
             }
-            u16 addr = command_package[1];
-            printf("Read CPU  [%04X] -> ", addr);
-            printf("%04X\n", *(vu16*)(0x1ed03000 + addr));
+            u32 addr = command_package[1] | ((u32)command_package[2] << 16);
+            printf("Read CPU  [%08lX] -> ", addr);
+            // FlushCache((vu16*)addr, 2);
+            printf("%04X\n", *(vu16*)(addr));
             break;
         }
         case 3: {
-            if (command_package.size() != 3) {
-                printf("Wrong length for Write\n");
+            if (command_package.size() != 4) {
+                printf("Wrong length for CPU Write\n");
                 break;
             }
-            u16 addr = command_package[1];
-            u16 value = command_package[2];
-            printf("Write CPU  [%04X] <- %04X", addr, value);
-            *(vu16*)(0x1ed03000 + addr) = value;
+            u32 addr = command_package[1] | ((u32)command_package[2] << 16);
+            u16 value = command_package[3];
+            printf("Write CPU  [%08lX] <- %04X", addr, value);
+            // InvalidateCache((vu16*)addr, 2);
+            *(vu16*)(addr) = value;
             printf(" OK\n");
             break;
         }
