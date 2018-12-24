@@ -17,6 +17,8 @@ public:
             std::lock_guard lock(mutex);
             ready = true;
             this->data = data;
+            if (disable_interrupt)
+                return;
         }
         if (handler)
             handler();
@@ -34,12 +36,20 @@ public:
         std::lock_guard lock(mutex);
         return ready;
     }
+    u16 GetDisableInterrupt() const {
+        std::lock_guard lock(mutex);
+        return disable_interrupt;
+    }
+    void SetDisableInterrupt(u16 v) {
+        disable_interrupt = v;
+    }
 
     std::function<void()> handler;
 
 private:
     bool ready = false;
     u16 data = 0;
+    u16 disable_interrupt = 0;
     mutable std::mutex mutex;
 };
 
@@ -82,6 +92,14 @@ u16 Apbp::PeekData(unsigned channel) const {
 
 bool Apbp::IsDataReady(unsigned channel) const {
     return impl->data_channels[channel].IsReady();
+}
+
+u16 Apbp::GetDisableInterrupt(unsigned channel) const {
+    return impl->data_channels[channel].GetDisableInterrupt();
+}
+
+void Apbp::SetDisableInterrupt(unsigned channel, u16 v) {
+    impl->data_channels[channel].SetDisableInterrupt(v);
 }
 
 void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {

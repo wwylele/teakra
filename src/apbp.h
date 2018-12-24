@@ -16,6 +16,8 @@ public:
     u16 RecvData(unsigned channel);
     u16 PeekData(unsigned channel) const;
     bool IsDataReady(unsigned channel) const;
+    u16 GetDisableInterrupt(unsigned channel) const;
+    void SetDisableInterrupt(unsigned channel, u16 v);
     void SetDataHandler(unsigned channel, std::function<void()> handler);
 
     void SetSemaphore(u16 bits);

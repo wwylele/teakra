@@ -174,8 +174,15 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
     impl->cells[0x0D4] = Cell::BitFieldCell({
         BitFieldSlot{2, 1, {}, {}}, // ARM side endianness flag
-        BitFieldSlot{8, 1, {}, {}},
-        BitFieldSlot{12, 2, {}, {}},
+        BitFieldSlot{8, 1,
+                     [&apbp_from_cpu](u16 v) { return apbp_from_cpu.SetDisableInterrupt(0, v); },
+                     [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.GetDisableInterrupt(0); }},
+        BitFieldSlot{12, 1,
+                     [&apbp_from_cpu](u16 v) { return apbp_from_cpu.SetDisableInterrupt(1, v); },
+                     [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.GetDisableInterrupt(1); }},
+        BitFieldSlot{13, 1,
+                     [&apbp_from_cpu](u16 v) { return apbp_from_cpu.SetDisableInterrupt(2, v); },
+                     [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.GetDisableInterrupt(2); }},
     });
     impl->cells[0x0D6] = Cell::BitFieldCell({
         BitFieldSlot{5, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(0); }},
