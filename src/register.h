@@ -15,95 +15,19 @@ struct RegisterState {
         *this = RegisterState();
     }
 
+    /** Program control unit **/
+
     u32 pc = 0;     // 18-bit, program counter
     u16 prpage = 0; // 4-bit, program page
+    u16 cpc = 1;    // 1-bit, change word order when push/pop pc
 
-    u16 repc = 0;     // rep loop counter
+    u16 repc = 0;     // 16-bit rep loop counter
     u16 repcs = 0;    // repc shadow
     bool rep = false; // true when in rep loop
-    u16 mixp = 0;
-    u16 sv = 0; // 16-bit two's complement shift value
-    u16 sp = 0; // stack pointer
+    u16 crep = 1;     // 1-bit. If clear, store/restore repc to shadows on context switch
 
-    std::array<u16, 8> r{}; // general registers
-
-    // shadows for bank exchange;
-    u16 r0b = 0, r1b = 0, r4b = 0, r7b = 0;
-
-    // 40-bit 2's comp on real TeakLite.
-    // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
-    std::array<u64, 2> a{};
-    std::array<u64, 2> b{};
-
-    // shadows for a1 and b1
-    u64 a1s = 0, b1s = 0;
-
-    // multiplication unit
-    std::array<u16, 2> x{}; // factor
-    std::array<u16, 2> y{}; // factor
-    std::array<u32, 2> p{}; // product
-
-    u16 p0h_cbs = 0; // A hidden state for codebook search (CBS) opcode
-
-    // step/modulo
-    u16 stepi = 0, stepj = 0;   // 7 bit 2's comp
-    u16 modi = 0, modj = 0;     // 9 bit
-    u16 stepi0 = 0, stepj0 = 0; // alternative step
-
-    // Shadows for bank exchange
-    u16 stepib = 0, stepjb = 0;
-    u16 modib = 0, modjb = 0;
-    u16 stepi0b = 0, stepj0b = 0;
-
-    // 1-bit flags
-    u16 fz = 0, fm = 0, fn = 0, fv = 0, fe = 0;
-    std::array<u16, 2> fc{};
-    u16 flm = 0; // set on saturation
-    u16 fvl = 0; // latching fv
-    u16 fr = 0;
-    std::array<u16, 2> vtr{}; // for viterbi decoding
-
-    // interrupt pending bit
-    std::array<u16, 3> ip{};
-    u16 ipv = 0;
-
-    // interrupt enable bit
-    std::array<u16, 3> im{};
-    u16 imv = 0;
-
-    // interrupt context switching bit
-    std::array<u16, 3> ic{};
-    u16 nimc = 0;
-
-    // interrupt enable master bit
-    u16 ie = 0;
-
-    u16 pcmhi = 0;           // 2-bit, higher part of program address for movp/movd
-    u16 bcn = 0;             // 3-bit, nest loop counter
-    u16 lp = 0;              // 1-bit, set when in a loop
-    u16 sat = 0;             // 1-bit, disable saturation when moving from acc
-    u16 sata = 1;            // 1-bit, disable saturation when moving to acc
-    u16 hwm = 0;             // 2-bit, half word mode, modify y on multiplication
-    u16 mod0_unk_const = 1;  // 3-bit
-    std::array<u16, 2> ps{}; // 2-bit, product shift mode
-    // sign bit of p0/1. For signed multiplication and mov, this is set to equal bit 31
-    // product shift and extension is signed according to this.
-    std::array<u16, 2> pe{};
-    u16 s = 0;               // 1-bit, shift mode. 0 - arithmetic, 1 - logic
-    std::array<u16, 5> ou{}; // user output pins
-    std::array<u16, 2> iu{}; // user input pins
-    u16 page = 0;            // 8-bit, Higher part of MemImm8 address
-    u16 stp16 = 0; // 1 bit. If set, stepi0/j0 will be exchanged along with cfgi/j in banke, and use
-                   // stepi0/j0 for steping
-    u16 cmd = 1;   // 1-bit, step/mod method. 0 - TeakLiteII; 1 - legacy TeakLite
-    u16 epi = 0;   // 1-bit. If set, cause r3 = 0 when steping r3
-    u16 epj = 0;   // 1-bit. If set, cause r7 = 0 when steping r7
-    u16 ccnta = 1; // 1-bit. If clear, store/restore a1/b1 to shadows on context switch
-    u16 cpc = 1;   // 1-bit, change word order when push/pop pc
-    u16 crep = 1;  // 1-bit. If clear, store/restore repc to shadows on context switch
-
-    std::array<u16, 8> m{};  // 1-bit each, enable modulo arithmetic for Rn
-    std::array<u16, 8> br{}; // 1-bit each, use bit-reversed value from Rn as address
+    u16 bcn = 0; // 3-bit, nest loop counter
+    u16 lp = 0;  // 1-bit, set when in a loop
 
     struct BlockRepeatFrame {
         u32 start = 0;
@@ -117,6 +41,78 @@ struct RegisterState {
             return bkrep_stack[bcn - 1].lc;
         return bkrep_stack[0].lc;
     }
+
+    /** Computation unit **/
+
+    // 40-bit 2's comp accumulators.
+    // Use 64-bit 2's comp here. The upper 24 bits are always sign extension
+    std::array<u64, 2> a{};
+    std::array<u64, 2> b{};
+
+    u64 a1s = 0, b1s = 0; // shadows for a1 and b1
+    u16 ccnta = 1;        // 1-bit. If clear, store/restore a1/b1 to shadows on context switch
+
+    u16 sat = 0;  // 1-bit, disable saturation when moving from acc
+    u16 sata = 1; // 1-bit, disable saturation when moving to acc
+    u16 s = 0;    // 1-bit, shift mode. 0 - arithmetic, 1 - logic
+    u16 sv = 0;   // 16-bit two's complement shift value
+    u16 mixp = 0; // 16-bit, stores result of min/max instructions
+
+    // 1-bit flags
+    u16 fz = 0;              // zero flag
+    u16 fm = 0;              // negative flag
+    u16 fn = 0;              // normalized flag
+    u16 fv = 0;              // overflow flag
+    u16 fe = 0;              // extension flag
+    std::array<u16, 2> fc{}; // carry flags
+    u16 flm = 0;             // set on saturation
+    u16 fvl = 0;             // latching fv
+    u16 fr = 0;              // Rn zero flag
+
+    // Viterbi
+    std::array<u16, 2> vtr{};
+
+    /** Multiplication unit **/
+
+    std::array<u16, 2> x{};  // factor
+    std::array<u16, 2> y{};  // factor
+    u16 hwm = 0;             // 2-bit, half word mode, modify y on multiplication
+    std::array<u32, 2> p{};  // product
+    std::array<u16, 2> pe{}; // 1-bit product extension
+    std::array<u16, 2> ps{}; // 2-bit, product shift mode
+    u16 p0h_cbs = 0;         // 16-bit hidden state for codebook search (CBS) opcode
+
+    /** Address unit **/
+
+    std::array<u16, 8> r{}; // 16-bit general and address registers
+    u16 sp = 0;             // 16-bit stack pointer
+    u16 page = 0;           // 8-bit, higher part of MemImm8 address
+    u16 pcmhi = 0;          // 2-bit, higher part of program address for movp/movd
+
+    // shadows for bank exchange;
+    u16 r0b = 0, r1b = 0, r4b = 0, r7b = 0;
+
+    /** Address step/mod unit **/
+
+    // step/modulo
+    u16 stepi = 0, stepj = 0;   // 7-bit step
+    u16 modi = 0, modj = 0;     // 9-bit mod
+    u16 stepi0 = 0, stepj0 = 0; // 16-bit step
+
+    // shadows for bank exchange
+    u16 stepib = 0, stepjb = 0;
+    u16 modib = 0, modjb = 0;
+    u16 stepi0b = 0, stepj0b = 0;
+
+    std::array<u16, 8> m{};  // 1-bit each, enable modulo arithmetic for Rn
+    std::array<u16, 8> br{}; // 1-bit each, use bit-reversed value from Rn as address
+    u16 stp16 = 0; // 1 bit. If set, stepi0/j0 will be exchanged along with cfgi/j in banke, and use
+                   // stepi0/j0 for steping
+    u16 cmd = 1;   // 1-bit, step/mod method. 0 - Teak; 1 - TeakLite
+    u16 epi = 0;   // 1-bit. If set, cause r3 = 0 when steping r3
+    u16 epj = 0;   // 1-bit. If set, cause r7 = 0 when steping r7
+
+    /** Indirect address unit **/
 
     // 3 bits each
     // 0: +0
@@ -142,9 +138,32 @@ struct RegisterState {
     // 2 bits each. for i represent r0~r3, for j represents r4~r7
     std::array<u16, 4> arprni{{0, 1, 2, 3}}, arprnj{{0, 1, 2, 3}};
 
+    /** Interrupt unit **/
+
+    // interrupt pending bit
+    std::array<u16, 3> ip{};
+    u16 ipv = 0;
+
+    // interrupt enable bit
+    std::array<u16, 3> im{};
+    u16 imv = 0;
+
+    // interrupt context switching bit
+    std::array<u16, 3> ic{};
+    u16 nimc = 0;
+
+    // interrupt enable master bit
+    u16 ie = 0;
+
+    /** Extension unit **/
+
+    std::array<u16, 5> ou{}; // user output pins
+    std::array<u16, 2> iu{}; // user input pins
     std::array<u16, 4> ext{};
 
-    //// Shadow registers for context switch
+    u16 mod0_unk_const = 1; // 3-bit
+
+    /** Shadow registers **/
 
     template <u16 RegisterState::*origin>
     class ShadowRegister {
@@ -343,13 +362,13 @@ struct RegisterState {
         case CondValue::Nn:
             return fn == 0;
         case CondValue::C:
-            return fc[0] == 1; // ?
+            return fc[0] == 1;
         case CondValue::V:
             return fv == 1;
         case CondValue::E:
             return fe == 1;
         case CondValue::L:
-            return flm == 1 || fvl == 1; // ??
+            return flm == 1 || fvl == 1;
         case CondValue::Nr:
             return fr == 0;
         case CondValue::Niu0:
