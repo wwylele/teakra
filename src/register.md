@@ -9,7 +9,7 @@ The `RegisterState` class includes registers that program can directly access in
  - accumulators `a0`, `a1`, `b0` and `b1` are 40-bit on hardware. They are sign-extended to `u64` here.
  - Multiplication results `p0` and `p1` are 33-bit on hardware. They are stored in separate `u32` fields `p[*]` for lower bits and zero-padded one-bit `u16` fields `pe[*]` for the highest bit.
 
-Note that many registers have signed-integer semantics with two's complement representation, but we still store them as unsigned integer. This is to cooperate with the interpreter policy where signed integer arithmetic is avoid in order to avoid undefined or implementation-defined behaviours.
+Note that many registers have signed-integer semantics with two's complement representation, but we still store them as unsigned integer. This is to cooperate with the interpreter policy where signed integer arithmetic is avoided in order to avoid undefined or implementation-defined behaviours.
 
 
 ## Shadow Registers
@@ -42,3 +42,5 @@ These pseudo-registers are defined as some C++ types with the same names, such a
 u16 stt1_value = registers.Get<stt1>();
 ```
 Internally, these predefined pseudo-register-types, using template, store pointers to basic registers and their bit position and length.
+
+## Details of all registers
