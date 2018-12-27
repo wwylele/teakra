@@ -48,7 +48,10 @@ struct MatcherCreator {
         F func;
         auto operator()(V& visitor, [[maybe_unused]] u16 opcode,
                         [[maybe_unused]] u16 expansion) const {
-            return (visitor.*func)(OprandAtTs::Extract(opcode, expansion)...);
+
+            PackagedMethod<V> packaged_method(std::aligned_alloc, std::free, func,
+                                              OprandAtTs::Extract(opcode, expansion)...);
+            return packaged_method.Invoke(visitor);
         }
     };
 

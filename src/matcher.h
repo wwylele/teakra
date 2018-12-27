@@ -1,7 +1,10 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdlib>
 #include <functional>
+#include <memory>
+#include <tuple>
 #include <vector>
 #include "common_types.h"
 #include "crash.h"
@@ -12,6 +15,41 @@ struct Rejector {
     bool Rejects(u16 instruction) const {
         return (instruction & mask) == unexpected;
     }
+};
+
+template <typename Visitor, typename Free = void (*)(void*)>
+class PackagedMethod {
+public:
+    using visitor_type = Visitor;
+    using handler_return_type = typename Visitor::instruction_return_type;
+
+    template <typename F, typename... T>
+    struct Package {
+        F f;
+        std::tuple<T...> ts;
+    };
+
+    template <typename Alloc, typename F, typename... T>
+    PackagedMethod(Alloc alloc, Free free, F f, T... t)
+        : package(alloc(alignof(Package<F, T...>), sizeof(Package<F, T...>)), free) {
+
+        using PackageT = Package<F, T...>;
+
+        invoker = [](Visitor& v, void* p_package) {
+            PackageT& package = *reinterpret_cast<PackageT*>(p_package);
+            return std::apply(std::mem_fn(package.f), std::tuple_cat(std::tie(v), package.ts));
+        };
+
+        new (package.get()) PackageT{f, std::make_tuple(t...)};
+    }
+
+    handler_return_type Invoke(Visitor& v) {
+        return invoker(v, package.get());
+    }
+
+private:
+    std::unique_ptr<void, Free> package;
+    handler_return_type (*invoker)(Visitor&, void*);
 };
 
 template <typename Visitor>
