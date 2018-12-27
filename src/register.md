@@ -44,3 +44,76 @@ u16 stt1_value = registers.Get<stt1>();
 Internally, these predefined pseudo-register-types, using template, store pointers to basic registers and their bit position and length.
 
 ## Details of all registers
+
+### Program control registers
+
+#### `pc`, program counter
+
+18-bit program counter, address for loading instructions from the program memory. It is increamented by 1 or 2, depending on the instruction length, on every instruction. It is post-incrementing from instructions' view, i.e. when referencing the `pc` value in an instruction, the value is always the address of the *next* instruction.
+
+The value of `pc` can theoretically be accessed by all opcodes that accept oprand `Register` as source. However, most of these opcodes and other registers in `Register` use 16-bit data bus, so it is unclear how the convertion works, or whether it works at all. Only the opcode `mov pc a0/a1` is well tested and implemented: it is full 18-bit transfer. Other code path that access `pc` via `Register` is currently marked as unreachable. On a side node, the TeakLite architecture only has a 16-bit `pc` register, where transferring `pc` value via 16-bit data base makes more sense.
+
+`pc` value can be pushed to / popped from the stack as two words. The word order is specified by the `cpc` register.
+
+Aside from increamenting on every instruction, `pc` value can also be modified by the following instructions and circumstances. Please refer to their sections for detail.
+ - `mov a0/a1/b0/b1 pc` opcodes.
+ - subroutine call: `call` opcodes family.
+ - subroutine return: `ret` opcodes family.
+ - branching: `br` opcodes family.
+ - `movpdw [a0/a1] pc` opcode.
+ - hitting the end of a repeating block indicated by opcode `bkrep`.
+ - repeating instruction indicated by opcode `rep`.
+ - on interrupt.
+
+#### `prpage`, program page
+
+4-bit register to select program page in the program memory, extending the entire possible program memory space to `4 + 18 = 22` bit. However XpertTeak/DSi/3DS only support single program page, so this register should remain 0.
+
+#### `repc` repeat counter
+
+16-bit counter that is set to `repeat count - 1` on `rep` opcodes (i.e. exactly the value passed in the opcodes) and decrements on every repeat until 0 (inclusive). During the repeat, program can read the register value by `mov` opcodes. Out side repeat loop, this register can be used as a general register by using `mov` opcodes to read and write. It can also be `push`ed to or `pop`ed from the stack, and swap with its shadow counterpart `repcs` on context store / restore if the configuration register `crep` is clear.
+
+#### TODO: block repeat
+
+
+### Comutation registers
+
+#### `a0`/`a1`/`b0`/`b1`, accumulators
+
+40-bit accumulators, stored as sign-extended 64-bit integer in Teakra. Accumulators each has three parts from the most significant bit to the least one: `8:16:16` as `e:h:l` (extension, high, and low). The `h` and `l` part are visible to many operations, while the `e` part can be only access by opcode `push/pop Abe`, and for `a0`/`a1`, the lower 4 bits of their `e` part is exposed in pseduo-registers `st0`/`st1`.
+
+#### Saturation
+
+#### Shifting
+
+#### Flags
+
+#### Viterbi
+
+### Multiplication registers
+
+#### `x0`/`x1`/`y0`/`y1`, factor registers
+
+#### `p0`/`p1`, product registers
+
+### Address registers
+
+#### `r0`..`r7`, general address registers
+
+#### `sp`, stack pointer
+
+16-bit register as a pointer to data memory, decrements on `push` / `call` / `bksto [sp]` opcodes and increments on `pop` / `ret` / `bkrst [sp]` opcodes. Can be also read and modified as a general register via all opcodes that accept `Register` oprand.
+
+#### `page`, data memory page
+
+#### `pcmhi`, program memory transfer page
+
+### Advanced address registers
+
+#### Step/mod configuration registers
+
+#### Indirect address registers
+
+### Interrupt registers
+
+### Extension registers
