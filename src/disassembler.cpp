@@ -475,6 +475,8 @@ std::string PA(SumBase base, bool sub_p0, bool p0_align, bool sub_p1, bool p1_al
 class Disassembler {
 public:
     using instruction_return_type = std::vector<std::string>;
+    using alloc_func_type = void* (*)(std::size_t, std::size_t);
+    using free_func_type = void (*)(void*);
 
     std::vector<std::string> undefined(u16 opcode) {
         return D("[ERROR]");
@@ -1751,7 +1753,7 @@ std::vector<std::string> GetTokenList(std::uint16_t opcode, std::uint16_t expans
     Disassembler dsm;
     dsm.SetArArp(ar_arp);
     auto decoder = Decode<Disassembler>(opcode);
-    auto v = decoder.GetInvoker(opcode, expansion).Invoke(dsm);
+    auto v = decoder.GetInvoker(std::aligned_alloc, std::free, opcode, expansion).Invoke(dsm);
     return v;
 }
 

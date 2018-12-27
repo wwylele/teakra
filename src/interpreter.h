@@ -108,7 +108,7 @@ public:
                 }
             }
 
-            decoder.GetInvoker(opcode, expand_value).Invoke(*this);
+            decoder.GetInvoker(std::aligned_alloc, std::free, opcode, expand_value).Invoke(*this);
 
             // I am not sure if a single-instruction loop is interruptable and how it is handled,
             // so just disable interrupt for it for now.
@@ -150,6 +150,8 @@ public:
     }
 
     using instruction_return_type = void;
+    using alloc_func_type = void* (*)(std::size_t, std::size_t);
+    using free_func_type = void (*)(void*);
 
     void nop() {
         // literally nothing

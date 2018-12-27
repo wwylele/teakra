@@ -234,6 +234,8 @@ public:
     }
 
     using instruction_return_type = Config;
+    using alloc_func_type = void* (*)(std::size_t, std::size_t);
+    using free_func_type = void (*)(void*);
 
     Config undefined(u16 opcode) {
         return DisabledConfig;
@@ -1449,7 +1451,8 @@ bool GenerateTestCasesToFile(const char* path) {
     for (u32 i = 0; i < 0x10000; ++i) {
         u16 opcode = (u16)i;
         auto decoded = Decode<TestGenerator>(opcode);
-        Config config = decoded.GetInvoker(opcode, 0).Invoke(generator);
+        Config config =
+            decoded.GetInvoker(std::aligned_alloc, std::free, opcode, 0).Invoke(generator);
         if (!config.enable)
             continue;
 

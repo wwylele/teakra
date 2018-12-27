@@ -17,7 +17,7 @@ struct Rejector {
     }
 };
 
-template <typename Visitor, typename Free = void (*)(void*)>
+template <typename Visitor, typename Free>
 class PackagedMethod {
 public:
     using visitor_type = Visitor;
@@ -56,8 +56,10 @@ template <typename Visitor>
 class Matcher {
 public:
     using visitor_type = Visitor;
-    using handler_return_type = typename Visitor::instruction_return_type;
-    using handler_function = std::function<PackagedMethod<Visitor>(u16, u16)>;
+    using alloc_func_type = typename Visitor::alloc_func_type;
+    using free_func_type = typename Visitor::free_func_type;
+    using handler_function = std::function<PackagedMethod<Visitor, free_func_type>(
+        alloc_func_type, free_func_type, u16, u16)>;
 
     Matcher(const char* const name, u16 mask, u16 expected, bool expanded, handler_function func)
         : name{name}, mask{mask}, expected{expected}, expanded{expanded}, fn{std::move(func)} {}
@@ -88,8 +90,9 @@ public:
         return new_matcher;
     }
 
-    auto GetInvoker(u16 instruction, u16 instruction_expansion = 0) const {
-        return fn(instruction, instruction_expansion);
+    auto GetInvoker(alloc_func_type alloc, free_func_type free, u16 instruction,
+                    u16 instruction_expansion = 0) const {
+        return fn(alloc, free, instruction, instruction_expansion);
     }
 
 private:

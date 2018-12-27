@@ -40,16 +40,20 @@ struct FilterOprand<OprandAtT0, OprandAtT...> {
 
 template <typename V, typename F, u16 expected, typename... OprandAtT>
 struct MatcherCreator {
+    using alloc_func_type = typename V::alloc_func_type;
+    using free_func_type = typename V::free_func_type;
+
     template <typename OprandListT>
     struct Proxy;
 
     template <typename... OprandAtTs>
     struct Proxy<OprandList<OprandAtTs...>> {
         F func;
-        auto operator()([[maybe_unused]] u16 opcode, [[maybe_unused]] u16 expansion) const {
+        auto operator()(alloc_func_type alloc, free_func_type free, [[maybe_unused]] u16 opcode,
+                        [[maybe_unused]] u16 expansion) const {
 
-            return PackagedMethod<V>(std::aligned_alloc, std::free, func,
-                                     OprandAtTs::Extract(opcode, expansion)...);
+            return PackagedMethod<V, free_func_type>(alloc, free, func,
+                                                     OprandAtTs::Extract(opcode, expansion)...);
         }
     };
 
@@ -702,8 +706,10 @@ Matcher<V> Decode(u16 instruction) {
 
     auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
     if (iter == table.end()) {
-        return Matcher<V>::AllMatcher([](u16 opcode, u16) {
-            return PackagedMethod<V>(std::aligned_alloc, std::free, &V::undefined, opcode);
+        return Matcher<V>::AllMatcher([](typename V::alloc_func_type alloc,
+                                         typename V::free_func_type free, u16 opcode, u16) {
+            return PackagedMethod<V, typename V::free_func_type>(alloc, free, &V::undefined,
+                                                                 opcode);
         });
     } else {
         auto other = std::find_if(iter + 1, table.end(), matches_instruction);
