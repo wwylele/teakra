@@ -88,9 +88,8 @@ public:
         return new_matcher;
     }
 
-    handler_return_type call(Visitor& v, u16 instruction, u16 instruction_expansion = 0) const {
-        ASSERT(Matches(instruction));
-        return fn(instruction, instruction_expansion).Invoke(v);
+    auto GetInvoker(u16 instruction, u16 instruction_expansion = 0) const {
+        return fn(instruction, instruction_expansion);
     }
 
 private:

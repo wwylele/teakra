@@ -1751,7 +1751,7 @@ std::vector<std::string> GetTokenList(std::uint16_t opcode, std::uint16_t expans
     Disassembler dsm;
     dsm.SetArArp(ar_arp);
     auto decoder = Decode<Disassembler>(opcode);
-    auto v = decoder.call(dsm, opcode, expansion);
+    auto v = decoder.GetInvoker(opcode, expansion).Invoke(dsm);
     return v;
 }
 

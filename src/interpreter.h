@@ -108,7 +108,7 @@ public:
                 }
             }
 
-            decoder.call(*this, opcode, expand_value);
+            decoder.GetInvoker(opcode, expand_value).Invoke(*this);
 
             // I am not sure if a single-instruction loop is interruptable and how it is handled,
             // so just disable interrupt for it for now.

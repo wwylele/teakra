@@ -1449,7 +1449,7 @@ bool GenerateTestCasesToFile(const char* path) {
     for (u32 i = 0; i < 0x10000; ++i) {
         u16 opcode = (u16)i;
         auto decoded = Decode<TestGenerator>(opcode);
-        Config config = decoded.call(generator, opcode, 0);
+        Config config = decoded.GetInvoker(opcode, 0).Invoke(generator);
         if (!config.enable)
             continue;
 
