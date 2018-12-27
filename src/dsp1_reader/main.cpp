@@ -33,7 +33,7 @@ public:
         } segments[10];
     };
 
-    static_assert(sizeof(Header) == 0x300, "!");
+    static_assert(sizeof(Header) == 0x300);
 
     struct Segment {
         std::vector<u8> data;

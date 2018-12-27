@@ -6,7 +6,7 @@ inline constexpr bool NoOverlap = (values + ...) == (values | ...);
 
 template <unsigned bits>
 struct Oprand {
-    static_assert(bits > 0 && bits <= 16, "!");
+    static_assert(bits > 0 && bits <= 16);
     static constexpr unsigned Bits = bits;
 
 protected:
@@ -22,7 +22,7 @@ protected:
 template <typename OprandT, unsigned pos>
 struct At {
     static constexpr unsigned Bits = OprandT::Bits;
-    static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16) || (Bits == 16 && pos == 16), "!");
+    static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16) || (Bits == 16 && pos == 16));
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
     static constexpr bool NeedExpansion = pos == 16;
     static constexpr bool PassAsParameter = true;
