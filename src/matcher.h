@@ -57,7 +57,7 @@ class Matcher {
 public:
     using visitor_type = Visitor;
     using handler_return_type = typename Visitor::instruction_return_type;
-    using handler_function = std::function<handler_return_type(Visitor&, u16, u16)>;
+    using handler_function = std::function<PackagedMethod<Visitor>(u16, u16)>;
 
     Matcher(const char* const name, u16 mask, u16 expected, bool expanded, handler_function func)
         : name{name}, mask{mask}, expected{expected}, expanded{expanded}, fn{std::move(func)} {}
@@ -90,7 +90,7 @@ public:
 
     handler_return_type call(Visitor& v, u16 instruction, u16 instruction_expansion = 0) const {
         ASSERT(Matches(instruction));
-        return fn(v, instruction, instruction_expansion);
+        return fn(instruction, instruction_expansion).Invoke(v);
     }
 
 private:

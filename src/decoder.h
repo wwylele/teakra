@@ -46,12 +46,10 @@ struct MatcherCreator {
     template <typename... OprandAtTs>
     struct Proxy<OprandList<OprandAtTs...>> {
         F func;
-        auto operator()(V& visitor, [[maybe_unused]] u16 opcode,
-                        [[maybe_unused]] u16 expansion) const {
+        auto operator()([[maybe_unused]] u16 opcode, [[maybe_unused]] u16 expansion) const {
 
-            PackagedMethod<V> packaged_method(std::aligned_alloc, std::free, func,
-                                              OprandAtTs::Extract(opcode, expansion)...);
-            return packaged_method.Invoke(visitor);
+            return PackagedMethod<V>(std::aligned_alloc, std::free, func,
+                                     OprandAtTs::Extract(opcode, expansion)...);
         }
     };
 
@@ -704,7 +702,9 @@ Matcher<V> Decode(u16 instruction) {
 
     auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
     if (iter == table.end()) {
-        return Matcher<V>::AllMatcher([](V& v, u16 opcode, u16) { return v.undefined(opcode); });
+        return Matcher<V>::AllMatcher([](u16 opcode, u16) {
+            return PackagedMethod<V>(std::aligned_alloc, std::free, &V::undefined, opcode);
+        });
     } else {
         auto other = std::find_if(iter + 1, table.end(), matches_instruction);
         ASSERT(other == table.end());
