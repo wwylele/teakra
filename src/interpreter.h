@@ -98,8 +98,9 @@ public:
                     cache_entry->need_expansion = true;
                     expand_value = mem.ProgramRead(program_pos + 1);
                 }
-                cache_entry->invoker =
-                    decoder.GetInvoker(std::aligned_alloc, std::free, opcode, expand_value);
+                cache_entry->invoker = decoder.GetInvoker(
+                    [this](std::size_t align, std::size_t size) { return AllocCache(align, size); },
+                    FreeCache, opcode, expand_value);
                 cache_entry->valid = true;
             }
 
@@ -166,7 +167,7 @@ public:
     }
 
     using instruction_return_type = void;
-    using alloc_func_type = void* (*)(std::size_t, std::size_t);
+    using alloc_func_type = std::function<void*(std::size_t, std::size_t)>;
     using free_func_type = void (*)(void*);
 
     void nop() {
@@ -2955,6 +2956,7 @@ public:
             entry.need_expansion = false;
             entry.invoker = {};
         }
+        cache_pos = 0;
     }
 
 private:
@@ -2975,6 +2977,23 @@ private:
         PackagedMethod<Interpreter, void (*)(void*)> invoker;
     };
     std::array<CacheEntry, cache_lut_size> cache_lut;
+
+    static constexpr std::size_t cache_size = 0x100000;
+
+    alignas(16) std::array<u8, cache_size> cache;
+    std::size_t cache_pos = 0;
+
+    static void FreeCache(void*) {
+        // do nothing;
+    }
+
+    void* AllocCache(std::size_t align, std::size_t size) {
+        cache_pos = (cache_pos + (align - cache_pos % align) % align);
+        void* p = cache.data() + cache_pos;
+        cache_pos += size;
+        ASSERT(cache_pos <= cache_size);
+        return p;
+    }
 
     u64 GetAcc(RegName name) const {
         switch (name) {
