@@ -48,7 +48,7 @@ struct MatcherCreator {
         F func;
         auto operator()(V& visitor, [[maybe_unused]] u16 opcode,
                         [[maybe_unused]] u16 expansion) const {
-            return (visitor.*func)(OprandAtTs::Filter(opcode, expansion)...);
+            return (visitor.*func)(OprandAtTs::Extract(opcode, expansion)...);
         }
     };
 

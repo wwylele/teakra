@@ -27,7 +27,7 @@ struct At {
     static constexpr bool NeedExpansion = pos == 16;
     static constexpr bool PassAsParameter = true;
     using FilterResult = OprandT;
-    static constexpr OprandT Filter(u16 opcode, u16 expansion) {
+    static constexpr OprandT Extract(u16 opcode, u16 expansion) {
         OprandT oprand{};
         if (NeedExpansion)
             oprand.storage = expansion;
@@ -45,8 +45,8 @@ struct AtNamed {
     static constexpr bool NeedExpansion = BaseType::NeedExpansion;
     static constexpr bool PassAsParameter = BaseType::PassAsParameter;
     using FilterResult = typename BaseType::FilterResult::NameType;
-    static constexpr auto Filter(u16 opcode, u16 expansion) {
-        return BaseType::Filter(opcode, expansion).GetName();
+    static constexpr auto Extract(u16 opcode, u16 expansion) {
+        return BaseType::Extract(opcode, expansion).GetName();
     }
 };
 
@@ -64,7 +64,7 @@ struct Const {
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
     using FilterResult = OprandT;
-    static constexpr OprandT Filter(u16, u16) {
+    static constexpr OprandT Extract(u16, u16) {
         OprandT oprand{};
         oprand.storage = value;
         return oprand;
@@ -84,7 +84,7 @@ struct Cn {
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
     using FilterResult = T;
-    static constexpr T Filter(u16, u16) {
+    static constexpr T Extract(u16, u16) {
         return value;
     }
 };
