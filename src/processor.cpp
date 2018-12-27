@@ -18,6 +18,7 @@ Processor::~Processor() = default;
 
 void Processor::Reset() {
     impl->regs = RegisterState();
+    impl->interpreter.Reset();
 }
 
 void Processor::Run(unsigned cycles) {

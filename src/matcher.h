@@ -29,6 +29,8 @@ public:
         std::tuple<T...> ts;
     };
 
+    PackagedMethod() : package(nullptr, nullptr) {}
+
     template <typename Alloc, typename F, typename... T>
     PackagedMethod(Alloc alloc, Free free, F f, T... t)
         : package(alloc(alignof(Package<F, T...>), sizeof(Package<F, T...>)), free) {

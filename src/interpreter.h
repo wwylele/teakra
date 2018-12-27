@@ -82,12 +82,28 @@ public:
                 regs.ipv = 1;
             }
 
-            u16 opcode = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
-            auto& decoder = decoders[opcode];
-            u16 expand_value = 0;
-            if (decoder.NeedExpansion()) {
-                expand_value = mem.ProgramRead((regs.pc++) | (regs.prpage << 18));
+            CacheEntry temp_entry;
+            CacheEntry* cache_entry = &temp_entry;
+
+            u32 program_pos = regs.pc | (regs.prpage << 18);
+            if (program_pos < cache_lut_size) {
+                cache_entry = &cache_lut[program_pos];
             }
+
+            if (!cache_entry->valid) {
+                u16 opcode = mem.ProgramRead(program_pos);
+                auto& decoder = decoders[opcode];
+                u16 expand_value = 0;
+                if (decoder.NeedExpansion()) {
+                    cache_entry->need_expansion = true;
+                    expand_value = mem.ProgramRead(program_pos + 1);
+                }
+                cache_entry->invoker =
+                    decoder.GetInvoker(std::aligned_alloc, std::free, opcode, expand_value);
+                cache_entry->valid = true;
+            }
+
+            regs.pc += cache_entry->need_expansion ? 2 : 1;
 
             if (regs.rep) {
                 if (regs.repc == 0) {
@@ -108,7 +124,7 @@ public:
                 }
             }
 
-            decoder.GetInvoker(std::aligned_alloc, std::free, opcode, expand_value).Invoke(*this);
+            cache_entry->invoker.Invoke(*this);
 
             // I am not sure if a single-instruction loop is interruptable and how it is handled,
             // so just disable interrupt for it for now.
@@ -2927,6 +2943,20 @@ public:
         regs.ext[3] = a.Signed16();
     }
 
+    void Reset() {
+        interrupt_pending[0] = false;
+        interrupt_pending[1] = false;
+        interrupt_pending[2] = false;
+        vinterrupt_pending = false;
+        vinterrupt_address = 0;
+        idle = false;
+        for (auto& entry : cache_lut) {
+            entry.valid = false;
+            entry.need_expansion = false;
+            entry.invoker = {};
+        }
+    }
+
 private:
     CoreTiming& core_timing;
     RegisterState& regs;
@@ -2937,6 +2967,14 @@ private:
     std::atomic<u32> vinterrupt_address;
 
     bool idle = false;
+
+    static constexpr std::size_t cache_lut_size = 0x20000;
+    struct CacheEntry {
+        bool valid = false;
+        bool need_expansion = false;
+        PackagedMethod<Interpreter, void (*)(void*)> invoker;
+    };
+    std::array<CacheEntry, cache_lut_size> cache_lut;
 
     u64 GetAcc(RegName name) const {
         switch (name) {
