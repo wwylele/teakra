@@ -236,24 +236,40 @@ struct RegisterState {
         }
     };
 
-    ShadowRegisterList<ShadowRegister<&RegisterState::flm>, ShadowRegister<&RegisterState::fvl>,
-                       ShadowRegister<&RegisterState::fe>, ShadowRegister<&RegisterState::fc0>,
-                       ShadowRegister<&RegisterState::fc1>, ShadowRegister<&RegisterState::fv>,
-                       ShadowRegister<&RegisterState::fn>, ShadowRegister<&RegisterState::fm>,
-                       ShadowRegister<&RegisterState::fz>, ShadowRegister<&RegisterState::fr>>
-        shadow_registers;
+    // clang-format off
+
+    ShadowRegisterList<
+        ShadowRegister<&RegisterState::flm>,
+        ShadowRegister<&RegisterState::fvl>,
+        ShadowRegister<&RegisterState::fe>,
+        ShadowRegister<&RegisterState::fc0>,
+        ShadowRegister<&RegisterState::fc1>,
+        ShadowRegister<&RegisterState::fv>,
+        ShadowRegister<&RegisterState::fn>,
+        ShadowRegister<&RegisterState::fm>,
+        ShadowRegister<&RegisterState::fz>,
+        ShadowRegister<&RegisterState::fr>
+    > shadow_registers;
 
     ShadowSwapRegisterList<
-        ShadowSwapRegister<&RegisterState::pcmhi>, ShadowSwapRegister<&RegisterState::sat>,
-        ShadowSwapRegister<&RegisterState::sata>, ShadowSwapRegister<&RegisterState::hwm>,
-        ShadowSwapRegister<&RegisterState::s>, ShadowSwapArrayRegister<2, &RegisterState::ps>,
-        ShadowSwapRegister<&RegisterState::page>, ShadowSwapRegister<&RegisterState::stp16>,
-        ShadowSwapRegister<&RegisterState::cmd>, ShadowSwapArrayRegister<8, &RegisterState::m>,
+        ShadowSwapRegister<&RegisterState::pcmhi>,
+        ShadowSwapRegister<&RegisterState::sat>,
+        ShadowSwapRegister<&RegisterState::sata>,
+        ShadowSwapRegister<&RegisterState::hwm>,
+        ShadowSwapRegister<&RegisterState::s>,
+        ShadowSwapArrayRegister<2, &RegisterState::ps>,
+        ShadowSwapRegister<&RegisterState::page>,
+        ShadowSwapRegister<&RegisterState::stp16>,
+        ShadowSwapRegister<&RegisterState::cmd>,
+        ShadowSwapArrayRegister<8, &RegisterState::m>,
         ShadowSwapArrayRegister<8, &RegisterState::br>,
         ShadowSwapArrayRegister<3, &RegisterState::im>, // ?
         ShadowSwapRegister<&RegisterState::imv>,        // ?
-        ShadowSwapRegister<&RegisterState::epi>, ShadowSwapRegister<&RegisterState::epj>>
-        shadow_swap_registers;
+        ShadowSwapRegister<&RegisterState::epi>,
+        ShadowSwapRegister<&RegisterState::epj>
+    > shadow_swap_registers;
+
+    // clang-format on
 
     template <unsigned index>
     class ShadowSwapAr {
