@@ -56,21 +56,22 @@ struct RegisterState {
     u16 sata = 1; // 1-bit, disable saturation when moving to acc
     u16 s = 0;    // 1-bit, shift mode. 0 - arithmetic, 1 - logic
     u16 sv = 0;   // 16-bit two's complement shift value
-    u16 mixp = 0; // 16-bit, stores result of min/max instructions
 
     // 1-bit flags
-    u16 fz = 0;              // zero flag
-    u16 fm = 0;              // negative flag
-    u16 fn = 0;              // normalized flag
-    u16 fv = 0;              // overflow flag
-    u16 fe = 0;              // extension flag
-    std::array<u16, 2> fc{}; // carry flags
-    u16 flm = 0;             // set on saturation
-    u16 fvl = 0;             // latching fv
-    u16 fr = 0;              // Rn zero flag
+    u16 fz = 0;  // zero flag
+    u16 fm = 0;  // negative flag
+    u16 fn = 0;  // normalized flag
+    u16 fv = 0;  // overflow flag
+    u16 fe = 0;  // extension flag
+    u16 fc0 = 0; // carry flag
+    u16 fc1 = 0; // another carry flag
+    u16 flm = 0; // set on saturation
+    u16 fvl = 0; // latching fv
+    u16 fr = 0;  // Rn zero flag
 
     // Viterbi
-    std::array<u16, 2> vtr{};
+    u16 vtr0 = 0;
+    u16 vtr1 = 0;
 
     /** Multiplication unit **/
 
@@ -85,6 +86,7 @@ struct RegisterState {
     /** Address unit **/
 
     std::array<u16, 8> r{}; // 16-bit general and address registers
+    u16 mixp = 0;           // 16-bit, stores result of min/max instructions
     u16 sp = 0;             // 16-bit stack pointer
     u16 page = 0;           // 8-bit, higher part of MemImm8 address
     u16 pcmhi = 0;          // 2-bit, higher part of program address for movp/movd
@@ -235,11 +237,10 @@ struct RegisterState {
     };
 
     ShadowRegisterList<ShadowRegister<&RegisterState::flm>, ShadowRegister<&RegisterState::fvl>,
-                       ShadowRegister<&RegisterState::fe>,
-                       ShadowArrayRegister<2, &RegisterState::fc>,
-                       ShadowRegister<&RegisterState::fv>, ShadowRegister<&RegisterState::fn>,
-                       ShadowRegister<&RegisterState::fm>, ShadowRegister<&RegisterState::fz>,
-                       ShadowRegister<&RegisterState::fr>>
+                       ShadowRegister<&RegisterState::fe>, ShadowRegister<&RegisterState::fc0>,
+                       ShadowRegister<&RegisterState::fc1>, ShadowRegister<&RegisterState::fv>,
+                       ShadowRegister<&RegisterState::fn>, ShadowRegister<&RegisterState::fm>,
+                       ShadowRegister<&RegisterState::fz>, ShadowRegister<&RegisterState::fr>>
         shadow_registers;
 
     ShadowSwapRegisterList<
@@ -362,7 +363,7 @@ struct RegisterState {
         case CondValue::Nn:
             return fn == 0;
         case CondValue::C:
-            return fc[0] == 1;
+            return fc0 == 1;
         case CondValue::V:
             return fv == 1;
         case CondValue::E:
@@ -505,12 +506,12 @@ using stt0 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::flm>, 0, 1>,
     ProxySlot<Redirector<&RegisterState::fvl>, 1, 1>,
     ProxySlot<Redirector<&RegisterState::fe>, 2, 1>,
-    ProxySlot<ArrayRedirector<2, &RegisterState::fc, 0>, 3, 1>,
+    ProxySlot<Redirector<&RegisterState::fc0>, 3, 1>,
     ProxySlot<Redirector<&RegisterState::fv>, 4, 1>,
     ProxySlot<Redirector<&RegisterState::fn>, 5, 1>,
     ProxySlot<Redirector<&RegisterState::fm>, 6, 1>,
     ProxySlot<Redirector<&RegisterState::fz>, 7, 1>,
-    ProxySlot<ArrayRedirector<2, &RegisterState::fc, 1>, 11, 1>
+    ProxySlot<Redirector<&RegisterState::fc1>, 11, 1>
 >;
 using stt1 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
@@ -595,7 +596,7 @@ using st0 = PseudoRegister<
     ProxySlot<Redirector<&RegisterState::fr>, 4, 1>,
     ProxySlot<DoubleRedirector<&RegisterState::flm, &RegisterState::fvl>, 5, 1>,
     ProxySlot<Redirector<&RegisterState::fe>, 6, 1>,
-    ProxySlot<ArrayRedirector<2, &RegisterState::fc, 0>, 7, 1>,
+    ProxySlot<Redirector<&RegisterState::fc0>, 7, 1>,
     ProxySlot<Redirector<&RegisterState::fv>, 8, 1>,
     ProxySlot<Redirector<&RegisterState::fn>, 9, 1>,
     ProxySlot<Redirector<&RegisterState::fm>, 10, 1>,

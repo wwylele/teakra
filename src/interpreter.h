@@ -163,7 +163,7 @@ public:
                 regs.fvl = 1;
             }
             value <<= 1;
-            regs.fc[0] = (value & ((u64)1 << 40)) != 0;
+            regs.fc0 = (value & ((u64)1 << 40)) != 0;
             value = SignExtend<40>(value);
             SetAccAndFlag(a.GetName(), value);
             u32 unit = b.Index();
@@ -282,7 +282,7 @@ public:
         a &= 0xFF'FFFF'FFFF;
         b &= 0xFF'FFFF'FFFF;
         u64 result = sub ? a - b : a + b;
-        regs.fc[0] = (result >> 40) & 1;
+        regs.fc0 = (result >> 40) & 1;
         if (sub)
             b = ~b;
         regs.fv = ((~(a ^ b) & (a ^ result)) >> 39) & 1;
@@ -320,15 +320,15 @@ public:
             UNREACHABLE();
         }
         u64 result = AddSub(value_c, value_a, sub_p0);
-        u16 temp_c = regs.fc[0];
+        u16 temp_c = regs.fc0;
         u16 temp_v = regs.fv;
         result = AddSub(result, value_b, sub_p1);
         // Is this correct?
         if (sub_p0 == sub_p1) {
-            regs.fc[0] |= temp_c;
+            regs.fc0 |= temp_c;
             regs.fv |= temp_v;
         } else {
-            regs.fc[0] ^= temp_c;
+            regs.fc0 ^= temp_c;
             regs.fv ^= temp_v;
         }
         SatAndSetAccAndFlag(acc, result);
@@ -532,7 +532,7 @@ public:
         }
         case AlbOp::Addv: {
             u32 r = a + b;
-            regs.fc[0] = (r >> 16) != 0;
+            regs.fc0 = (r >> 16) != 0;
             regs.fm = (SignExtend<16, u32>(b) + SignExtend<16, u32>(a)) >> 31; // !
             result = r & 0xFFFF;
             break;
@@ -548,7 +548,7 @@ public:
         case AlbOp::Cmpv:
         case AlbOp::Subv: {
             u32 r = b - a;
-            regs.fc[0] = (r >> 16) != 0;
+            regs.fc0 = (r >> 16) != 0;
             regs.fm = (SignExtend<16, u32>(b) - SignExtend<16, u32>(a)) >> 31; // !
             result = r & 0xFFFF;
             break;
@@ -842,8 +842,8 @@ public:
             }
             case ModaOp::Ror: {
                 u64 value = GetAcc(a) & 0xFF'FFFF'FFFF;
-                u16 old_fc = regs.fc[0];
-                regs.fc[0] = value & 1;
+                u16 old_fc = regs.fc0;
+                regs.fc0 = value & 1;
                 value >>= 1;
                 value |= (u64)old_fc << 39;
                 value = SignExtend<40>(value);
@@ -852,8 +852,8 @@ public:
             }
             case ModaOp::Rol: {
                 u64 value = GetAcc(a);
-                u16 old_fc = regs.fc[0];
-                regs.fc[0] = (value >> 39) & 1;
+                u16 old_fc = regs.fc0;
+                regs.fc0 = (value >> 39) & 1;
                 value <<= 1;
                 value |= old_fc;
                 value = SignExtend<40>(value);
@@ -871,7 +871,7 @@ public:
             }
             case ModaOp::Neg: {
                 u64 value = GetAcc(a);
-                regs.fc[0] = value != 0;                  // ?
+                regs.fc0 = value != 0;                    // ?
                 regs.fv = value == 0xFFFF'FF80'0000'0000; // ?
                 if (regs.fv)
                     regs.fvl = 1;
@@ -1374,7 +1374,7 @@ public:
         u16 value = mem.DataRead(address);
         u64 bit = GetAcc(RegName::a0) & 0xF;
         // Is this correct? an why?
-        regs.fz = regs.fc[0] = (value >> bit) & 1;
+        regs.fz = regs.fc0 = (value >> bit) & 1;
     }
     void tst4b(ArRn2 b, ArStep2 bs, Ax c) {
         u64 a = GetAcc(RegName::a0);
@@ -1386,7 +1386,7 @@ public:
         u16 fe = regs.fe;
         u16 sv = regs.sv;
         ShiftBus40(a, sv, c.GetName());
-        regs.fc[1] = regs.fc[0];
+        regs.fc1 = regs.fc0;
         regs.fv = fv;
         regs.fvl = fvl;
         regs.fm = fm;
@@ -1394,7 +1394,7 @@ public:
         regs.fe = fe;
         u16 address = RnAddressAndModify(GetArRnUnit(b), GetArStep(bs));
         u16 value = mem.DataRead(address);
-        regs.fz = regs.fc[0] = (value >> bit) & 1;
+        regs.fz = regs.fc0 = (value >> bit) & 1;
     }
     void tstb(MemImm8 a, Imm4 b) {
         u16 value = LoadFromMemory(a);
@@ -2225,7 +2225,7 @@ public:
                     }
                 }
                 value = 0;
-                regs.fc[0] = 0;
+                regs.fc0 = 0;
             } else {
                 if (regs.s == 0) {
                     regs.fv = SignExtend<40>(value) != SignExtend(value, 40 - sv);
@@ -2234,21 +2234,21 @@ public:
                     }
                 }
                 value <<= sv;
-                regs.fc[0] = (value & ((u64)1 << 40)) != 0;
+                regs.fc0 = (value & ((u64)1 << 40)) != 0;
             }
         } else {
             // right shift
             u16 nsv = ~sv + 1;
             if (nsv >= 40) {
                 if (regs.s == 0) {
-                    regs.fc[0] = (value >> 39) & 1;
-                    value = regs.fc[0] ? 0xFF'FFFF'FFFF : 0;
+                    regs.fc0 = (value >> 39) & 1;
+                    value = regs.fc0 ? 0xFF'FFFF'FFFF : 0;
                 } else {
                     value = 0;
-                    regs.fc[0] = 0;
+                    regs.fc0 = 0;
                 }
             } else {
-                regs.fc[0] = (value & ((u64)1 << (nsv - 1))) != 0;
+                regs.fc0 = (value & ((u64)1 << (nsv - 1))) != 0;
                 value >>= nsv;
                 if (regs.s == 0) {
                     value = SignExtend(value, 40 - nsv);
@@ -2309,7 +2309,7 @@ public:
         // Do 16-bit arithmetic. Flag C is set according to bit 16 but Flag V is always cleared
         // Looks like a hardware bug to me
         u64 result = (u64)value16 + 0x8000;
-        regs.fc[0] = (u16)(result >> 16);
+        regs.fc0 = (u16)(result >> 16);
         regs.fv = 0;
         result &= 0xFFFF;
         SatAndSetAccAndFlag(b.GetName(), result);
@@ -2325,7 +2325,7 @@ public:
         } else {
             u16 value16 = RegToBus16(a.GetName());
             result = (u64)value16 + 0x8000;
-            regs.fc[0] = (u16)(result >> 16);
+            regs.fc0 = (u16)(result >> 16);
             regs.fv = 0;
             result &= 0xFFFF;
         }
@@ -2339,7 +2339,7 @@ public:
     void movr_r6_to(Ax b) {
         u16 value16 = regs.r[6];
         u64 result = (u64)value16 + 0x8000;
-        regs.fc[0] = (u16)(result >> 16);
+        regs.fc0 = (u16)(result >> 16);
         regs.fv = 0;
         result &= 0xFFFF;
         SatAndSetAccAndFlag(b.GetName(), result);
@@ -2410,28 +2410,28 @@ public:
     }
 
     void vtrclr0() {
-        regs.vtr[0] = 0;
+        regs.vtr0 = 0;
     }
     void vtrclr1() {
-        regs.vtr[1] = 0;
+        regs.vtr1 = 0;
     }
     void vtrclr() {
-        regs.vtr[0] = 0;
-        regs.vtr[1] = 0;
+        regs.vtr0 = 0;
+        regs.vtr1 = 0;
     }
     void vtrmov0(Axl a) {
-        SatAndSetAccAndFlag(a.GetName(), regs.vtr[0]);
+        SatAndSetAccAndFlag(a.GetName(), regs.vtr0);
     }
     void vtrmov1(Axl a) {
-        SatAndSetAccAndFlag(a.GetName(), regs.vtr[1]);
+        SatAndSetAccAndFlag(a.GetName(), regs.vtr1);
     }
     void vtrmov(Axl a) {
-        SatAndSetAccAndFlag(a.GetName(), (regs.vtr[1] & 0xFF00) | (regs.vtr[0] >> 8));
+        SatAndSetAccAndFlag(a.GetName(), (regs.vtr1 & 0xFF00) | (regs.vtr0 >> 8));
     }
     void vtrshr() {
         // TODO: This instruction has one cycle delay on vtr0, but not on vtr1
-        regs.vtr[0] = (regs.vtr[0] >> 1) | (regs.fc[0] << 15);
-        regs.vtr[1] = (regs.vtr[1] >> 1) | (regs.fc[1] << 15);
+        regs.vtr0 = (regs.vtr0 >> 1) | (regs.fc0 << 15);
+        regs.vtr1 = (regs.vtr1 >> 1) | (regs.fc1 << 15);
     }
 
     void clrp0() {
@@ -2627,11 +2627,11 @@ public:
         u64 wh = min ? uh - vh : vh - uh;
         u64 wl = min ? ul - vl : vl - ul;
 
-        regs.fc[0] = !(wh >> 63);
-        regs.fc[1] = !(wl >> 63);
+        regs.fc0 = !(wh >> 63);
+        regs.fc1 = !(wl >> 63);
 
-        wh = regs.fc[0] != 0 ? vh : uh;
-        wl = regs.fc[1] != 0 ? vl : ul;
+        wh = regs.fc0 != 0 ? vh : uh;
+        wl = regs.fc1 != 0 ? vl : ul;
 
         u64 w = (wh << 16) | (wl & 0xFFFF);
         SetAcc(a, w);
