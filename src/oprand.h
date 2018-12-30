@@ -153,7 +153,7 @@ enum class RegName {
 
     r0, r1, r2, r3, r4, r5, r6, r7,
 
-    x0, y0, x1, y1, p0, p1, p,
+    y0, p,
 
     pc, sp, sv, lc,
 
@@ -236,10 +236,15 @@ struct Bxh : RegOprand<
     RegName::b0h,
     RegName::b1h
 > {};
-struct Px : RegOprand<
-    RegName::p0,
-    RegName::p1
-> {};
+struct Px : Oprand<1> {
+    Px() = default;
+    Px(u16 index) {
+        this->storage = index;
+    }
+    constexpr u16 Index() const {
+        return this->storage;
+    }
+};
 struct Ab : RegOprand<
     RegName::b0,
     RegName::b1,

@@ -294,8 +294,8 @@ public:
 
     void ProductSum(SumBase base, RegName acc, bool sub_p0, bool p0_align, bool sub_p1,
                     bool p1_align) {
-        u64 value_a = ProductToBus40(RegName::p0);
-        u64 value_b = ProductToBus40(RegName::p1);
+        u64 value_a = ProductToBus40(Px{0});
+        u64 value_b = ProductToBus40(Px{1});
         if (p0_align) {
             value_a = SignExtend<24>(value_a >> 16);
         }
@@ -387,7 +387,7 @@ public:
         }
         case AlmOp::Msu: {
             u64 value = GetAcc(b.GetName());
-            u64 product = ProductToBus40(RegName::p0);
+            u64 product = ProductToBus40(Px{0});
             u64 result = AddSub(value, product, true);
             SatAndSetAccAndFlag(b.GetName(), result);
 
@@ -397,7 +397,7 @@ public:
         }
         case AlmOp::Sqra: {
             u64 value = GetAcc(b.GetName());
-            u64 product = ProductToBus40(RegName::p0);
+            u64 product = ProductToBus40(Px{0});
             u64 result = AddSub(value, product, false);
             SatAndSetAccAndFlag(b.GetName(), result);
         }
@@ -449,7 +449,7 @@ public:
         // need more test
         case RegName::p:
             CheckBus40OprandAllowed();
-            value = ProductToBus40(RegName::p0);
+            value = ProductToBus40(Px{0});
             break;
         case RegName::a0:
         case RegName::a1:
@@ -593,7 +593,7 @@ public:
     void alb(Alb op, Imm16 a, Register b) {
         u16 bv;
         if (b.GetName() == RegName::p) {
-            bv = (u16)(ProductToBus40(RegName::p0) >> 16);
+            bv = (u16)(ProductToBus40(Px{0}) >> 16);
         } else if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
             throw UnimplementedException(); // weird effect;
         } else {
@@ -661,13 +661,13 @@ public:
         SatAndSetAccAndFlag(b.GetName(), result);
     }
     void add_p1(Ax b) {
-        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_a = ProductToBus40(Px{1});
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, false);
         SatAndSetAccAndFlag(b.GetName(), result);
     }
     void add(Px a, Bx b) {
-        u64 value_a = ProductToBus40(a.GetName());
+        u64 value_a = ProductToBus40(a);
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, false);
         SatAndSetAccAndFlag(b.GetName(), result);
@@ -686,13 +686,13 @@ public:
         SatAndSetAccAndFlag(b.GetName(), result);
     }
     void sub_p1(Ax b) {
-        u64 value_a = ProductToBus40(RegName::p1);
+        u64 value_a = ProductToBus40(Px{1});
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, true);
         SatAndSetAccAndFlag(b.GetName(), result);
     }
     void sub(Px a, Bx b) {
-        u64 value_a = ProductToBus40(a.GetName());
+        u64 value_a = ProductToBus40(a);
         u64 value_b = GetAcc(b.GetName());
         u64 result = AddSub(value_b, value_a, true);
         SatAndSetAccAndFlag(b.GetName(), result);
@@ -886,7 +886,7 @@ public:
                 break;
             }
             case ModaOp::Pacr: {
-                u64 value = ProductToBus40(RegName::p0);
+                u64 value = ProductToBus40(Px{0});
                 u64 result = AddSub(value, 0x8000, false);
                 SatAndSetAccAndFlag(a, result);
                 break;
@@ -928,7 +928,7 @@ public:
     }
 
     void pacr1(Ax a) {
-        u64 value = ProductToBus40(RegName::p1);
+        u64 value = ProductToBus40(Px{1});
         u64 result = AddSub(value, 0x8000, false);
         SatAndSetAccAndFlag(a.GetName(), result);
     }
@@ -1247,7 +1247,7 @@ public:
         mem.DataWrite(--regs.sp, regs.prpage);
     }
     void push(Px a) {
-        u32 value = (u32)ProductToBus40(a.GetName());
+        u32 value = (u32)ProductToBus40(a);
         u16 h = value >> 16;
         u16 l = value & 0xFFFF;
         mem.DataWrite(--regs.sp, l);
@@ -1312,7 +1312,7 @@ public:
         u16 h = mem.DataRead(regs.sp++);
         u16 l = mem.DataRead(regs.sp++);
         u32 value = ((u32)h << 16) | l;
-        ProductFromBus32(a.GetName(), value);
+        ProductFromBus32(a, value);
     }
     void pop_r6() {
         u16 value = mem.DataRead(regs.sp++);
@@ -1433,7 +1433,7 @@ public:
     void MulGeneric(MulOp op, Ax a) {
         if (op != MulOp::Mpy && op != MulOp::Mpysu) {
             u64 value = GetAcc(a.GetName());
-            u64 product = ProductToBus40(RegName::p0);
+            u64 product = ProductToBus40(Px{0});
             if (op == MulOp::Maa || op == MulOp::Maasu) {
                 product >>= 16;
                 product = SignExtend<24>(product);
@@ -1503,7 +1503,7 @@ public:
         u16 yi = RnAddressAndModify(y.Index(), ys.GetName());
         u16 xi = RnAddressAndModify(x.Index(), xs.GetName());
         u64 value = GetAcc(a.GetName());
-        u64 product = ProductToBus40(RegName::p0);
+        u64 product = ProductToBus40(Px{0});
         u64 result = AddSub(value, product, true);
         SatAndSetAccAndFlag(a.GetName(), result);
         regs.y[0] = mem.DataRead(yi);
@@ -1513,7 +1513,7 @@ public:
     void msu(Rn y, StepZIDS ys, Imm16 x, Ax a) {
         u16 yi = RnAddressAndModify(y.Index(), ys.GetName());
         u64 value = GetAcc(a.GetName());
-        u64 product = ProductToBus40(RegName::p0);
+        u64 product = ProductToBus40(Px{0});
         u64 result = AddSub(value, product, true);
         SatAndSetAccAndFlag(a.GetName(), result);
         regs.y[0] = mem.DataRead(yi);
@@ -1523,7 +1523,7 @@ public:
     void msusu(ArRn2 x, ArStep2 xs, Ax a) {
         u16 xi = RnAddressAndModify(GetArRnUnit(x), GetArStep(xs));
         u64 value = GetAcc(a.GetName());
-        u64 product = ProductToBus40(RegName::p0);
+        u64 product = ProductToBus40(Px{0});
         u64 result = AddSub(value, product, true);
         SatAndSetAccAndFlag(a.GetName(), result);
         regs.x[0] = mem.DataRead(xi);
@@ -1531,7 +1531,7 @@ public:
     }
     void mac_x1to0(Ax a) {
         u64 value = GetAcc(a.GetName());
-        u64 product = ProductToBus40(RegName::p0);
+        u64 product = ProductToBus40(Px{0});
         u64 result = AddSub(value, product, false);
         SatAndSetAccAndFlag(a.GetName(), result);
         regs.x[0] = regs.x[1];
@@ -1543,7 +1543,7 @@ public:
         u16 i = RnAddressAndModify(ui, si);
         u16 j = RnAddressAndModify(uj, sj);
         u64 value = GetAcc(a.GetName());
-        u64 product = ProductToBus40(RegName::p1);
+        u64 product = ProductToBus40(Px{1});
         u64 result = AddSub(value, product, false);
         SatAndSetAccAndFlag(a.GetName(), result);
         regs.x[1] = mem.DataRead(i);
@@ -1818,7 +1818,7 @@ public:
     }
     void mov(Register a, Bx b) {
         if (a.GetName() == RegName::p) {
-            u64 value = ProductToBus40(RegName::p0);
+            u64 value = ProductToBus40(Px{0});
             SatAndSetAccAndFlag(b.GetName(), value);
         } else if (a.GetName() == RegName::a0 || a.GetName() == RegName::a1) {
             // Is there any difference from the mov(Ab, Ab) instruction?
@@ -1834,7 +1834,7 @@ public:
         if (a.GetName() == RegName::p) {
             // b loses its typical meaning in this case
             RegName b_name = b.GetNameForMovFromP();
-            u64 value = ProductToBus40(RegName::p0);
+            u64 value = ProductToBus40(Px{0});
             SatAndSetAccAndFlag(b_name, value);
         } else if (a.GetName() == RegName::pc) {
             if (b.GetName() == RegName::a0 || b.GetName() == RegName::a1) {
@@ -2012,28 +2012,28 @@ public:
         regs.r[6] = value;
     }
     void mov_p0h_to(Bx b) {
-        u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+        u16 value = (ProductToBus40(Px{0}) >> 16) & 0xFFFF;
         RegFromBus16(b.GetName(), value);
     }
     void mov_p0h_r6() {
-        u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+        u16 value = (ProductToBus40(Px{0}) >> 16) & 0xFFFF;
         regs.r[6] = value;
     }
     void mov_p0h_to(Register b) {
-        u16 value = (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+        u16 value = (ProductToBus40(Px{0}) >> 16) & 0xFFFF;
         RegFromBus16(b.GetName(), value);
     }
     void mov_p0(Ab a) {
         u32 value = GetAndSatAcc(a.GetName()) & 0xFFFFFFFF;
-        ProductFromBus32(RegName::p0, value);
+        ProductFromBus32(Px{0}, value);
     }
     void mov_p1_to(Ab b) {
-        u64 value = ProductToBus40(RegName::p1);
+        u64 value = ProductToBus40(Px{1});
         SatAndSetAccAndFlag(b.GetName(), value);
     }
 
     void mov2(Px a, ArRn2 b, ArStep2 bs) {
-        u32 value = ProductToBus32_NoShift(a.GetName());
+        u32 value = ProductToBus32_NoShift(a);
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
         u16 unit = GetArRnUnit(b);
@@ -2044,7 +2044,7 @@ public:
         mem.DataWrite(address, h);
     }
     void mov2s(Px a, ArRn2 b, ArStep2 bs) {
-        u64 value = ProductToBus40(a.GetName());
+        u64 value = ProductToBus40(a);
         u16 l = value & 0xFFFF;
         u16 h = (value >> 16) & 0xFFFF;
         u16 unit = GetArRnUnit(b);
@@ -2061,7 +2061,7 @@ public:
         u16 l = mem.DataRead(address2);
         u16 h = mem.DataRead(address);
         u32 value = ((u32)h << 16) | l;
-        ProductFromBus32(b.GetName(), value);
+        ProductFromBus32(b, value);
     }
     void mova(Ab a, ArRn2 b, ArStep2 bs) {
         u64 value = GetAndSatAcc(a.GetName());
@@ -2320,7 +2320,7 @@ public:
             u64 value = GetAcc(a.GetName());
             result = AddSub(value, 0x8000, false);
         } else if (a.GetName() == RegName::p) {
-            u64 value = ProductToBus40(RegName::p0);
+            u64 value = ProductToBus40(Px{0});
             result = AddSub(value, 0x8000, false);
         } else {
             u16 value16 = RegToBus16(a.GetName());
@@ -2435,14 +2435,14 @@ public:
     }
 
     void clrp0() {
-        ProductFromBus32(RegName::p0, 0);
+        ProductFromBus32(Px{0}, 0);
     }
     void clrp1() {
-        ProductFromBus32(RegName::p1, 0);
+        ProductFromBus32(Px{1}, 0);
     }
     void clrp() {
-        ProductFromBus32(RegName::p0, 0);
-        ProductFromBus32(RegName::p1, 0);
+        ProductFromBus32(Px{0}, 0);
+        ProductFromBus32(Px{1}, 0);
     }
 
     void max_ge(Ax a, StepZIDS bs) {
@@ -2612,7 +2612,7 @@ public:
         SetAccFlag(AddSub(vb, va, true));
     }
     void cmp_p1_to(Ax b) {
-        u64 va = ProductToBus40(RegName::p1);
+        u64 va = ProductToBus40(Px{1});
         u64 vb = GetAcc(b.GetName());
         SetAccFlag(AddSub(vb, va, true));
     }
@@ -2763,7 +2763,7 @@ public:
     }
 
     void CodebookSearch(u16 u, u16 v, u16 r, CbsCond c) {
-        u64 diff = ProductToBus40(RegName::p0) - ProductToBus40(RegName::p1);
+        u64 diff = ProductToBus40(Px{0}) - ProductToBus40(Px{1});
         bool cond;
         switch (c.GetName()) {
         case CbsCondValue::Ge:
@@ -2783,7 +2783,7 @@ public:
         regs.y[0] = u;
         u16 x0 = std::exchange(regs.x[0], regs.y[0]);
         DoMultiplication(0, true, true);
-        regs.p0h_cbs = regs.y[0] = (u16)((ProductToBus40(RegName::p0) >> 16) & 0xFFFF);
+        regs.p0h_cbs = regs.y[0] = (u16)((ProductToBus40(Px{0}) >> 16) & 0xFFFF);
         regs.x[0] = x0;
         regs.y[1] = v;
         DoMultiplication(0, true, true);
@@ -2907,7 +2907,7 @@ public:
     void addhp(ArRn2 a, ArStep2 as, Px b, Ax c) {
         u16 address = RnAddressAndModify(GetArRnUnit(a), GetArStep(as));
         u64 value = SignExtend<32, u64>(((u64)mem.DataRead(address) << 16) | 0x8000);
-        u64 p = ProductToBus40(b.GetName());
+        u64 p = ProductToBus40(b);
         u64 result = AddSub(value, p, false);
         SatAndSetAccAndFlag(c.GetName(), result);
     }
@@ -3050,21 +3050,12 @@ private:
         case RegName::r7:
             return regs.r[7];
 
-        case RegName::x0:
-            return regs.x[0];
-        case RegName::x1:
-            return regs.x[1];
         case RegName::y0:
             return regs.y[0];
-        case RegName::y1:
-            return regs.y[1];
-        case RegName::p0:
-        case RegName::p1:
-            UNREACHABLE();
         case RegName::p:
             // This only happen to insturctions using "Register" oprand,
             // and doesn't apply to all instructions. Need test and special check.
-            return (ProductToBus40(RegName::p0) >> 16) & 0xFFFF;
+            return (ProductToBus40(Px{0}) >> 16) & 0xFFFF;
 
         case RegName::pc:
             UNREACHABLE();
@@ -3234,21 +3225,9 @@ private:
             regs.r[7] = value;
             break;
 
-        case RegName::x0:
-            regs.x[0] = value;
-            break;
-        case RegName::x1:
-            regs.x[1] = value;
-            break;
         case RegName::y0:
             regs.y[0] = value;
             break;
-        case RegName::y1:
-            regs.y[1] = value;
-            break;
-        case RegName::p0:
-        case RegName::p1:
-            UNREACHABLE();
         case RegName::p: // p0h
             regs.pe[0] = value > 0x7FFF;
             regs.p[0] = (regs.p[0] & 0xFFFF) | (value << 16);
@@ -3595,33 +3574,12 @@ private:
         return ret;
     }
 
-    u32 ProductToBus32_NoShift(RegName reg) const {
-        u32 unit;
-        switch (reg) {
-        case RegName::p0:
-            unit = 0;
-            break;
-        case RegName::p1:
-            unit = 1;
-            break;
-        default:
-            UNREACHABLE();
-        }
-        return regs.p[unit];
+    u32 ProductToBus32_NoShift(Px reg) const {
+        return regs.p[reg.Index()];
     }
 
-    u64 ProductToBus40(RegName reg) const {
-        u32 unit;
-        switch (reg) {
-        case RegName::p0:
-            unit = 0;
-            break;
-        case RegName::p1:
-            unit = 1;
-            break;
-        default:
-            UNREACHABLE();
-        }
+    u64 ProductToBus40(Px reg) const {
+        u16 unit = reg.Index();
         u64 value = regs.p[unit] | ((u64)regs.pe[unit] << 32);
         switch (regs.ps[unit]) {
         case 0:
@@ -3643,18 +3601,8 @@ private:
         return value;
     }
 
-    void ProductFromBus32(RegName reg, u32 value) {
-        u32 unit;
-        switch (reg) {
-        case RegName::p0:
-            unit = 0;
-            break;
-        case RegName::p1:
-            unit = 1;
-            break;
-        default:
-            UNREACHABLE();
-        }
+    void ProductFromBus32(Px reg, u32 value) {
+        u16 unit = reg.Index();
         regs.p[unit] = value;
         regs.pe[unit] = value >> 31;
     }
