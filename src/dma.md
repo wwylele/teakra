@@ -29,11 +29,11 @@ S0..S7: some sort of slots for channel 0..7? are initialized as value 0..7
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x01C0    |                         SRC_ADDR_LOW                          |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x01C2    |                         SRC_ADDR_HI                           |
+|+0x01C2    |                         SRC_ADDR_HIGH                         |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x01C4    |                         DST_ADDR_LOW                          |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x01C6    |                         DST_ADDR_HI                           |
+|+0x01C6    |                         DST_ADDR_HIGH                         |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x01C8    |                             SIZE0                             |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
@@ -60,7 +60,7 @@ S0..S7: some sort of slots for channel 0..7? are initialized as value 0..7
 |+0x01DE    |RST|STR|                       | ? | ? |                       |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 
-CHANNEL: set the channel to bind with register +0x01C0..+01DE
+CHANNEL: set the channel to bind with register +0x01C0..+0x01DE
 SRC_SPACE / DST_SPACE: the memory space associated with SRC_ADDR and DST_ADDR
  - 0: DSP main memory
  - 1: MMIO
@@ -93,4 +93,4 @@ The same rule applies to the destination address as well. Note that `SIZEx` can 
 
 One element can be either a 16-bit(`DWM = 0`) word or a 32-bit double word (`DWM = 1`). In the 32-bit double word mode, the address stepping method is the same as described above, except for `SIZE0`, where one 32-bit element is counted as 2 for the dimension 0 counter, so effectively `SIZE0` value is twice as the actual count of 32-bit elements copied in a dimension 0 stride. The double word mode also automatically aligns down the addresses to 32-bit boundaries.
 
-When the memory space is specified as 7 (AHBM), it performs data transfer from/to external memory. Take 3DS for example, the external memory is FCRAM, and the address is specified as FCRAM's physical address as-is. Because the external memory has 8-bit addressing, the address resolution mismatch between DSP memory and FCRAM can make it unintuitive. Just keep in mind that the `STEP` value is also added to the address as-is, so `STEP = 1` means stepping 8-bit for FCRAM, while stepping 16-bit for DSP memory. There are also more alignment requirement on the external memory address, but it is handled by AHBM. See [AHBM.md](AHBM.md) for detail.
+When the memory space is specified as 7 (AHBM), it performs data transfer from/to external memory. Take 3DS for example, the external memory is FCRAM, and the address is specified as FCRAM's physical address as-is. Because the external memory has 8-bit addressing, the address resolution mismatch between DSP memory and FCRAM can make it unintuitive. Just keep in mind that the `STEP` value is also added to the address as-is, so `STEP = 1` means stepping 8-bit for FCRAM, while stepping 16-bit for DSP memory. There are also more alignment requirement on the external memory address, but it is handled by AHBM. See [ahbm.md](ahbm.md) for detail.
