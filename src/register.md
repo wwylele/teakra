@@ -51,7 +51,7 @@ Internally, these predefined pseudo-register-types, using template, store pointe
 
 18-bit program counter, address for loading instructions from the program memory. It is increamented by 1 or 2, depending on the instruction length, on every instruction. It is post-incrementing from instructions' view, i.e. when referencing the `pc` value in an instruction, the value is always the address of the *next* instruction.
 
-The value of `pc` can theoretically be accessed by all opcodes that accept oprand `Register` as source. However, most of these opcodes and other registers in `Register` use 16-bit data bus, so it is unclear how the convertion works, or whether it works at all. Only the opcode `mov pc a0/a1` is well tested and implemented: it is full 18-bit transfer. Other code path that access `pc` via `Register` is currently marked as unreachable. On a side node, the TeakLite architecture only has a 16-bit `pc` register, where transferring `pc` value via 16-bit data base makes more sense.
+The value of `pc` can theoretically be accessed by all opcodes that accept operand `Register` as source. However, most of these opcodes and other registers in `Register` use 16-bit data bus, so it is unclear how the convertion works, or whether it works at all. Only the opcode `mov pc a0/a1` is well tested and implemented: it is full 18-bit transfer. Other code path that access `pc` via `Register` is currently marked as unreachable. On a side node, the TeakLite architecture only has a 16-bit `pc` register, where transferring `pc` value via 16-bit data base makes more sense.
 
 `pc` value can be pushed to / popped from the stack as two words. The word order is specified by the `cpc` register.
 
@@ -88,25 +88,37 @@ Aside from increamenting on every instruction, `pc` value can also be modified b
 
 #### Flags
 
-#### Viterbi
+#### `vtr0`/`vtr1`, Viterbi registers
+
+These two 16-bit registers are dedicated for [Viterbi decoding](https://en.wikipedia.org/wiki/Viterbi_decoder),and for path recovery to be specific. For every opcodes that contain a `vtrshr` part, status bits `fc0` and `fc1` are pushed into `vtr0` and `vtr1`, respectively. `vtrmov` opcodes can move the value from these registers to accumulators. `vtrclr` can clear these registers to zero. There is no way to directly access these registers.
 
 ### Multiplication registers
 
 #### `x0`/`x1`/`y0`/`y1`, factor registers
 
+16 bits each, used as factors for calculating multiplication, but can also be used for general purpose.
+
 #### `p0`/`p1`, product registers
+
+33 bits each, stores the result of multiplication operation when the instruction initiates one. `p0` stores `x0 * y0` and `p1` stores `x1 * y1`. The registers are split in to 32-bit parts `p[0]/p[1]` and sign bits `pe[0]/pe[1]` in the code.
 
 ### Address registers
 
 #### `r0`..`r7`, general address registers
 
+These 16-bit registers can be used for general purpose or as memory pointer. Most opcodes that support indirect data access uses these registers as address operand (e.g. `[r0]`). Specifically `r7` also supports supplying an additional immediate address offset in some opcodes, and is often used as stack frame pointer.
+
 #### `sp`, stack pointer
 
-16-bit register as a pointer to data memory, decrements on `push` / `call` / `bksto [sp]` opcodes and increments on `pop` / `ret` / `bkrst [sp]` opcodes. Can be also read and modified as a general register via all opcodes that accept `Register` oprand.
+16-bit register as a pointer to data memory, decrements on `push` / `call` / `bksto [sp]` opcodes and increments on `pop` / `ret` / `bkrst [sp]` opcodes. Can be also read and modified as a general register via all opcodes that accept `Register` operand.
 
 #### `page`, data memory page
 
+Used to specify the higher 8-bits for opcodes that use 8-bit immediate data address.
+
 #### `pcmhi`, program memory transfer page
+
+Used to specify the higher 2-bits for opcodes that use 16-bit program address.
 
 ### Advanced address registers
 
