@@ -1,12 +1,10 @@
 segment p 0000
-br 0x00000000 always // reset vector
-data 0800
+br 0x0000$0800 always // reset vector
 reti always
 data 0000
 reti always
 data 0000
-br 0x00000000 always // int0
-data 5000
+br 0x0000$5000 always // int0
 data 0000
 data 0000
 data 0000
@@ -24,24 +22,19 @@ data 0000
 reti always // int2
 
 segment p 0800 // init
-mov 0x0000 sp // set stack pointer
-data 0xF000
-mov 0x0000 mod3 // enable interrupt
-data 0x0180
+mov 0x$f000 sp // set stack pointer
+mov 0x$0180 mod3 // enable interrupt
 load 0x0082u8 page // configure ICU
-mov 0x0000 r0
-data 0x4000
+mov 0x$4000 r0
 mov r0 [page:0x000eu8]
 mov r0 [page:0x0010u8]
 mov r0 [page:0x0006u8] // enable apbp as int0
-br 0x00000000 always
-data 0x1000
+br 0x0000$1000 always
 
 segment p 1000 // Main loop
 load 0x0000u8 page
 
-mov 0x0000 r0 // transfer APBP register
-data 0x80CC
+mov 0x$80CC r0 // transfer APBP register
 mov [r0++] r1
 mov r1 [page:0x0005u8]
 modr [r0++]
@@ -66,52 +59,40 @@ modr [r0++]
 
 
 mov [page:0x0000u8] b0l // get signal
-br 0x00000000 eq // loop back if no signal
-data 1000
+br 0x0000$1000 eq // loop back if no signal
 
 mov [page:0x0001u8] b0l // get command type
 
-cmpv 0x0000 b0l
-data 0000
-br 0x00000000 eq
-data 2000
+cmpv 0x$0000 b0l
+br 0x0000$2000 eq
 
-cmpv 0x0000 b0l
-data 0001
-br 0x00000000 eq
-data 3000
+cmpv 0x$0001 b0l
+br 0x0000$3000 eq
 
-br 0x00000000 always
-data 4000
+br 0x0000$4000 always
 
 segment p 2000 // read
 mov [page:0x0002u8] r0
 mov [r0] r1
 mov r1 [page:0x0003u8]
-br 0x00000000 always
-data 4000
+br 0x0000$4000 always
 
 segment p 3000 // write
 mov [page:0x0002u8] r0
 mov [page:0x0003u8] r1
 mov r1 [r0]
-br 0x00000000 always
-data 4000
+br 0x0000$4000 always
 
 segment p 4000 // end
 clr b0 always
 mov b0l [page:0x0000u8] // clear signal
-br 0x00000000 always
-data 1000 // loop back
+br 0x0000$1000 always
 
 segment p 5000 // interrupt handler
-mov 0x0000 r5
-data 0x4000
-mov 0x0000 r4
-data 0x8202
+mov 0x$4000 r5
+mov 0x$8202 r4
 mov r5 [r4] // ack
-mov 0x0000 r4
-data 0x0004
+mov 0x$0004 r4
 mov [r4] r5
 modr [r5++]
 mov r5 [r4]
