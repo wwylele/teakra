@@ -134,6 +134,9 @@ public:
                     PushPC();
                     regs.pc = vinterrupt_address;
                     idle = false;
+                    if (vinterrupt_context_switch) {
+                        ContextStore();
+                    }
                 }
             }
 
@@ -144,9 +147,10 @@ public:
     void SignalInterrupt(u32 i) {
         interrupt_pending[i] = true;
     }
-    void SignalVectoredInterrupt(u32 address) {
+    void SignalVectoredInterrupt(u32 address, bool context_switch) {
         vinterrupt_address = address;
         vinterrupt_pending = true;
+        vinterrupt_context_switch = context_switch;
     }
 
     using instruction_return_type = void;
@@ -2932,6 +2936,7 @@ private:
 
     std::array<std::atomic<bool>, 3> interrupt_pending{{false, false, false}};
     std::atomic<bool> vinterrupt_pending{false};
+    std::atomic<bool> vinterrupt_context_switch;
     std::atomic<u32> vinterrupt_address;
 
     bool idle = false;

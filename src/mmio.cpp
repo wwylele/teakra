@@ -327,7 +327,8 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     // impl->cells[0x210]; // source type for each interrupt?
     for (unsigned i = 0; i < 16; ++i) {
         impl->cells[0x212 + i * 4] = Cell::BitFieldCell({
-            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]), BitFieldSlot{15, 1, {}, {}}, // ?
+            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]),
+            BitFieldSlot::RefSlot(15, 1, icu.vector_context_switch[i]),
         });
         impl->cells[0x214 + i * 4] = Cell::RefCell(icu.vector_low[i]);
     }

@@ -35,7 +35,7 @@ public:
                     }
                 }
                 if (vectored_enabled[irq]) {
-                    on_vectored_interrupt(GetVector(irq));
+                    on_vectored_interrupt(GetVector(irq), vector_context_switch[irq] != 0);
                 }
             }
         }
@@ -68,16 +68,17 @@ public:
     }
 
     void SetInterruptHandler(std::function<void(u32)> interrupt,
-                             std::function<void(u32)> vectored_interrupt) {
+                             std::function<void(u32, bool)> vectored_interrupt) {
         on_interrupt = std::move(interrupt);
         on_vectored_interrupt = std::move(vectored_interrupt);
     }
 
     std::array<u16, 16> vector_low, vector_high;
+    std::array<u16, 16> vector_context_switch;
 
 private:
     std::function<void(u32)> on_interrupt;
-    std::function<void(u32)> on_vectored_interrupt;
+    std::function<void(u32, bool)> on_vectored_interrupt;
 
     IrqBits request;
     std::array<IrqBits, 3> enabled;

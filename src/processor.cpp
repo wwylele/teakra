@@ -27,8 +27,8 @@ void Processor::Run(unsigned cycles) {
 void Processor::SignalInterrupt(u32 i) {
     impl->interpreter.SignalInterrupt(i);
 }
-void Processor::SignalVectoredInterrupt(u32 address) {
-    impl->interpreter.SignalVectoredInterrupt(address);
+void Processor::SignalVectoredInterrupt(u32 address, bool context_switch) {
+    impl->interpreter.SignalVectoredInterrupt(address, context_switch);
 }
 
 } // namespace Teakra

@@ -15,7 +15,7 @@ public:
     void Reset();
     void Run(unsigned cycles);
     void SignalInterrupt(u32 i);
-    void SignalVectoredInterrupt(u32 address);
+    void SignalVectoredInterrupt(u32 address, bool context_switch);
 
 private:
     struct Impl;

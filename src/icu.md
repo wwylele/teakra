@@ -25,7 +25,7 @@
 
 N = 0..15
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x0212+N*4| ? |                                                   |VADDR_H|
+|+0x0212+N*4|VIC|                                                   |VADDR_H|
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x0214+N*4|                            VADDR_L                            |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
@@ -40,6 +40,7 @@ IV0..IVF: connects IRQ to core vectored interrupt
 PL0..PLF: polarity of IRQ signal?
 TP0..TPF: type of IQR signal? 0: pulse, 1: sticky
 VADDR_H, VADDR_L: address of interrupt handler for vectored interrupt
+VIC: 1 to enable context switch on vectored interrupt
 
 Some IRQ bits are associated with specific peripherals
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
