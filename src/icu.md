@@ -41,8 +41,12 @@ PL0..PLF: polarity of IRQ signal?
 TP0..TPF: type of IQR signal? 0: pulse, 1: sticky
 VADDR_H, VADDR_L: address of interrupt handler for vectored interrupt
 VIC: 1 to enable context switch on vectored interrupt
+```
 
-Some IRQ bits are associated with specific peripherals
+## IRQ signal
+
+All bit fields in MMIO correspond to 16 IRQ signal. Some of them are known to connect to other peripherals as shown below. There might be more undiscovered components that have associated IRQ
+```
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |           | *F| *E| *D| *C| *B| *A| *9| *8| *7| *6| *5| *4| *3| *2| *1| *0|
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
@@ -53,3 +57,11 @@ BTDMP ------------------------*   |   |
 TIMER0----------------------------*   |
 TIMER1--------------------------------*
 ```
+
+## IRQ-to-interrupt translator
+
+The main job of ICU is to translate 16 IRQ signals to 4 processor interrupt signals (int0, int1, int2 and vint), specified by `I0x`, `I1x`, `I2x` and `IVx` registers. When an IRQ is signaled, ICU will generate interrupt signal and the processor starts to execute interrupt handling procedure if the core interrupt is enabled. The procedure is supposed check `IPx` reigster to know the exact IRQ index, and to set `IAx` registers to clear the IRQ signal.
+
+## Software interrupt
+
+The processor can writes to `ITx` to generate a software interrupt manually. A use case for this in many 3DS games is that IRQ 0 is used as the reschedule procedure for multithreading. When a thread wants to yield, it triggers IRQ 0, which switches thread context and resume another thread.
