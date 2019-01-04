@@ -18,9 +18,9 @@
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x020C    |IVF|IVE|IVD|IVC|IVB|IVA|IV9|IV8|IV7|IV6|IV5|IV4|IV3|IV2|IV1|IV0|
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x020E    |PLF|PLE|PLD|PLC|PLB|PLA|PL9|PL8|PL7|PL6|PL5|PL4|PL3|PL2|PL1|PL0|
+|+0x020E    |TPF|TPE|TPD|TPC|TPB|TPA|TP9|TP8|TP7|TP6|TP5|TP4|TP3|TP2|TP1|TP0|
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x0210    |TPF|TPE|TPD|TPC|TPB|TPA|TP9|TP8|TP7|TP6|TP5|TP4|TP3|TP2|TP1|TP0|
+|+0x0210    |PLF|PLE|PLD|PLC|PLB|PLA|PL9|PL8|PL7|PL6|PL5|PL4|PL3|PL2|PL1|PL0|
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 
 N = 0..15
@@ -37,8 +37,9 @@ I00..I0F: connects IRQ to core interrupt 0
 I10..I1F: connects IRQ to core interrupt 1
 I20..I2F: connects IRQ to core interrupt 2
 IV0..IVF: connects IRQ to core vectored interrupt
+TP0..TPF: IRQ trigger mode? 0: pulse, 1: sticky
 PL0..PLF: polarity of IRQ signal?
-TP0..TPF: type of IQR signal? 0: pulse, 1: sticky
+ * I might have got PLx and TPx swapped
 VADDR_H, VADDR_L: address of interrupt handler for vectored interrupt
 VIC: 1 to enable context switch on vectored interrupt
 ```
