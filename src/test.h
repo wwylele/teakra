@@ -31,7 +31,7 @@ static_assert(std::is_trivially_copyable_v<State>);
 
 struct TestCase {
     State before, after;
-    u16 opcode, expand;
+    u16 opcode, expand, unused;
 };
 
 static_assert(sizeof(TestCase) == 4312);
