@@ -237,8 +237,8 @@ struct Bxh : RegOprand<
     RegName::b1h
 > {};
 struct Px : Oprand<1> {
-    Px() = default;
-    Px(u16 index) {
+    constexpr Px() = default;
+    constexpr Px(u16 index) {
         this->storage = index;
     }
     constexpr u16 Index() const {
@@ -299,8 +299,8 @@ struct Rn : RegOprand<
     RegName::r6,
     RegName::r7
 > {
-    Rn() = default;
-    Rn(u16 index) {
+    constexpr Rn() = default;
+    constexpr Rn(u16 index) {
         this->storage = index;
     }
     constexpr u16 Index() const {
