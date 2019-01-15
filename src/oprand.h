@@ -10,7 +10,7 @@ struct Oprand {
     static constexpr unsigned Bits = bits;
 
 protected:
-    u16 storage;
+    u16 storage{};
 
     template <typename OprandT, unsigned pos>
     friend struct At;
