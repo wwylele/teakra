@@ -76,7 +76,7 @@ Aside from increamenting on every instruction, `pc` value can also be modified b
 #### TODO: block repeat
 
 
-### Comutation registers
+### Arithmetic registers
 
 #### `a0`/`a1`/`b0`/`b1`, accumulators
 
