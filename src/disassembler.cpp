@@ -5,7 +5,7 @@
 #include "common_types.h"
 #include "crash.h"
 #include "decoder.h"
-#include "oprand.h"
+#include "operand.h"
 #include "teakra/disassembler.h"
 
 namespace Teakra::Disassembler {

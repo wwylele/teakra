@@ -25,7 +25,7 @@ add_library(teakra
     memory_interface.h
     mmio.cpp
     mmio.h
-    oprand.h
+    operand.h
     parser.cpp
     processor.cpp
     processor.h

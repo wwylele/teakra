@@ -2,8 +2,8 @@
 
  - main library
    - [processor related](processor_general.md)
-     - oprand: defines basic oprand types used in instructions
-     - matcher and decoder: decodes binary instructions into opcodes and oprands
+     - operand: defines basic operand types used in instructions
+     - matcher and decoder: decodes binary instructions into opcodes and operands
      - disassembler: translate binary instructions to (pseudo-)assembly.
      - parser: translate (pseudo-)assembly to binary instructions
      - interpreter: executes instructions

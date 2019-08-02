@@ -10,7 +10,7 @@
 #include "crash.h"
 #include "decoder.h"
 #include "memory_interface.h"
-#include "oprand.h"
+#include "operand.h"
 #include "register.h"
 
 namespace Teakra {
@@ -417,7 +417,7 @@ public:
         }
     }
 
-    u64 ExtendOprandForAlm(AlmOp op, u16 a) {
+    u64 ExtendOperandForAlm(AlmOp op, u16 a) {
         switch (op) {
         case AlmOp::Cmp:
         case AlmOp::Sub:
@@ -433,16 +433,16 @@ public:
 
     void alm(Alm op, MemImm8 a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
     void alm(Alm op, Rn a, StepZIDS as, Ax b) {
         u16 address = RnAddressAndModify(a.Index(), as.GetName());
         u16 value = mem.DataRead(address);
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
     void alm(Alm op, Register a, Ax b) {
         u64 value;
-        auto CheckBus40OprandAllowed = [op] {
+        auto CheckBus40OperandAllowed = [op] {
             static const std::unordered_set<AlmOp> allowed_instruction{
                 AlmOp::Or, AlmOp::And, AlmOp::Xor, AlmOp::Add, AlmOp::Cmp, AlmOp::Sub,
             };
@@ -452,36 +452,36 @@ public:
         switch (a.GetName()) {
         // need more test
         case RegName::p:
-            CheckBus40OprandAllowed();
+            CheckBus40OperandAllowed();
             value = ProductToBus40(Px{0});
             break;
         case RegName::a0:
         case RegName::a1:
-            CheckBus40OprandAllowed();
+            CheckBus40OperandAllowed();
             value = GetAcc(a.GetName());
             break;
         default:
-            value = ExtendOprandForAlm(op.GetName(), RegToBus16(a.GetName()));
+            value = ExtendOperandForAlm(op.GetName(), RegToBus16(a.GetName()));
             break;
         }
         AlmGeneric(op.GetName(), value, b);
     }
     void alm_r6(Alm op, Ax b) {
         u16 value = regs.r[6];
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
 
     void alu(Alu op, MemImm16 a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, MemR7Imm16 a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, Imm16 a, Ax b) {
         u16 value = a.Unsigned16();
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
     void alu(Alu op, Imm8 a, Ax b) {
         u16 value = a.Unsigned16();
@@ -492,7 +492,7 @@ public:
             // affected
             and_backup = GetAcc(b.GetName()) & 0xFF00;
         }
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
         if (op.GetName() == AlmOp::And) {
             u64 and_new = GetAcc(b.GetName()) & 0xFFFF'FFFF'FFFF'00FF;
             SetAcc(b.GetName(), and_backup | and_new);
@@ -500,7 +500,7 @@ public:
     }
     void alu(Alu op, MemR7Imm7s a, Ax b) {
         u16 value = LoadFromMemory(a);
-        AlmGeneric(op.GetName(), ExtendOprandForAlm(op.GetName(), value), b);
+        AlmGeneric(op.GetName(), ExtendOperandForAlm(op.GetName(), value), b);
     }
 
     void or_(Ab a, Ax b, Ax c) {
@@ -3013,7 +3013,7 @@ private:
         case RegName::b0:
         case RegName::b1:
             // get aXl, but unlike using RegName::aXl, this does never saturate.
-            // This only happen to insturctions using "Register" oprand,
+            // This only happen to insturctions using "Register" operand,
             // and doesn't apply to all instructions. Need test and special check.
             return GetAcc(reg) & 0xFFFF;
         case RegName::a0l:
@@ -3058,7 +3058,7 @@ private:
         case RegName::y0:
             return regs.y[0];
         case RegName::p:
-            // This only happen to insturctions using "Register" oprand,
+            // This only happen to insturctions using "Register" operand,
             // and doesn't apply to all instructions. Need test and special check.
             return (ProductToBus40(Px{0}) >> 16) & 0xFFFF;
 

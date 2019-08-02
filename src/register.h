@@ -6,7 +6,7 @@
 #include <vector>
 #include "common_types.h"
 #include "crash.h"
-#include "oprand.h"
+#include "operand.h"
 
 namespace Teakra {
 

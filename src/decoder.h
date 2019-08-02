@@ -3,84 +3,84 @@
 #include <vector>
 #include "crash.h"
 #include "matcher.h"
-#include "oprand.h"
+#include "operand.h"
 
-template <typename... OprandAtT>
-struct OprandList {
-    template <typename OprandAtT0>
-    using prefix = OprandList<OprandAtT0, OprandAtT...>;
+template <typename... OperandAtT>
+struct OperandList {
+    template <typename OperandAtT0>
+    using prefix = OperandList<OperandAtT0, OperandAtT...>;
 };
 
-template <typename... OprandAtT>
-struct FilterOprand;
+template <typename... OperandAtT>
+struct FilterOperand;
 
 template <>
-struct FilterOprand<> {
-    using result = OprandList<>;
+struct FilterOperand<> {
+    using result = OperandList<>;
 };
 
-template <bool keep, typename OprandAtT0, typename... OprandAtT>
-struct FilterOprandHelper;
+template <bool keep, typename OperandAtT0, typename... OperandAtT>
+struct FilterOperandHelper;
 
-template <typename OprandAtT0, typename... OprandAtT>
-struct FilterOprandHelper<false, OprandAtT0, OprandAtT...> {
-    using result = typename FilterOprand<OprandAtT...>::result;
+template <typename OperandAtT0, typename... OperandAtT>
+struct FilterOperandHelper<false, OperandAtT0, OperandAtT...> {
+    using result = typename FilterOperand<OperandAtT...>::result;
 };
 
-template <typename OprandAtT0, typename... OprandAtT>
-struct FilterOprandHelper<true, OprandAtT0, OprandAtT...> {
-    using result = typename FilterOprand<OprandAtT...>::result ::template prefix<OprandAtT0>;
+template <typename OperandAtT0, typename... OperandAtT>
+struct FilterOperandHelper<true, OperandAtT0, OperandAtT...> {
+    using result = typename FilterOperand<OperandAtT...>::result ::template prefix<OperandAtT0>;
 };
 
-template <typename OprandAtT0, typename... OprandAtT>
-struct FilterOprand<OprandAtT0, OprandAtT...> {
+template <typename OperandAtT0, typename... OperandAtT>
+struct FilterOperand<OperandAtT0, OperandAtT...> {
     using result =
-        typename FilterOprandHelper<OprandAtT0::PassAsParameter, OprandAtT0, OprandAtT...>::result;
+        typename FilterOperandHelper<OperandAtT0::PassAsParameter, OperandAtT0, OperandAtT...>::result;
 };
 
-template <typename V, typename F, u16 expected, typename... OprandAtT>
+template <typename V, typename F, u16 expected, typename... OperandAtT>
 struct MatcherCreator {
-    template <typename OprandListT>
+    template <typename OperandListT>
     struct Proxy;
 
-    template <typename... OprandAtTs>
-    struct Proxy<OprandList<OprandAtTs...>> {
+    template <typename... OperandAtTs>
+    struct Proxy<OperandList<OperandAtTs...>> {
         F func;
         auto operator()(V& visitor, [[maybe_unused]] u16 opcode,
                         [[maybe_unused]] u16 expansion) const {
-            return (visitor.*func)(OprandAtTs::Extract(opcode, expansion)...);
+            return (visitor.*func)(OperandAtTs::Extract(opcode, expansion)...);
         }
     };
 
     static Matcher<V> Create(const char* name, F func) {
-        // Oprands shouldn't overlap each other, nor overlap with the expected ones
-        static_assert(NoOverlap<u16, expected, OprandAtT::Mask...>, "Error");
+        // Operands shouldn't overlap each other, nor overlap with the expected ones
+        static_assert(NoOverlap<u16, expected, OperandAtT::Mask...>, "Error");
 
-        Proxy<typename FilterOprand<OprandAtT...>::result> proxy{func};
+        Proxy<typename FilterOperand<OperandAtT...>::result> proxy{func};
 
-        u16 mask = (~OprandAtT::Mask & ...);
-        bool expanded = (OprandAtT::NeedExpansion || ...);
+        u16 mask = (~OperandAtT::Mask & ...);
+        bool expanded = (OperandAtT::NeedExpansion || ...);
         return Matcher<V>(name, mask, expected, expanded, proxy);
     }
 };
 
-template <typename... OprandAtConstT>
+template <typename... OperandAtConstT>
 struct RejectorCreator {
-    static constexpr Rejector rejector{(OprandAtConstT::Mask | ...), (OprandAtConstT::Pad | ...)};
+    static constexpr Rejector rejector{(OperandAtConstT::Mask | ...), (OperandAtConstT::Pad | ...)};
 };
 
-template <typename V, typename OprandListT>
+template <typename V, typename OperandListT>
 struct VisitorFunctionWithoutFilter;
 
-template <typename V, typename... OprandAtT>
-struct VisitorFunctionWithoutFilter<V, OprandList<OprandAtT...>> {
-    using type = typename V::instruction_return_type (V::*)(typename OprandAtT::FilterResult...);
+template <typename V, typename... OperandAtT>
+struct VisitorFunctionWithoutFilter<V, OperandList<OperandAtT...>> {
+    using type = typename V::instruction_return_type (V::*)(typename OperandAtT::FilterResult...);
 };
 
-template <typename V, typename... OprandAtT>
+template <typename V, typename... OperandAtT>
 struct VisitorFunction {
     using type =
-        typename VisitorFunctionWithoutFilter<V, typename FilterOprand<OprandAtT...>::result>::type;
+        typename VisitorFunctionWithoutFilter<V, typename FilterOperand<OperandAtT...>::result>::type;
 };
 
 // clang-format off
