@@ -38,10 +38,26 @@ struct FilterOperand<OperandAtT0, OperandAtT...> {
         typename FilterOperandHelper<OperandAtT0::PassAsParameter, OperandAtT0, OperandAtT...>::result;
 };
 
-template <typename V, typename F, u16 expected, typename... OperandAtT>
+template <typename V, typename OperandListT>
+struct VisitorFunctionWithoutFilter;
+
+template <typename V, typename... OperandAtT>
+struct VisitorFunctionWithoutFilter<V, OperandList<OperandAtT...>> {
+    using type = typename V::instruction_return_type (V::*)(typename OperandAtT::FilterResult...);
+};
+
+template <typename V, typename... OperandAtT>
+struct VisitorFunction {
+    using type =
+        typename VisitorFunctionWithoutFilter<V, typename FilterOperand<OperandAtT...>::result>::type;
+};
+
+template <typename V, u16 expected, typename... OperandAtT>
 struct MatcherCreator {
     template <typename OperandListT>
     struct Proxy;
+
+    using F = typename VisitorFunction<V, OperandAtT...>::type;
 
     template <typename... OperandAtTs>
     struct Proxy<OperandList<OperandAtTs...>> {
@@ -69,27 +85,13 @@ struct RejectorCreator {
     static constexpr Rejector rejector{(OperandAtConstT::Mask | ...), (OperandAtConstT::Pad | ...)};
 };
 
-template <typename V, typename OperandListT>
-struct VisitorFunctionWithoutFilter;
-
-template <typename V, typename... OperandAtT>
-struct VisitorFunctionWithoutFilter<V, OperandList<OperandAtT...>> {
-    using type = typename V::instruction_return_type (V::*)(typename OperandAtT::FilterResult...);
-};
-
-template <typename V, typename... OperandAtT>
-struct VisitorFunction {
-    using type =
-        typename VisitorFunctionWithoutFilter<V, typename FilterOperand<OperandAtT...>::result>::type;
-};
-
 // clang-format off
 
 template <typename V>
 std::vector<Matcher<V>> GetDecodeTable() {
     return {
 
-#define INST(name, expected, ...) MatcherCreator<V, typename VisitorFunction<V, __VA_ARGS__>::type, expected, __VA_ARGS__>::Create(#name, &V::name)
+#define INST(name, expected, ...) MatcherCreator<V, expected, __VA_ARGS__>::Create(#name, &V::name)
 #define EXCEPT(...) Except(RejectorCreator<__VA_ARGS__>::rejector)
 
     // <<< Misc >>>
