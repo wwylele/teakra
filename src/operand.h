@@ -104,12 +104,6 @@ using Add = Cn<bool, false>;
 using EMod = Cn<bool, false>;
 using DMod = Cn<bool, true>;
 
-struct NoParam {
-    static constexpr u16 Mask = 0;
-    static constexpr bool NeedExpansion = false;
-    static constexpr bool PassAsParameter = false;
-};
-
 template <typename OperandT, unsigned pos, u16 value>
 struct AtConst {
     using Base = At<OperandT, pos>;
