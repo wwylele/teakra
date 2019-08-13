@@ -46,7 +46,9 @@ target_include_directories(teakra
 target_compile_options(teakra PRIVATE ${TEAKRA_CXX_FLAGS})
 
 add_library(teakra_c
+    ../include/teakra/disassembler_c.h
     ../include/teakra/teakra_c.h
+    disassembler_c.cpp
     teakra_c.cpp
 )
 target_link_libraries(teakra_c PRIVATE teakra)
