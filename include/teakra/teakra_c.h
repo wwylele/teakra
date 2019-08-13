@@ -2,7 +2,9 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 struct TeakraObject;
 typedef struct TeakraObject TeakraContext;
@@ -37,4 +39,6 @@ void Teakra_SetAHBMCallback(TeakraContext* context, Teakra_AHBMReadCallback read
                             Teakra_AHBMWriteCallback write, void* userdata);
 
 void Teakra_SetAudioCallback(TeakraContext* context, Teakra_AudioCallback callback, void* userdata);
+#ifdef __cplusplus
 }
+#endif
