@@ -15,7 +15,7 @@ constexpr T log2p1(T x) noexcept {
     if (x == 0)
         return 0;
 #ifdef _MSC_VER
-    unsigned long index;
+    unsigned long index = 0;
     _BitScanReverse64(&index, x);
     return static_cast<T>(index) + 1;
 #else
