@@ -34,7 +34,7 @@ Semaphore registers
 
 SET_SEMAPHORE: sets semaphore sent from DSP to CPU
 MASK_SEMAPHORE: masks semaphore interrupt received from CPU to DSP
-ACH_SEMAPHORE: acknowledges/clears semaphore received from CPU to DSP
+ACK_SEMAPHORE: acknowledges/clears semaphore received from CPU to DSP
 GET_SEMAPHORE: semaphore received from CPU to DSP
 
 Config/status registers
@@ -72,7 +72,7 @@ When one side writes to a data channel, it sets the 1 to the "data ready" bit (`
 
 ### Semaphore channels
 
-There are two 16-bit semaphore channels for two directions, `CPU->DSP` and `DSP->CPU`. Writing to `SET_SEMAPHORE` from side A or `ACH_SEMAPHORE` from side B changes the semaphore value of direction `A->B`. Semaphore value change also changes the corresponding `S` bit (See the calculation above). Changing in mask is also reflected in the `S` bit immediately. Whenever a `0->1` transition for `S` is detected, interrupt is fired on B side.
+There are two 16-bit semaphore channels for two directions, `CPU->DSP` and `DSP->CPU`. Writing to `SET_SEMAPHORE` from side A or `ACK_SEMAPHORE` from side B changes the semaphore value of direction `A->B`. Semaphore value change also changes the corresponding `S` bit (See the calculation above). Changing in mask is also reflected in the `S` bit immediately. Whenever a `0->1` transition for `S` is detected, interrupt is fired on B side.
 
 ## CPU side MMIO
 
