@@ -335,8 +335,8 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
 
     // BTDMP
     for (u16 i = 0; i < 2; ++i) {
-        impl->cells[0x2A2 + i * 0x80].set = std::bind(&Btdmp::SetTransmitPeriod, &btdmp[i], _1);
-        impl->cells[0x2A2 + i * 0x80].get = std::bind(&Btdmp::GetTransmitPeriod, &btdmp[i]);
+        impl->cells[0x2A2 + i * 0x80].set = std::bind(&Btdmp::SetTransmitClockConfig, &btdmp[i], _1);
+        impl->cells[0x2A2 + i * 0x80].get = std::bind(&Btdmp::GetTransmitClockConfig, &btdmp[i]);
         impl->cells[0x2BE + i * 0x80].set = std::bind(&Btdmp::SetTransmitEnable, &btdmp[i], _1);
         impl->cells[0x2BE + i * 0x80].get = std::bind(&Btdmp::GetTransmitEnable, &btdmp[i]);
         impl->cells[0x2C2 + i * 0x80] = Cell::BitFieldCell({

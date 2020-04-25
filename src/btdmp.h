@@ -16,6 +16,14 @@ public:
 
     void Reset();
 
+    void SetTransmitClockConfig(u16 value) {
+        transmit_clock_config = value;
+    }
+
+    u16 GetTransmitClockConfig() const {
+        return transmit_clock_config;
+    }
+
     void SetTransmitPeriod(u16 value) {
         transmit_period = value;
     }
@@ -73,7 +81,10 @@ public:
     }
 
 private:
-    u16 transmit_period = 0;
+    // TODO: figure out the relation between clock_config and period.
+    // Default to period = 4096 for now which every game uses
+    u16 transmit_clock_config = 0;
+    u16 transmit_period = 4096;
     u16 transmit_timer = 0;
     u16 transmit_enable = 0;
     bool transmit_empty = true;
