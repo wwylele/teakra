@@ -1,6 +1,6 @@
 #pragma once
 #include <atomic>
-#include <exception>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
