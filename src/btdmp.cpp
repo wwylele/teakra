@@ -11,7 +11,8 @@ Btdmp::Btdmp(CoreTiming& core_timing) {
 Btdmp::~Btdmp() = default;
 
 void Btdmp::Reset() {
-    transmit_period = 0;
+    transmit_clock_config = 0;
+    transmit_period = 4096;
     transmit_timer = 0;
     transmit_enable = 0;
     transmit_empty = true;
