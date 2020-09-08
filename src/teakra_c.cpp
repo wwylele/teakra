@@ -38,6 +38,9 @@ int Teakra_RecvDataIsReady(const TeakraContext* context, uint8_t index) {
 uint16_t Teakra_RecvData(TeakraContext* context, uint8_t index) {
     return context->teakra.RecvData(index);
 }
+uint16_t Teakra_PeekRecvData(TeakraContext* context, uint8_t index) {
+    return context->teakra.PeekRecvData(index);
+}
 
 void Teakra_SetRecvDataHandler(TeakraContext* context, uint8_t index,
                                Teakra_InterruptCallback handler, void* userdata) {

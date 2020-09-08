@@ -21,6 +21,7 @@ int Teakra_SendDataIsEmpty(const TeakraContext* context, uint8_t index);
 void Teakra_SendData(TeakraContext* context, uint8_t index, uint16_t value);
 int Teakra_RecvDataIsReady(const TeakraContext* context, uint8_t index);
 uint16_t Teakra_RecvData(TeakraContext* context, uint8_t index);
+uint16_t Teakra_PeekRecvData(TeakraContext* context, uint8_t index);
 void Teakra_SetRecvDataHandler(TeakraContext* context, uint8_t index,
                                Teakra_InterruptCallback handler, void* userdata);
 
