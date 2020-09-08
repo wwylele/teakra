@@ -28,7 +28,8 @@ public:
     }
     u16 ToMMIO(u16 addr) const {
         ASSERT(z_page == 0);
-        return addr - mmio_base;
+        // according to GBATek ("DSi Teak I/O Ports (on ARM9 Side)"), these are mirrored
+        return (addr - mmio_base) & (MMIOSize - 1);
     }
 
     u32 ConvertDataAddress(u16 addr) const {
@@ -56,8 +57,12 @@ public:
     void SetMMIO(MMIORegion& mmio);
     u16 ProgramRead(u32 address) const;
     void ProgramWrite(u32 address, u16 value);
-    u16 DataRead(u16 address); // not const because it can be a FIFO register
-    void DataWrite(u16 address, u16 value);
+    u16 DataRead(u16 address, bool bypass_mmio = false); // not const because it can be a FIFO register
+    void DataWrite(u16 address, u16 value, bool bypass_mmio = false);
+    u16 DataReadA32(u32 address) const;
+    void DataWriteA32(u32 address, u16 value);
+    u16 MMIORead(u16 address);
+    void MMIOWrite(u16 address, u16 value);
 
 private:
     SharedMemory& shared_memory;

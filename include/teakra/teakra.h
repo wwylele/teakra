@@ -37,6 +37,21 @@ public:
     void SetSemaphoreHandler(std::function<void()> handler);
     std::uint16_t GetSemaphore() const;
 
+    // for implementing DSP_PDATA/PADR DMA transfers
+    std::uint16_t ProgramRead(std::uint32_t address) const;
+    void ProgramWrite(std::uint32_t address, std::uint16_t value);
+    std::uint16_t DataRead(std::uint16_t address, bool bypass_mmio = false);
+    void DataWrite(std::uint16_t address, std::uint16_t value, bool bypass_mmio = false);
+    std::uint16_t DataReadA32(std::uint32_t address) const;
+    void DataWriteA32(std::uint32_t address, std::uint16_t value);
+    std::uint16_t MMIORead(std::uint16_t address);
+    void MMIOWrite(std::uint16_t address, std::uint16_t value);
+
+    // DSP_PADR is only 16-bit, so this is where the DMA interface gets the
+    // upper 16-bits from
+    std::uint16_t DMAChan0GetSrcHigh();
+    std::uint16_t DMAChan0GetDstHigh();
+
     // core
     void Run(unsigned cycle);
 

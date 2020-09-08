@@ -66,6 +66,38 @@ uint16_t Teakra_GetSemaphore(const TeakraContext* context) {
     return context->teakra.GetSemaphore();
 }
 
+uint16_t Teakra_ProgramRead(TeakraContext* context, uint32_t address) {
+    return context->teakra.ProgramRead(address);
+}
+void Teakra_ProgramWrite(TeakraContext* context, uint32_t address, uint16_t value) {
+    context->teakra.ProgramWrite(address, value);
+}
+uint16_t Teakra_DataRead(TeakraContext* context, uint16_t address, bool bypass_mmio) {
+    return context->teakra.DataRead(address, bypass_mmio);
+}
+void Teakra_DataWrite(TeakraContext* context, uint16_t address, uint16_t value, bool bypass_mmio) {
+    context->teakra.DataWrite(address, value, bypass_mmio);
+}
+uint16_t Teakra_DataReadA32(TeakraContext* context, uint32_t address) {
+    return context->teakra.DataReadA32(address);
+}
+void Teakra_DataWriteA32(TeakraContext* context, uint32_t address, uint16_t value) {
+    context->teakra.DataWriteA32(address, value);
+}
+uint16_t Teakra_MMIORead(TeakraContext* context, uint16_t address) {
+    return context->teakra.MMIORead(address);
+}
+void Teakra_MMIOWrite(TeakraContext* context, uint16_t address, uint16_t value) {
+    context->teakra.MMIOWrite(address, value);
+}
+
+uint16_t Teakra_DMAChan0GetSrcHigh(TeakraContext* context) {
+    return context->teakra.DMAChan0GetSrcHigh();
+}
+uint16_t Teakra_DMAChan0GetDstHigh(TeakraContext* context){
+    return context->teakra.DMAChan0GetDstHigh();
+}
+
 void Teakra_Run(TeakraContext* context, unsigned cycle) {
     context->teakra.Run(cycle);
 }
