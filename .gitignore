@@ -1,5 +1,6 @@
 # Build directory
 [Bb]uild/
+cmake-build/
 doc-build/
 
 test/

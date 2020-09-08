@@ -2,24 +2,24 @@
 
  - main library
    - [processor related](processor_general.md)
-     - oprand: defines basic oprand types used in instructions
-     - matcher and decoder: decodes binary instructions into opcodes and oprands
+     - operand: defines basic operand types used in instructions
+     - matcher and decoder: decodes binary instructions into opcodes and operands
      - disassembler: translate binary instructions to (pseudo-)assembly.
      - parser: translate (pseudo-)assembly to binary instructions
      - interpreter: executes instructions
-     - register: defines all register states in the processor
+     - [register](register.md): defines all register states in the processor
      - processor: wrapper of interpreter and register as a processor emulator
      - test_generator: generates test cases information for the instruction set
    - peripherals
-     - AHBM: interface for accessing external memory (DSi/3DS main memory)
-     - APBP: interface for communication with CPU (ARM in DSi/3DS)
-     - BTDMP: audio input/output ports
-     - DMA: engine for transferring large data between DSP memory and external memory
-     - ICU: interrupt controller unit
-     - timer
-     - MMIO: I/O ports for all peripherals
+     - [AHBM](ahbm.md): interface for accessing external memory (DSi/3DS main memory)
+     - [APBP](apbp.md): interface for communication with CPU (ARM in DSi/3DS)
+     - [BTDMP](btdmp.md): audio input/output ports
+     - [DMA](dma.md): engine for transferring large data between DSP memory and external memory
+     - [ICU](icu.md): interrupt controller unit
+     - [timer](timer.md)
+     - [MMIO](mmio.md): I/O ports for all peripherals
      - shared_memory: the DSP working memory
-     - memory_interface: the memory space exposed to the processor and related control
+     - [memory_interface](miu.md): the memory space exposed to the processor and related control
  - Tools
    - coff_reader: disassembles and parses symbols COFF files leaked by some DSi applications
    - dsp1_reader: disassembles DSP1 files, DSP binary for 3DS applications

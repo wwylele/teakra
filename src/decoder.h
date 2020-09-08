@@ -3,84 +3,86 @@
 #include <vector>
 #include "crash.h"
 #include "matcher.h"
-#include "oprand.h"
+#include "operand.h"
 
-template <typename... OprandAtT>
-struct OprandList {
-    template <typename OprandAtT0>
-    using prefix = OprandList<OprandAtT0, OprandAtT...>;
+template <typename... OperandAtT>
+struct OperandList {
+    template <typename OperandAtT0>
+    using prefix = OperandList<OperandAtT0, OperandAtT...>;
 };
 
-template <typename... OprandAtT>
-struct FilterOprand;
+template <typename... OperandAtT>
+struct FilterOperand;
 
 template <>
-struct FilterOprand<> {
-    using result = OprandList<>;
+struct FilterOperand<> {
+    using result = OperandList<>;
 };
 
-template <bool keep, typename OprandAtT0, typename... OprandAtT>
-struct FilterOprandHelper;
+template <bool keep, typename OperandAtT0, typename... OperandAtT>
+struct FilterOperandHelper;
 
-template <typename OprandAtT0, typename... OprandAtT>
-struct FilterOprandHelper<false, OprandAtT0, OprandAtT...> {
-    using result = typename FilterOprand<OprandAtT...>::result;
+template <typename OperandAtT0, typename... OperandAtT>
+struct FilterOperandHelper<false, OperandAtT0, OperandAtT...> {
+    using result = typename FilterOperand<OperandAtT...>::result;
 };
 
-template <typename OprandAtT0, typename... OprandAtT>
-struct FilterOprandHelper<true, OprandAtT0, OprandAtT...> {
-    using result = typename FilterOprand<OprandAtT...>::result ::template prefix<OprandAtT0>;
+template <typename OperandAtT0, typename... OperandAtT>
+struct FilterOperandHelper<true, OperandAtT0, OperandAtT...> {
+    using result = typename FilterOperand<OperandAtT...>::result ::template prefix<OperandAtT0>;
 };
 
-template <typename OprandAtT0, typename... OprandAtT>
-struct FilterOprand<OprandAtT0, OprandAtT...> {
+template <typename OperandAtT0, typename... OperandAtT>
+struct FilterOperand<OperandAtT0, OperandAtT...> {
     using result =
-        typename FilterOprandHelper<OprandAtT0::PassAsParameter, OprandAtT0, OprandAtT...>::result;
+        typename FilterOperandHelper<OperandAtT0::PassAsParameter, OperandAtT0, OperandAtT...>::result;
 };
 
-template <typename V, typename F, u16 expected, typename... OprandAtT>
+template <typename V, typename OperandListT>
+struct VisitorFunctionWithoutFilter;
+
+template <typename V, typename... OperandAtT>
+struct VisitorFunctionWithoutFilter<V, OperandList<OperandAtT...>> {
+    using type = typename V::instruction_return_type (V::*)(typename OperandAtT::FilterResult...);
+};
+
+template <typename V, typename... OperandAtT>
+struct VisitorFunction {
+    using type =
+        typename VisitorFunctionWithoutFilter<V, typename FilterOperand<OperandAtT...>::result>::type;
+};
+
+template <typename V, u16 expected, typename... OperandAtT>
 struct MatcherCreator {
-    template <typename OprandListT>
+    template <typename OperandListT>
     struct Proxy;
 
-    template <typename... OprandAtTs>
-    struct Proxy<OprandList<OprandAtTs...>> {
+    using F = typename VisitorFunction<V, OperandAtT...>::type;
+
+    template <typename... OperandAtTs>
+    struct Proxy<OperandList<OperandAtTs...>> {
         F func;
         auto operator()(V& visitor, [[maybe_unused]] u16 opcode,
                         [[maybe_unused]] u16 expansion) const {
-            return (visitor.*func)(OprandAtTs::Filter(opcode, expansion)...);
+            return (visitor.*func)(OperandAtTs::Extract(opcode, expansion)...);
         }
     };
 
     static Matcher<V> Create(const char* name, F func) {
-        // Oprands shouldn't overlap each other, nor overlap with the expected ones
-        static_assert(NoOverlap<u16, expected, OprandAtT::Mask...>, "Error");
+        // Operands shouldn't overlap each other, nor overlap with the expected ones
+        static_assert(NoOverlap<u16, expected, OperandAtT::Mask...>, "Error");
 
-        Proxy<typename FilterOprand<OprandAtT...>::result> proxy{func};
+        Proxy<typename FilterOperand<OperandAtT...>::result> proxy{func};
 
-        u16 mask = (~OprandAtT::Mask & ...);
-        bool expanded = (OprandAtT::NeedExpansion || ...);
+        constexpr u16 mask = (~OperandAtT::Mask & ... & 0xFFFF);
+        constexpr bool expanded = (OperandAtT::NeedExpansion || ...);
         return Matcher<V>(name, mask, expected, expanded, proxy);
     }
 };
 
-template <typename... OprandAtConstT>
+template <typename... OperandAtConstT>
 struct RejectorCreator {
-    static constexpr Rejector rejector{(OprandAtConstT::Mask | ...), (OprandAtConstT::Pad | ...)};
-};
-
-template <typename V, typename OprandListT>
-struct VisitorFunctionWithoutFilter;
-
-template <typename V, typename... OprandAtT>
-struct VisitorFunctionWithoutFilter<V, OprandList<OprandAtT...>> {
-    using type = typename V::instruction_return_type (V::*)(typename OprandAtT::FilterResult...);
-};
-
-template <typename V, typename... OprandAtT>
-struct VisitorFunction {
-    using type =
-        typename VisitorFunctionWithoutFilter<V, typename FilterOprand<OprandAtT...>::result>::type;
+    static constexpr Rejector rejector{(OperandAtConstT::Mask | ...), (OperandAtConstT::Pad | ...)};
 };
 
 // clang-format off
@@ -89,14 +91,14 @@ template <typename V>
 std::vector<Matcher<V>> GetDecodeTable() {
     return {
 
-#define INST(name, expected, ...) MatcherCreator<V, typename VisitorFunction<V, __VA_ARGS__>::type, expected, __VA_ARGS__>::Create(#name, &V::name)
+#define INST(name, ...) MatcherCreator<V, __VA_ARGS__>::Create(#name, &V::name)
 #define EXCEPT(...) Except(RejectorCreator<__VA_ARGS__>::rejector)
 
     // <<< Misc >>>
-    INST(nop, 0x0000, NoParam),
+    INST(nop, 0x0000),
     INST(norm, 0x94C0, At<Ax, 8>, At<Rn, 0>, At<StepZIDS, 3>),
     INST(swap, 0x4980, At<SwapType, 0>),
-    INST(trap, 0x0020, NoParam),
+    INST(trap, 0x0020),
 
     // <<< ALM normal >>>
     INST(alm, 0xA000, At<Alm, 9>, At<MemImm8, 0>, At<Ax, 8>),
@@ -233,7 +235,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     // <<< Bank >>>
     INST(banke, 0x4B80, At<BankFlags, 0>),
-    INST(bankr, 0x8CDF, NoParam),
+    INST(bankr, 0x8CDF),
     INST(bankr, 0x8CDC, At<Ar, 0>),
     INST(bankr, 0x8CD0, At<Ar, 2>, At<Arp, 0>),
     INST(bankr, 0x8CD8, At<Arp, 0>),
@@ -248,7 +250,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(brr, 0x5000, At<RelAddr7, 4>, At<Cond, 0>),
 
     // <<< Break >>>
-    INST(break_, 0xD3C0, NoParam),
+    INST(break_, 0xD3C0),
 
     // <<< Call >>>
     INST(call, 0x41C0, At<Address18_16, 16>, At<Address18_2, 4>, At<Cond, 0>),
@@ -257,16 +259,16 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(callr, 0x1000, At<RelAddr7, 4>, At<Cond, 0>),
 
     // <<< Context >>>
-    INST(cntx_s, 0xD380, NoParam),
-    INST(cntx_r, 0xD390, NoParam),
+    INST(cntx_s, 0xD380),
+    INST(cntx_r, 0xD390),
 
     // <<< Return >>>
     INST(ret, 0x4580, At<Cond, 0>),
-    INST(retd, 0xD780, NoParam),
+    INST(retd, 0xD780),
     INST(reti, 0x45C0, At<Cond, 0>),
     INST(retic, 0x45D0, At<Cond, 0>),
-    INST(retid, 0xD7C0, NoParam),
-    INST(retidc, 0xD3C3, NoParam),
+    INST(retid, 0xD7C0),
+    INST(retidc, 0xD3C3),
     INST(rets, 0x0900, At<Imm8, 0>),
 
     // <<< Load >>>
@@ -303,8 +305,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(pop, 0xD496, At<Px, 0>),
     INST(pop_r6, 0x0024, Unused<0>),
     INST(pop_repc, 0xD7F0, Unused<0>, Unused<1>),
-    INST(pop_x0, 0xD494, NoParam),
-    INST(pop_x1, 0xD495, NoParam),
+    INST(pop_x0, 0xD494),
+    INST(pop_x1, 0xD495),
     INST(pop_y1, 0x0004, Unused<0>),
     INST(popa, 0x47B0, At<Ab, 0>),
 
@@ -331,8 +333,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(and_, 0x6770, At<Ab, 2>, At<Ab, 0>, At<Ax, 12>),
 
     // <<< Interrupt >>>
-    INST(dint, 0x43C0, NoParam),
-    INST(eint, 0x4380, NoParam),
+    INST(dint, 0x43C0),
+    INST(eint, 0x4380),
 
     // <<< EXP >>>
     INST(exp, 0x9460, At<Bx, 0>),
@@ -341,7 +343,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(exp, 0x9840, At<Rn, 0>, At<StepZIDS, 3>, At<Ax, 8>),
     INST(exp, 0x9440, At<Register, 0>),
     INST(exp, 0x9040, At<Register, 0>, At<Ax, 8>),
-    INST(exp_r6, 0xD7C1, NoParam),
+    INST(exp_r6, 0xD7C1),
     INST(exp_r6, 0xD382, At<Ax, 4>),
 
     // <<< MODR >>>
@@ -428,10 +430,10 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(movpdw, 0xD499, At<Ax, 8>),
 
     // <<< MOV 2 >>>
-    INST(mov_a0h_stepi0, 0xD49B, NoParam),
-    INST(mov_a0h_stepj0, 0xD59B, NoParam),
-    INST(mov_stepi0_a0h, 0xD482, NoParam),
-    INST(mov_stepj0_a0h, 0xD582, NoParam),
+    INST(mov_a0h_stepi0, 0xD49B),
+    INST(mov_a0h_stepj0, 0xD59B),
+    INST(mov_stepi0_a0h, 0xD482),
+    INST(mov_stepj0_a0h, 0xD582),
 
     INST(mov_prpage, 0x9164, At<Abl, 0>),
     INST(mov_repc, 0x9064, At<Abl, 0>),
@@ -461,9 +463,9 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mov_pc, 0x8863, At<Bx, 8>),
 
     INST(mov_mixp_to, 0x8A73, At<Bx, 3>),
-    INST(mov_mixp_r6, 0x4381, NoParam),
+    INST(mov_mixp_r6, 0x4381),
     INST(mov_p0h_to, 0x4382, At<Bx, 0>),
-    INST(mov_p0h_r6, 0xD3C2, NoParam),
+    INST(mov_p0h_r6, 0xD3C2),
     INST(mov_p0h_to, 0x4B60, At<Register, 0>),
     INST(mov_p0, 0x8FD4, At<Ab, 0>),
     INST(mov_p1_to, 0x8FD8, At<Ab, 0>),
@@ -475,7 +477,7 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(mova, 0x4BC0, At<ArRn2, 2>, At<ArStep2, 0>, At<Ab, 4>),
 
     INST(mov_r6_to, 0xD481, At<Bx, 8>),
-    INST(mov_r6_mixp, 0x43C1, NoParam),
+    INST(mov_r6_mixp, 0x43C1),
     INST(mov_r6_to, 0x5F00, At<Register, 0>),
     INST(mov_r6, 0x5F60, At<Register, 0>),
     INST(mov_memsp_r6, 0xD29C, Unused<0>, Unused<1>, Unused<10>),
@@ -511,18 +513,18 @@ std::vector<Matcher<V>> GetDecodeTable() {
     INST(lim, 0x49C0, At<Ax, 5>, At<Ax, 4>),
 
     // <<< Viterbi >>>
-    INST(vtrclr0, 0x5F45, NoParam),
-    INST(vtrclr1, 0x5F46, NoParam),
-    INST(vtrclr, 0x5F47, NoParam),
+    INST(vtrclr0, 0x5F45),
+    INST(vtrclr1, 0x5F46),
+    INST(vtrclr, 0x5F47),
     INST(vtrmov0, 0xD29A, At<Axl, 0>),
     INST(vtrmov1, 0xD69A, At<Axl, 0>),
     INST(vtrmov, 0xD383, At<Axl, 4>),
-    INST(vtrshr, 0xD781, NoParam),
+    INST(vtrshr, 0xD781),
 
     // <<< CLRP >>>
-    INST(clrp0, 0x5DFE, NoParam),
-    INST(clrp1, 0x5DFD, NoParam),
-    INST(clrp, 0x5DFF, NoParam),
+    INST(clrp0, 0x5DFE),
+    INST(clrp1, 0x5DFD),
+    INST(clrp, 0x5DFF),
 
     // <<< min/max >>>
     INST(max_ge, 0x8460, At<Ax, 8>, At<StepZIDS, 3>),
@@ -544,8 +546,8 @@ std::vector<Matcher<V>> GetDecodeTable() {
 
     // <<< CMP Extra >>>
     INST(cmp, 0x4D8C, At<Ax, 1>, At<Bx, 0>),
-    INST(cmp_b0_b1, 0xD483, NoParam),
-    INST(cmp_b1_b0, 0xD583, NoParam),
+    INST(cmp_b0_b1, 0xD483),
+    INST(cmp_b1_b0, 0xD583),
     INST(cmp, 0xDA9A, At<Bx, 10>, At<Ax, 0>),
     INST(cmp_p1_to, 0x8B63, At<Ax, 4>),
 

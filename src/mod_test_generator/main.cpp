@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include "../test.h"
 
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
                     test_case.before.ar[0] = (step_mode << 5) | (offset_mode << 8);
                     u16 step_min = 0, step_max = 0x20;
                     if (step_mode != 3) {
-                        step_min = step_max = rand() % 0x20;
+                        step_min = step_max = std::rand() % 0x20;
                         ++step_max;
                     }
                     for (u16 step = step_min; step < step_max; ++step) {

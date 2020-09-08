@@ -33,7 +33,7 @@ struct Teakra::Impl {
         memory_interface.SetMMIO(mmio);
         using namespace std::placeholders;
         icu.SetInterruptHandler(std::bind(&Processor::SignalInterrupt, &processor, _1),
-                                std::bind(&Processor::SignalVectoredInterrupt, &processor, _1));
+                                std::bind(&Processor::SignalVectoredInterrupt, &processor, _1, _2));
 
         timer[0].SetInterruptHandler([this]() { icu.TriggerSingle(0xA); });
         timer[1].SetInterruptHandler([this]() { icu.TriggerSingle(0x9); });
@@ -94,6 +94,9 @@ bool Teakra::RecvDataIsReady(std::uint8_t index) const {
 }
 std::uint16_t Teakra::RecvData(std::uint8_t index) {
     return impl->apbp_from_dsp.RecvData(index);
+}
+std::uint16_t Teakra::PeekRecvData(std::uint8_t index) {
+    return impl->apbp_from_dsp.PeekData(index);
 }
 void Teakra::SetRecvDataHandler(std::uint8_t index, std::function<void()> handler) {
     impl->apbp_from_dsp.SetDataHandler(index, std::move(handler));

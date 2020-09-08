@@ -174,8 +174,15 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     impl->cells[0x0D2].get = std::bind(&Apbp::GetSemaphore, &apbp_from_cpu);
     impl->cells[0x0D4] = Cell::BitFieldCell({
         BitFieldSlot{2, 1, {}, {}}, // ARM side endianness flag
-        BitFieldSlot{8, 1, {}, {}},
-        BitFieldSlot{12, 2, {}, {}},
+        BitFieldSlot{8, 1,
+                     [&apbp_from_cpu](u16 v) { return apbp_from_cpu.SetDisableInterrupt(0, v); },
+                     [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.GetDisableInterrupt(0); }},
+        BitFieldSlot{12, 1,
+                     [&apbp_from_cpu](u16 v) { return apbp_from_cpu.SetDisableInterrupt(1, v); },
+                     [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.GetDisableInterrupt(1); }},
+        BitFieldSlot{13, 1,
+                     [&apbp_from_cpu](u16 v) { return apbp_from_cpu.SetDisableInterrupt(2, v); },
+                     [&apbp_from_cpu]() -> u16 { return apbp_from_cpu.GetDisableInterrupt(2); }},
     });
     impl->cells[0x0D6] = Cell::BitFieldCell({
         BitFieldSlot{5, 1, {}, [&apbp_from_dsp]() -> u16 { return apbp_from_dsp.IsDataReady(0); }},
@@ -320,15 +327,16 @@ MMIORegion::MMIORegion(MemoryInterfaceUnit& miu, ICU& icu, Apbp& apbp_from_cpu, 
     // impl->cells[0x210]; // source type for each interrupt?
     for (unsigned i = 0; i < 16; ++i) {
         impl->cells[0x212 + i * 4] = Cell::BitFieldCell({
-            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]), BitFieldSlot{15, 1, {}, {}}, // ?
+            BitFieldSlot::RefSlot(0, 2, icu.vector_high[i]),
+            BitFieldSlot::RefSlot(15, 1, icu.vector_context_switch[i]),
         });
         impl->cells[0x214 + i * 4] = Cell::RefCell(icu.vector_low[i]);
     }
 
     // BTDMP
     for (u16 i = 0; i < 2; ++i) {
-        impl->cells[0x2A2 + i * 0x80].set = std::bind(&Btdmp::SetTransmitPeriod, &btdmp[i], _1);
-        impl->cells[0x2A2 + i * 0x80].get = std::bind(&Btdmp::GetTransmitPeriod, &btdmp[i]);
+        impl->cells[0x2A2 + i * 0x80].set = std::bind(&Btdmp::SetTransmitClockConfig, &btdmp[i], _1);
+        impl->cells[0x2A2 + i * 0x80].get = std::bind(&Btdmp::GetTransmitClockConfig, &btdmp[i]);
         impl->cells[0x2BE + i * 0x80].set = std::bind(&Btdmp::SetTransmitEnable, &btdmp[i], _1);
         impl->cells[0x2BE + i * 0x80].get = std::bind(&Btdmp::GetTransmitEnable, &btdmp[i]);
         impl->cells[0x2C2 + i * 0x80] = Cell::BitFieldCell({

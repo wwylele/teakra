@@ -2,7 +2,9 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 struct TeakraObject;
 typedef struct TeakraObject TeakraContext;
@@ -21,6 +23,7 @@ int Teakra_SendDataIsEmpty(const TeakraContext* context, uint8_t index);
 void Teakra_SendData(TeakraContext* context, uint8_t index, uint16_t value);
 int Teakra_RecvDataIsReady(const TeakraContext* context, uint8_t index);
 uint16_t Teakra_RecvData(TeakraContext* context, uint8_t index);
+uint16_t Teakra_PeekRecvData(TeakraContext* context, uint8_t index);
 void Teakra_SetRecvDataHandler(TeakraContext* context, uint8_t index,
                                Teakra_InterruptCallback handler, void* userdata);
 
@@ -37,4 +40,6 @@ void Teakra_SetAHBMCallback(TeakraContext* context, Teakra_AHBMReadCallback read
                             Teakra_AHBMWriteCallback write, void* userdata);
 
 void Teakra_SetAudioCallback(TeakraContext* context, Teakra_AudioCallback callback, void* userdata);
+#ifdef __cplusplus
 }
+#endif

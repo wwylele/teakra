@@ -5,7 +5,7 @@
 #include "common_types.h"
 #include "crash.h"
 #include "decoder.h"
-#include "oprand.h"
+#include "operand.h"
 #include "teakra/disassembler.h"
 
 namespace Teakra::Disassembler {
@@ -132,21 +132,10 @@ std::string DsmReg(RegName a) {
     case RegName::cfgj:
         return "cfgj";
 
-    case RegName::x0:
-        return "x0";
-    case RegName::x1:
-        return "x1";
     case RegName::y0:
         return "y0";
-    case RegName::y1:
-        return "y1";
-    case RegName::p0:
-        return "p0";
-    case RegName::p1:
-        return "p1";
     case RegName::p:
         return "p*";
-
     case RegName::pc:
         return "pc";
     case RegName::sp:
@@ -170,6 +159,11 @@ std::string DsmReg(RegName a) {
 template <typename RegT>
 std::string R(RegT a) {
     return DsmReg(a.GetName());
+}
+
+template <>
+std::string R(Px a) {
+    return "p" + std::to_string(a.Index());
 }
 
 std::string Dsm(Alm alm) {

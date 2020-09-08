@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include "common_types.h"
 #include "decoder.h"
-#include "oprand.h"
+#include "operand.h"
 #include "test.h"
 
 namespace Teakra::Test {

@@ -1,35 +1,28 @@
 segment p 0000
-br 0x00000000 always// reset vector
-data 0800
-br 0x00000000 always
-data 3000
-br 0x00000000 always
-data 3000
-br 0x00000000 always // int0
-data 3000
+br 0x0000$0800 always// reset vector
+br 0x0000$3000 always
+br 0x0000$3000 always
+br 0x0000$3000 always // int0
 data 0000
 data 0000
 data 0000
 data 0000
 data 0000
 data 0000
-br 0x00000000 always // int1
-data 3000
+br 0x0000$3000 always // int1
 data 0000
 data 0000
 data 0000
 data 0000
 data 0000
 data 0000
-br 0x00000000 always // int2
-data 3000
+br 0x0000$3000 always // int2
 
 segment p 0800 // pre-write shutdown sequence
 load 0x0080u8 page
 clr b0 always
 mov b0l [page:0x00c8u8] // T_REPLY2
-br 0x00000000 always // jump to epilogue first to dump the initial register value
-data 1800
+br 0x0000$1800 always // jump to epilogue first to dump the initial register value
 
 segment p 1000 // signal handler & prologue
 load 0x0000u8 page
@@ -47,17 +40,13 @@ clr b0 always
 mov b0l [page:0x0001u8]
 
 mov [page:0x0000u8] b0l
-br 0x00000000 eq
-data 1000
+br 0x0000$1000 eq
 
-mov 0x0000 sp
-data 2000
+mov 0x$2000 sp
 
-mov 0x0000 mod0 // disable SAR and PS so a/b/p can be correctly loaded
-data 0003
+mov 0x$0003 mod0 // disable SAR and PS so a/b/p can be correctly loaded
 
-mov 0x0000 mod3 // clear mod3 from E000 to 0000. Game does this at the beginning so let it be the default env
-data 0000
+mov 0x$0000 mod3 // clear mod3 from E000 to 0000. Game does this at the beginning so let it be the default env
 
 pop r7
 pop r6
@@ -105,14 +94,11 @@ pop stt0
 pop cfgj
 pop cfgi
 
-mov 0x0000 sp
-data 1000
-br 0x00000000 always
-data 2000
+mov 0x$1000 sp
+br 0x0000$2000 always
 
 segment p 1800 //  epilogue
-mov 0x0000 sp
-data 3000
+mov 0x$3000 sp
 
 push cfgi
 push cfgj
@@ -129,8 +115,7 @@ push arp1
 push arp2
 push arp3
 
-mov 0x0000 mod0 // disable SAR and PS so a/b/p can be correctly loaded
-data 0003
+mov 0x$0003 mod0 // disable SAR and PS so a/b/p can be correctly loaded
 
 push a0e 
 pusha a0 
@@ -171,12 +156,10 @@ clr b0 always
 mov b0l [page:0x0000u8]
 mov b0l [page:0x0003u8]
 
-br 0x00000000 always
-data 1000
+br 0x0000$1000 always
 
 segment p 2000 // test area
-br 0x00000000 always
-data 1800
+br 0x0000$1800 always
 
 segment p 3000 // interrupt
 reti always

@@ -5,48 +5,48 @@ template <typename T, T... values>
 inline constexpr bool NoOverlap = (values + ...) == (values | ...);
 
 template <unsigned bits>
-struct Oprand {
-    static_assert(bits > 0 && bits <= 16, "!");
+struct Operand {
+    static_assert(bits > 0 && bits <= 16);
     static constexpr unsigned Bits = bits;
 
 protected:
-    u16 storage;
+    u16 storage{};
 
-    template <typename OprandT, unsigned pos>
+    template <typename OperandT, unsigned pos>
     friend struct At;
 
-    template <typename OprandT, u16 value>
+    template <typename OperandT, u16 value>
     friend struct Const;
 };
 
-template <typename OprandT, unsigned pos>
+template <typename OperandT, unsigned pos>
 struct At {
-    static constexpr unsigned Bits = OprandT::Bits;
-    static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16) || (Bits == 16 && pos == 16), "!");
+    static constexpr unsigned Bits = OperandT::Bits;
+    static_assert((Bits < 16 && pos < 16 && Bits + pos <= 16) || (Bits == 16 && pos == 16));
     static constexpr u16 Mask = (((1 << Bits) - 1) << pos) & 0xFFFF;
     static constexpr bool NeedExpansion = pos == 16;
     static constexpr bool PassAsParameter = true;
-    using FilterResult = OprandT;
-    static constexpr OprandT Filter(u16 opcode, u16 expansion) {
-        OprandT oprand{};
+    using FilterResult = OperandT;
+    static constexpr OperandT Extract(u16 opcode, u16 expansion) {
+        OperandT operand{};
         if (NeedExpansion)
-            oprand.storage = expansion;
+            operand.storage = expansion;
         else
-            oprand.storage = (u16)((opcode & Mask) >> pos);
-        return oprand;
+            operand.storage = (u16)((opcode & Mask) >> pos);
+        return operand;
     }
 };
 
-template <typename OprandT, unsigned pos>
+template <typename OperandT, unsigned pos>
 struct AtNamed {
-    using BaseType = At<OprandT, pos>;
+    using BaseType = At<OperandT, pos>;
     static constexpr unsigned Bits = BaseType::Bits;
     static constexpr u16 Mask = BaseType::Mask;
     static constexpr bool NeedExpansion = BaseType::NeedExpansion;
     static constexpr bool PassAsParameter = BaseType::PassAsParameter;
     using FilterResult = typename BaseType::FilterResult::NameType;
-    static constexpr auto Filter(u16 opcode, u16 expansion) {
-        return BaseType::Filter(opcode, expansion).GetName();
+    static constexpr auto Extract(u16 opcode, u16 expansion) {
+        return BaseType::Extract(opcode, expansion).GetName();
     }
 };
 
@@ -58,16 +58,16 @@ struct Unused {
     static constexpr bool PassAsParameter = false;
 };
 
-template <typename OprandT, u16 value>
+template <typename OperandT, u16 value>
 struct Const {
     static constexpr u16 Mask = 0;
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
-    using FilterResult = OprandT;
-    static constexpr OprandT Filter(u16, u16) {
-        OprandT oprand{};
-        oprand.storage = value;
-        return oprand;
+    using FilterResult = OperandT;
+    static constexpr OperandT Extract(u16, u16) {
+        OperandT operand{};
+        operand.storage = value;
+        return operand;
     }
 };
 
@@ -84,7 +84,7 @@ struct Cn {
     static constexpr bool NeedExpansion = false;
     static constexpr bool PassAsParameter = true;
     using FilterResult = T;
-    static constexpr T Filter(u16, u16) {
+    static constexpr T Extract(u16, u16) {
         return value;
     }
 };
@@ -104,15 +104,9 @@ using Add = Cn<bool, false>;
 using EMod = Cn<bool, false>;
 using DMod = Cn<bool, true>;
 
-struct NoParam {
-    static constexpr u16 Mask = 0;
-    static constexpr bool NeedExpansion = false;
-    static constexpr bool PassAsParameter = false;
-};
-
-template <typename OprandT, unsigned pos, u16 value>
+template <typename OperandT, unsigned pos, u16 value>
 struct AtConst {
-    using Base = At<OprandT, pos>;
+    using Base = At<OperandT, pos>;
     static_assert(Base::NeedExpansion == false, "");
     static constexpr u16 Mask = Base::Mask;
     static constexpr u16 Pad = value << pos;
@@ -127,7 +121,7 @@ constexpr unsigned intlog2(unsigned n) {
 }
 
 template <typename EnumT, EnumT... names>
-struct EnumOprand : Oprand<intlog2(sizeof...(names))> {
+struct EnumOperand : Operand<intlog2(sizeof...(names))> {
     using NameType = EnumT;
     static constexpr EnumT values[] = {names...};
     constexpr EnumT GetName() const {
@@ -136,7 +130,7 @@ struct EnumOprand : Oprand<intlog2(sizeof...(names))> {
 };
 
 template <typename EnumT>
-struct EnumAllOprand : Oprand<intlog2((unsigned)EnumT::EnumEnd)> {
+struct EnumAllOperand : Operand<intlog2((unsigned)EnumT::EnumEnd)> {
     using NameType = EnumT;
     constexpr EnumT GetName() const {
         return (EnumT)this->storage;
@@ -153,7 +147,7 @@ enum class RegName {
 
     r0, r1, r2, r3, r4, r5, r6, r7,
 
-    x0, y0, x1, y1, p0, p1, p,
+    y0, p,
 
     pc, sp, sv, lc,
 
@@ -171,9 +165,9 @@ enum class RegName {
 };
 
 template <RegName ... reg_names>
-using RegOprand = EnumOprand <RegName, reg_names...>;
+using RegOperand = EnumOperand <RegName, reg_names...>;
 
-struct Register : RegOprand<
+struct Register : RegOperand<
     RegName::r0,
     RegName::r1,
     RegName::r2,
@@ -185,7 +179,7 @@ struct Register : RegOprand<
     RegName::st0,
     RegName::st1,
     RegName::st2,
-    RegName::p, // take special care of this as src oprand
+    RegName::p, // take special care of this as src operand
     RegName::pc,
     RegName::sp,
     RegName::cfgi,
@@ -198,8 +192,8 @@ struct Register : RegOprand<
     RegName::ext1,
     RegName::ext2,
     RegName::ext3,
-    RegName::a0, // take special care of this as src oprand
-    RegName::a1, // take special care of this as src oprand
+    RegName::a0, // take special care of this as src operand
+    RegName::a1, // take special care of this as src operand
     RegName::a0l,
     RegName::a1l,
     RegName::a0h,
@@ -212,59 +206,64 @@ struct Register : RegOprand<
         return (this->storage & 1) ? RegName::a1 : RegName::a0;
     }
 };
-struct Ax : RegOprand<
+struct Ax : RegOperand<
     RegName::a0,
     RegName::a1
 > {};
-struct Axl : RegOprand<
+struct Axl : RegOperand<
     RegName::a0l,
     RegName::a1l
 > {};
-struct Axh : RegOprand<
+struct Axh : RegOperand<
     RegName::a0h,
     RegName::a1h
 > {};
-struct Bx : RegOprand<
+struct Bx : RegOperand<
     RegName::b0,
     RegName::b1
 > {};
-struct Bxl : RegOprand<
+struct Bxl : RegOperand<
     RegName::b0l,
     RegName::b1l
 > {};
-struct Bxh : RegOprand<
+struct Bxh : RegOperand<
     RegName::b0h,
     RegName::b1h
 > {};
-struct Px : RegOprand<
-    RegName::p0,
-    RegName::p1
-> {};
-struct Ab : RegOprand<
+struct Px : Operand<1> {
+    constexpr Px() = default;
+    constexpr Px(u16 index) {
+        this->storage = index;
+    }
+    constexpr u16 Index() const {
+        return this->storage;
+    }
+};
+struct Ab : RegOperand<
     RegName::b0,
     RegName::b1,
     RegName::a0,
     RegName::a1
 > {};
-struct Abl : RegOprand<
+struct Abl : RegOperand<
     RegName::b0l,
     RegName::b1l,
     RegName::a0l,
     RegName::a1l
 > {};
-struct Abh : RegOprand<
+struct Abh : RegOperand<
     RegName::b0h,
     RegName::b1h,
     RegName::a0h,
     RegName::a1h
 > {};
-struct Abe : RegOprand<
+struct Abe : RegOperand<
     RegName::b0e,
     RegName::b1e,
     RegName::a0e,
     RegName::a1e
 > {};
-struct Ablh : RegOprand<
+struct Ablh : RegOperand<
     RegName::b0l,
     RegName::b0h,
     RegName::b1l,
@@ -274,7 +273,7 @@ struct Ablh : RegOprand<
     RegName::a1l,
     RegName::a1h
 > {};
-struct RnOld : RegOprand<
+struct RnOld : RegOperand<
     RegName::r0,
     RegName::r1,
     RegName::r2,
@@ -284,7 +283,7 @@ struct RnOld : RegOprand<
     RegName::r7,
     RegName::y0
 > {};
-struct Rn : RegOprand<
+struct Rn : RegOperand<
     RegName::r0,
     RegName::r1,
     RegName::r2,
@@ -294,8 +293,8 @@ struct Rn : RegOprand<
     RegName::r6,
     RegName::r7
 > {
-    Rn() = default;
-    Rn(u16 index) {
+    constexpr Rn() = default;
+    constexpr Rn(u16 index) {
         this->storage = index;
     }
     constexpr u16 Index() const {
@@ -303,7 +302,7 @@ struct Rn : RegOprand<
     }
 };
 
-struct R45 : RegOprand<
+struct R45 : RegOperand<
     RegName::r4,
     RegName::r5
 > {
@@ -312,7 +311,7 @@ struct R45 : RegOprand<
     }
 };
 
-struct R0123 : RegOprand<
+struct R0123 : RegOperand<
     RegName::r0,
     RegName::r1,
     RegName::r2,
@@ -323,7 +322,7 @@ struct R0123 : RegOprand<
     }
 };
 
-struct ArArpSttMod : RegOprand<
+struct ArArpSttMod : RegOperand<
     RegName::ar0,
     RegName::ar1,
     RegName::arp0,
@@ -341,7 +340,7 @@ struct ArArpSttMod : RegOprand<
     RegName::mod2,
     RegName::mod3
 > {};
-struct ArArp : RegOprand<
+struct ArArp : RegOperand<
     RegName::ar0,
     RegName::ar1,
     RegName::arp0,
@@ -351,7 +350,7 @@ struct ArArp : RegOprand<
     RegName::undefine,
     RegName::undefine
 > {};
-struct SttMod : RegOprand<
+struct SttMod : RegOperand<
     RegName::stt0,
     RegName::stt1,
     RegName::stt2,
@@ -362,7 +361,7 @@ struct SttMod : RegOprand<
     RegName::mod3
 > {};
 
-struct Ar : RegOprand<
+struct Ar : RegOperand<
     RegName::ar0,
     RegName::ar1
 > {
@@ -371,7 +370,7 @@ struct Ar : RegOprand<
     }
 };
 
-struct Arp : RegOprand<
+struct Arp : RegOperand<
     RegName::arp0,
     RegName::arp1,
     RegName::arp2,
@@ -403,7 +402,7 @@ enum SwapTypeValue {
     EnumEnd,
 };
 
-using SwapType = EnumAllOprand<SwapTypeValue>;
+using SwapType = EnumAllOperand<SwapTypeValue>;
 
 enum class StepValue {
     Zero,
@@ -416,7 +415,7 @@ enum class StepValue {
     Decrease2Mode2,
 };
 
-using StepZIDS = EnumOprand<StepValue,
+using StepZIDS = EnumOperand<StepValue,
     StepValue::Zero,
     StepValue::Increase,
     StepValue::Decrease,
@@ -424,7 +423,7 @@ using StepZIDS = EnumOprand<StepValue,
 >;
 
 template<unsigned bits, u16 offset = 0>
-struct ArIndex : Oprand<bits>{
+struct ArIndex : Operand<bits>{
     constexpr u16 Index() const {
         return this->storage + offset;
     }
@@ -440,12 +439,12 @@ struct ArpRn2 : ArIndex<2> {};
 struct ArpStep1 : ArIndex<1> {};
 struct ArpStep2 : ArIndex<2> {};
 
-struct Address18_2 : Oprand<2> {
+struct Address18_2 : Operand<2> {
     constexpr u32 Address32() const {
         return (u32)(this->storage) << 16;
     }
 };
-struct Address18_16 : Oprand<16> {
+struct Address18_16 : Operand<16> {
     constexpr u32 Address32() const {
         return this->storage;
     }
@@ -455,27 +454,27 @@ constexpr u32 Address32(Address18_16 low, Address18_2 high) {
     return low.Address32() | high.Address32();
 }
 
-struct Address16 : Oprand<16> {
+struct Address16 : Operand<16> {
     constexpr u32 Address32() {
         return this->storage;
     }
 };
 
-struct RelAddr7 : Oprand<7> {
+struct RelAddr7 : Operand<7> {
     constexpr u32 Relative32() {
         return SignExtend<7, u32>(this->storage);
     }
 };
 
 template <unsigned bits>
-struct Imm : Oprand<bits> {
+struct Imm : Operand<bits> {
     constexpr u16 Unsigned16() const {
         return this->storage;
     }
 };
 
 template <unsigned bits>
-struct Imms : Oprand<bits> {
+struct Imms : Operand<bits> {
     constexpr u16 Signed16() const {
         return SignExtend<bits, u16>(this->storage);
     }
@@ -519,7 +518,7 @@ enum class AlmOp {
     Reserved
 };
 
-using Alm = EnumOprand<AlmOp,
+using Alm = EnumOperand<AlmOp,
     AlmOp::Or,
     AlmOp::And,
     AlmOp::Xor,
@@ -538,7 +537,7 @@ using Alm = EnumOprand<AlmOp,
     AlmOp::Cmpu
 >;
 
-using Alu = EnumOprand<AlmOp,
+using Alu = EnumOperand<AlmOp,
     AlmOp::Or,
     AlmOp::And,
     AlmOp::Xor,
@@ -562,7 +561,7 @@ enum class AlbOp {
     EnumEnd
 };
 
-using Alb = EnumAllOprand<AlbOp>;
+using Alb = EnumAllOperand<AlbOp>;
 
 enum class MulOp {
     Mpy,
@@ -575,7 +574,7 @@ enum class MulOp {
     Maasu,
 };
 
-using Mul3 = EnumOprand<MulOp,
+using Mul3 = EnumOperand<MulOp,
     MulOp::Mpy,
     MulOp::Mpysu,
     MulOp::Mac,
@@ -586,7 +585,7 @@ using Mul3 = EnumOprand<MulOp,
     MulOp::Maasu
 >;
 
-using Mul2 = EnumOprand<MulOp,
+using Mul2 = EnumOperand<MulOp,
     MulOp::Mpy,
     MulOp::Mac,
     MulOp::Maa,
@@ -613,7 +612,7 @@ enum class ModaOp {
 
 };
 
-using Moda4 = EnumOprand<ModaOp,
+using Moda4 = EnumOperand<ModaOp,
     ModaOp::Shr,
     ModaOp::Shr4,
     ModaOp::Shl,
@@ -632,7 +631,7 @@ using Moda4 = EnumOprand<ModaOp,
     ModaOp::Copy
 >;
 
-using Moda3 = EnumOprand<ModaOp,
+using Moda3 = EnumOperand<ModaOp,
     ModaOp::Shr,
     ModaOp::Shr4,
     ModaOp::Shl,
@@ -664,9 +663,9 @@ enum class CondValue {
     EnumEnd
 };
 
-using Cond = EnumAllOprand<CondValue>;
+using Cond = EnumAllOperand<CondValue>;
 
-struct BankFlags : Oprand<6>{
+struct BankFlags : Operand<6>{
     constexpr bool Cfgi() const {
         return (this->storage & 1) != 0;
     }
@@ -694,6 +693,6 @@ enum class CbsCondValue {
     EnumEnd
 };
 
-using CbsCond = EnumAllOprand<CbsCondValue>;
+using CbsCond = EnumAllOperand<CbsCondValue>;
 
 // clang-format on
