@@ -27,6 +27,7 @@ public:
     void SendData(std::uint8_t index, std::uint16_t value);
     bool RecvDataIsReady(std::uint8_t index) const;
     std::uint16_t RecvData(std::uint8_t index);
+    std::uint16_t PeekRecvData(std::uint8_t index);
     void SetRecvDataHandler(std::uint8_t index, std::function<void()> handler);
 
     // APBP Semaphore
