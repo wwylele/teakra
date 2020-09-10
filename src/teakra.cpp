@@ -118,7 +118,9 @@ void Teakra::MaskSemaphore(std::uint16_t value) {
     impl->apbp_from_dsp.MaskSemaphore(value);
 }
 void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
-    impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8);
+    impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8,
+        callback.read16, callback.write16,
+        callback.read32, callback.write32);
 }
 
 std::uint16_t Teakra::AHBMGetUnitSize(std::uint16_t i) const {

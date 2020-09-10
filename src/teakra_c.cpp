@@ -112,13 +112,21 @@ void Teakra_Run(TeakraContext* context, unsigned cycle) {
     context->teakra.Run(cycle);
 }
 
-void Teakra_SetAHBMCallback(TeakraContext* context, Teakra_AHBMReadCallback read,
-                            Teakra_AHBMWriteCallback write, void* userdata) {
+void Teakra_SetAHBMCallback(TeakraContext* context,
+                            Teakra_AHBMReadCallback8  read8 , Teakra_AHBMWriteCallback8  write8 ,
+                            Teakra_AHBMReadCallback16 read16, Teakra_AHBMWriteCallback16 write16,
+                            Teakra_AHBMReadCallback32 read32, Teakra_AHBMWriteCallback32 write32,
+                            void* userdata) {
     Teakra::AHBMCallback callback;
-    callback.read8 = [=](uint32_t address) { return read(userdata, address); };
-    callback.write8 = [=](uint32_t address, uint8_t value) { write(userdata, address, value); };
+    callback.read8 = [=](uint32_t address) { return read8(userdata, address); };
+    callback.write8 = [=](uint32_t address, uint8_t value) { write8(userdata, address, value); };
+    callback.read16 = [=](uint32_t address) { return read16(userdata, address); };
+    callback.write16 = [=](uint32_t address, uint16_t value) { write16(userdata, address, value); };
+    callback.read32 = [=](uint32_t address) { return read32(userdata, address); };
+    callback.write32 = [=](uint32_t address, uint32_t value) { write32(userdata, address, value); };
     context->teakra.SetAHBMCallback(callback);
 }
+
 
 void Teakra_SetAudioCallback(TeakraContext* context, Teakra_AudioCallback callback,
                              void* userdata) {
