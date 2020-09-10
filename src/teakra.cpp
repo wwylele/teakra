@@ -121,6 +121,16 @@ void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
     impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8);
 }
 
+std::uint16_t Teakra::AHBMGetUnitSize(std::uint16_t i) const {
+    return impl->ahbm.GetUnitSize(i);
+}
+std::uint16_t Teakra::AHBMGetDirection(std::uint16_t i) const {
+    return impl->ahbm.GetDirection(i);
+}
+std::uint16_t Teakra::AHBMGetDmaChannel(std::uint16_t i) const {
+    return impl->ahbm.GetDmaChannel(i);
+}
+
 void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) {
     impl->btdmp[0].SetAudioCallback(std::move(callback));
 }

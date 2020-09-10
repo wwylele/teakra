@@ -98,6 +98,16 @@ uint16_t Teakra_DMAChan0GetDstHigh(TeakraContext* context){
     return context->teakra.DMAChan0GetDstHigh();
 }
 
+uint16_t Teakra_AHBMGetUnitSize(TeakraContext* context, uint16_t i) {
+    return context->teakra.AHBMGetUnitSize(i);
+}
+uint16_t Teakra_AHBMGetDirection(TeakraContext* context, uint16_t i) {
+    return context->teakra.AHBMGetDirection(i);
+}
+uint16_t Teakra_AHBMGetDmaChannel(TeakraContext* context, uint16_t i) {
+    return context->teakra.AHBMGetDmaChannel(i);
+}
+
 void Teakra_Run(TeakraContext* context, unsigned cycle) {
     context->teakra.Run(cycle);
 }

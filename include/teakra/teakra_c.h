@@ -47,6 +47,10 @@ void Teakra_MMIOWrite(TeakraContext* context, uint16_t address, uint16_t value);
 uint16_t Teakra_DMAChan0GetSrcHigh(TeakraContext* context);
 uint16_t Teakra_DMAChan0GetDstHigh(TeakraContext* context);
 
+uint16_t Teakra_AHBMGetUnitSize(TeakraContext* context, uint16_t i);
+uint16_t Teakra_AHBMGetDirection(TeakraContext* context, uint16_t i);
+uint16_t Teakra_AHBMGetDmaChannel(TeakraContext* context, uint16_t i);
+
 void Teakra_Run(TeakraContext* context, unsigned cycle);
 
 void Teakra_SetAHBMCallback(TeakraContext* context, Teakra_AHBMReadCallback read,

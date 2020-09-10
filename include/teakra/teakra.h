@@ -52,6 +52,10 @@ public:
     std::uint16_t DMAChan0GetSrcHigh();
     std::uint16_t DMAChan0GetDstHigh();
 
+    std::uint16_t AHBMGetUnitSize(std::uint16_t i) const;
+    std::uint16_t AHBMGetDirection(std::uint16_t i) const;
+    std::uint16_t AHBMGetDmaChannel(std::uint16_t i) const;
+
     // core
     void Run(unsigned cycle);
 
