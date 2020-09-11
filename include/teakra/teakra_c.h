@@ -58,6 +58,12 @@ uint16_t Teakra_AHBMGetUnitSize(TeakraContext* context, uint16_t i);
 uint16_t Teakra_AHBMGetDirection(TeakraContext* context, uint16_t i);
 uint16_t Teakra_AHBMGetDmaChannel(TeakraContext* context, uint16_t i);
 
+uint16_t Teakra_AHBMRead16(TeakraContext* context, uint32_t addr);
+void Teakra_AHBMWrite16(TeakraContext* context, uint32_t addr, uint16_t value);
+uint16_t Teakra_AHBMRead32(TeakraContext* context, uint32_t addr);
+void Teakra_AHBMWrite32(TeakraContext* context, uint32_t addr, uint32_t value);
+
+
 void Teakra_Run(TeakraContext* context, unsigned cycle);
 
 void Teakra_SetAHBMCallback(TeakraContext* context,

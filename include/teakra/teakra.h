@@ -61,6 +61,11 @@ public:
     std::uint16_t AHBMGetUnitSize(std::uint16_t i) const;
     std::uint16_t AHBMGetDirection(std::uint16_t i) const;
     std::uint16_t AHBMGetDmaChannel(std::uint16_t i) const;
+    // we need these as AHBM does some weird stuff on unaligned accesses internally
+    std::uint16_t AHBMRead16(std::uint32_t addr);
+    void AHBMWrite16(std::uint32_t addr, std::uint16_t value);
+    std::uint16_t AHBMRead32(std::uint32_t addr);
+    void AHBMWrite32(std::uint32_t addr, std::uint32_t value);
 
     // core
     void Run(unsigned cycle);

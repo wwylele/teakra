@@ -133,6 +133,19 @@ std::uint16_t Teakra::AHBMGetDmaChannel(std::uint16_t i) const {
     return impl->ahbm.GetDmaChannel(i);
 }
 
+std::uint16_t Teakra::AHBMRead16(std::uint32_t addr) {
+    return impl->ahbm.Read16(0, addr);
+}
+void Teakra::AHBMWrite16(std::uint32_t addr, std::uint16_t value) {
+    impl->ahbm.Write16(0, addr, value);
+}
+std::uint16_t Teakra::AHBMRead32(std::uint32_t addr) {
+    return impl->ahbm.Read32(0, addr);
+}
+void Teakra::AHBMWrite32(std::uint32_t addr, std::uint32_t value) {
+    impl->ahbm.Write32(0, addr, value);
+}
+
 void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) {
     impl->btdmp[0].SetAudioCallback(std::move(callback));
 }

@@ -108,6 +108,19 @@ uint16_t Teakra_AHBMGetDmaChannel(TeakraContext* context, uint16_t i) {
     return context->teakra.AHBMGetDmaChannel(i);
 }
 
+uint16_t Teakra_AHBMRead16(TeakraContext* context, uint32_t addr) {
+    return context->teakra.AHBMRead16(addr);
+}
+void Teakra_AHBMWrite16(TeakraContext* context, uint32_t addr, uint16_t value) {
+    context->teakra.AHBMWrite16(addr, value);
+}
+uint16_t Teakra_AHBMRead32(TeakraContext* context, uint32_t addr) {
+    return context->teakra.AHBMRead32(addr);
+}
+void Teakra_AHBMWrite32(TeakraContext* context, uint32_t addr, uint32_t value) {
+    context->teakra.AHBMWrite32(addr, value);
+}
+
 void Teakra_Run(TeakraContext* context, unsigned cycle) {
     context->teakra.Run(cycle);
 }
