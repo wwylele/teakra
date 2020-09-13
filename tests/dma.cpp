@@ -21,6 +21,27 @@ TEST_CASE("DMA + AHBM test", "[dma]") {
         [&fcram](u32 address, u8 v) {
             REQUIRE(address >= 0x20000000);
             fcram[address - 0x20000000] = v;
+        },
+        [&fcram](u32 address) -> u16 {
+            REQUIRE(address >= 0x20000000);
+            return fcram[address - 0x20000000] | ((u16)fcram[address - 0x20000000 + 1] << 8);
+        },
+        [&fcram](u32 address, u16 v) {
+            REQUIRE(address >= 0x20000000);
+            fcram[address - 0x20000000 + 0] = (u8)v;
+            fcram[address - 0x20000000 + 1] = v >> 8;
+        },
+        [&fcram](u32 address) -> u32 {
+            REQUIRE(address >= 0x20000000);
+            return fcram[address - 0x20000000] | ((u32)fcram[address - 0x20000000 + 1] << 8)
+                | ((u32)fcram[address - 0x20000000 + 2] << 16) | ((u32)fcram[address - 0x20000000 + 3] << 24);
+        },
+        [&fcram](u32 address, u32 v) {
+            REQUIRE(address >= 0x20000000);
+            fcram[address - 0x20000000 + 0] = (u8)v;
+            fcram[address - 0x20000000 + 1] = (u8)(v >>  8);
+            fcram[address - 0x20000000 + 2] = (u8)(v >> 16);
+            fcram[address - 0x20000000 + 3] = (u8)(v >> 24);
         });
 
     for (u8 i = 0; i < 0x80; ++i) {

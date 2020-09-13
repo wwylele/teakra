@@ -10,6 +10,12 @@ namespace Teakra {
 struct AHBMCallback {
     std::function<std::uint8_t(std::uint32_t address)> read8;
     std::function<void(std::uint32_t address, std::uint8_t value)> write8;
+
+    std::function<std::uint16_t(std::uint32_t address)> read16;
+    std::function<void(std::uint32_t address, std::uint16_t value)> write16;
+
+    std::function<std::uint32_t(std::uint32_t address)> read32;
+    std::function<void(std::uint32_t address, std::uint32_t value)> write32;
 };
 
 class Teakra {
@@ -51,6 +57,15 @@ public:
     // upper 16-bits from
     std::uint16_t DMAChan0GetSrcHigh();
     std::uint16_t DMAChan0GetDstHigh();
+
+    std::uint16_t AHBMGetUnitSize(std::uint16_t i) const;
+    std::uint16_t AHBMGetDirection(std::uint16_t i) const;
+    std::uint16_t AHBMGetDmaChannel(std::uint16_t i) const;
+    // we need these as AHBM does some weird stuff on unaligned accesses internally
+    std::uint16_t AHBMRead16(std::uint32_t addr);
+    void AHBMWrite16(std::uint32_t addr, std::uint16_t value);
+    std::uint16_t AHBMRead32(std::uint32_t addr);
+    void AHBMWrite32(std::uint32_t addr, std::uint32_t value);
 
     // core
     void Run(unsigned cycle);

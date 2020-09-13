@@ -63,10 +63,17 @@ public:
 
     u16 GetChannelForDma(u16 dma_channel) const;
 
-    void SetExternalMemoryCallback(std::function<u8(u32)> read,
-                                   std::function<void(u32, u8)> write) {
-        read_external = std::move(read);
-        write_external = std::move(write);
+    void SetExternalMemoryCallback(
+           std::function<u8 (u32)> read8 , std::function<void(u32, u8 )> write8 ,
+           std::function<u16(u32)> read16, std::function<void(u32, u16)> write16,
+           std::function<u32(u32)> read32, std::function<void(u32, u32)> write32) {
+
+        read_external8 = std::move(read8);
+        write_external8 = std::move(write8);
+        read_external16 = std::move(read16);
+        write_external16 = std::move(write16);
+        read_external32 = std::move(read32);
+        write_external32 = std::move(write32);
     }
 
 private:
@@ -83,8 +90,12 @@ private:
     };
     std::array<Channel, 3> channels;
 
-    std::function<u8(u32)> read_external;
-    std::function<void(u32, u8)> write_external;
+    std::function<u8(u32)> read_external8;
+    std::function<void(u32, u8)> write_external8;
+    std::function<u16(u32)> read_external16;
+    std::function<void(u32, u16)> write_external16;
+    std::function<u32(u32)> read_external32;
+    std::function<void(u32, u32)> write_external32;
 
     void WriteInternal(u16 channel, u32 address, u32 value);
 };

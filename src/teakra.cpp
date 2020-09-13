@@ -118,7 +118,32 @@ void Teakra::MaskSemaphore(std::uint16_t value) {
     impl->apbp_from_dsp.MaskSemaphore(value);
 }
 void Teakra::SetAHBMCallback(const AHBMCallback& callback) {
-    impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8);
+    impl->ahbm.SetExternalMemoryCallback(callback.read8, callback.write8,
+        callback.read16, callback.write16,
+        callback.read32, callback.write32);
+}
+
+std::uint16_t Teakra::AHBMGetUnitSize(std::uint16_t i) const {
+    return impl->ahbm.GetUnitSize(i);
+}
+std::uint16_t Teakra::AHBMGetDirection(std::uint16_t i) const {
+    return impl->ahbm.GetDirection(i);
+}
+std::uint16_t Teakra::AHBMGetDmaChannel(std::uint16_t i) const {
+    return impl->ahbm.GetDmaChannel(i);
+}
+
+std::uint16_t Teakra::AHBMRead16(std::uint32_t addr) {
+    return impl->ahbm.Read16(0, addr);
+}
+void Teakra::AHBMWrite16(std::uint32_t addr, std::uint16_t value) {
+    impl->ahbm.Write16(0, addr, value);
+}
+std::uint16_t Teakra::AHBMRead32(std::uint32_t addr) {
+    return impl->ahbm.Read32(0, addr);
+}
+void Teakra::AHBMWrite32(std::uint32_t addr, std::uint32_t value) {
+    impl->ahbm.Write32(0, addr, value);
 }
 
 void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) {

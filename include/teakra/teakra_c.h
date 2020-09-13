@@ -12,8 +12,15 @@ typedef struct TeakraObject TeakraContext;
 
 typedef void (*Teakra_InterruptCallback)(void* userdata);
 typedef void (*Teakra_AudioCallback)(void* userdata, int16_t samples[2]);
-typedef uint8_t (*Teakra_AHBMReadCallback)(void* userdata, uint32_t address);
-typedef void (*Teakra_AHBMWriteCallback)(void* userdata, uint32_t address, uint8_t value);
+
+typedef uint8_t (*Teakra_AHBMReadCallback8)(void* userdata, uint32_t address);
+typedef void (*Teakra_AHBMWriteCallback8)(void* userdata, uint32_t address, uint8_t value);
+
+typedef uint16_t (*Teakra_AHBMReadCallback16)(void* userdata, uint32_t address);
+typedef void (*Teakra_AHBMWriteCallback16)(void* userdata, uint32_t address, uint16_t value);
+
+typedef uint32_t (*Teakra_AHBMReadCallback32)(void* userdata, uint32_t address);
+typedef void (*Teakra_AHBMWriteCallback32)(void* userdata, uint32_t address, uint32_t value);
 
 TeakraContext* Teakra_Create();
 void Teakra_Destroy(TeakraContext* context);
@@ -47,10 +54,24 @@ void Teakra_MMIOWrite(TeakraContext* context, uint16_t address, uint16_t value);
 uint16_t Teakra_DMAChan0GetSrcHigh(TeakraContext* context);
 uint16_t Teakra_DMAChan0GetDstHigh(TeakraContext* context);
 
+uint16_t Teakra_AHBMGetUnitSize(TeakraContext* context, uint16_t i);
+uint16_t Teakra_AHBMGetDirection(TeakraContext* context, uint16_t i);
+uint16_t Teakra_AHBMGetDmaChannel(TeakraContext* context, uint16_t i);
+
+uint16_t Teakra_AHBMRead16(TeakraContext* context, uint32_t addr);
+void Teakra_AHBMWrite16(TeakraContext* context, uint32_t addr, uint16_t value);
+uint16_t Teakra_AHBMRead32(TeakraContext* context, uint32_t addr);
+void Teakra_AHBMWrite32(TeakraContext* context, uint32_t addr, uint32_t value);
+
+
 void Teakra_Run(TeakraContext* context, unsigned cycle);
 
-void Teakra_SetAHBMCallback(TeakraContext* context, Teakra_AHBMReadCallback read,
-                            Teakra_AHBMWriteCallback write, void* userdata);
+void Teakra_SetAHBMCallback(TeakraContext* context,
+                            Teakra_AHBMReadCallback8  read8 , Teakra_AHBMWriteCallback8  write8 ,
+                            Teakra_AHBMReadCallback16 read16, Teakra_AHBMWriteCallback16 write16,
+                            Teakra_AHBMReadCallback32 read32, Teakra_AHBMWriteCallback32 write32,
+                            void* userdata);
+
 
 void Teakra_SetAudioCallback(TeakraContext* context, Teakra_AudioCallback callback, void* userdata);
 #ifdef __cplusplus
