@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,18 @@ void Teakra_MaskSemaphore(TeakraContext* context, uint16_t value);
 void Teakra_SetSemaphoreHandler(TeakraContext* context, Teakra_InterruptCallback handler,
                                 void* userdata);
 uint16_t Teakra_GetSemaphore(const TeakraContext* context);
+
+uint16_t Teakra_ProgramRead(TeakraContext* context, uint32_t address);
+void Teakra_ProgramWrite(TeakraContext* context, uint32_t address, uint16_t value);
+uint16_t Teakra_DataRead(TeakraContext* context, uint16_t address, bool bypass_mmio);
+void Teakra_DataWrite(TeakraContext* context, uint16_t address, uint16_t value, bool bypass_mmio);
+uint16_t Teakra_DataReadA32(TeakraContext* context, uint32_t address);
+void Teakra_DataWriteA32(TeakraContext* context, uint32_t address, uint16_t value);
+uint16_t Teakra_MMIORead(TeakraContext* context, uint16_t address);
+void Teakra_MMIOWrite(TeakraContext* context, uint16_t address, uint16_t value);
+
+uint16_t Teakra_DMAChan0GetSrcHigh(TeakraContext* context);
+uint16_t Teakra_DMAChan0GetDstHigh(TeakraContext* context);
 
 void Teakra_Run(TeakraContext* context, unsigned cycle);
 

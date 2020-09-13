@@ -125,4 +125,44 @@ void Teakra::SetAudioCallback(std::function<void(std::array<s16, 2>)> callback) 
     impl->btdmp[0].SetAudioCallback(std::move(callback));
 }
 
+std::uint16_t Teakra::ProgramRead(std::uint32_t address) const {
+    return impl->memory_interface.ProgramRead(address);
+}
+void Teakra::ProgramWrite(std::uint32_t address, std::uint16_t value) {
+    impl->memory_interface.ProgramWrite(address, value);
+}
+std::uint16_t Teakra::DataRead(std::uint16_t address, bool bypass_mmio) {
+    return impl->memory_interface.DataRead(address, bypass_mmio);
+}
+void Teakra::DataWrite(std::uint16_t address, std::uint16_t value, bool bypass_mmio) {
+    impl->memory_interface.DataWrite(address, value, bypass_mmio);
+}
+std::uint16_t Teakra::DataReadA32(std::uint32_t address) const {
+    return impl->memory_interface.DataReadA32(address);
+}
+void Teakra::DataWriteA32(std::uint32_t address, std::uint16_t value) {
+    impl->memory_interface.DataWriteA32(address, value);
+}
+std::uint16_t Teakra::MMIORead(std::uint16_t address) {
+    return impl->memory_interface.MMIORead(address);
+}
+void Teakra::MMIOWrite(std::uint16_t address, std::uint16_t value) {
+    impl->memory_interface.MMIOWrite(address, value);
+}
+
+std::uint16_t Teakra::DMAChan0GetSrcHigh() {
+    u16 active_bak = impl->dma.GetActiveChannel();
+    impl->dma.ActivateChannel(0);
+    u16 ret = impl->dma.GetAddrSrcHigh();
+    impl->dma.ActivateChannel(active_bak);
+    return ret;
+}
+std::uint16_t Teakra::DMAChan0GetDstHigh() {
+    u16 active_bak = impl->dma.GetActiveChannel();
+    impl->dma.ActivateChannel(0);
+    u16 ret = impl->dma.GetAddrDstHigh();
+    impl->dma.ActivateChannel(active_bak);
+    return ret;
+}
+
 } // namespace Teakra
