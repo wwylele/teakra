@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    std::unique_ptr<std::FILE, decltype(&std::fclose)> f{std::fopen(argv[1], "wb"), std::fclose};
+    std::unique_ptr<std::FILE, fclose_deleter> f{std::fopen(argv[1], "wb")};
     if (!f) {
         std::fprintf(stderr, "Unable to open file %s. Exiting...\n", argv[1]);
         return -2;
