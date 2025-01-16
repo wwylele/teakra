@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    std::unique_ptr<std::FILE, decltype(&std::fclose)> file{std::fopen(argv[1], "rb"), std::fclose};
+    std::unique_ptr<std::FILE, fclose_deleter> file{std::fopen(argv[1], "rb")};
     if (!file) {
         std::fprintf(stderr, "Unable to open file %s. Exiting...\n", argv[1]);
         return -2;

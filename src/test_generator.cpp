@@ -1440,7 +1440,7 @@ public:
 } // Anonymous namespace
 
 bool GenerateTestCasesToFile(const char* path) {
-    std::unique_ptr<std::FILE, decltype(&std::fclose)> f{std::fopen(path, "wb"), std::fclose};
+    std::unique_ptr<std::FILE, fclose_deleter> f{std::fopen(path, "wb")};
     if (!f) {
         return false;
     }

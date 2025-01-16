@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdio>
 #include <type_traits>
 
 #ifndef COMMON_TYPE_3DS
@@ -36,3 +37,9 @@ struct TestCase {
 
 static_assert(sizeof(TestCase) == 4312);
 static_assert(std::is_trivially_copyable_v<TestCase>);
+
+struct fclose_deleter {
+    void operator()(std::FILE* f) const {
+        std::fclose(f);
+    }
+};
