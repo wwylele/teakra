@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.14)
 project(teakra CXX)
 
 # Determine if we're built as a subproject (using add_subdirectory)
@@ -8,9 +8,14 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
 endif()
 
+# Useful built-in modules
+include(CMakeDependentOption)
+include(CTest)
+include(GNUInstallDirs)
+
 option(TEAKRA_WARNINGS_AS_ERRORS "Warnings as errors" ${MASTER_PROJECT})
 option(TEAKRA_BUILD_TOOLS "Build tools" ${MASTER_PROJECT})
-option(TEAKRA_BUILD_UNIT_TESTS "Build unit tests" ${MASTER_PROJECT})
+cmake_dependent_option(TEAKRA_BUILD_UNIT_TESTS "Build unit tests" "${MASTER_PROJECT}" "BUILD_TESTING" OFF)
 option(TEAKRA_RUN_TESTS "Run Teakra accuracy tests" OFF)
 
 # Set hard requirements for C++
@@ -72,8 +77,6 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-enable_testing()
-
 if (NOT TEAKRA_TEST_ASSETS_DIR)
   set(TEAKRA_TEST_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
@@ -88,3 +91,16 @@ add_subdirectory(src)
 if (TEAKRA_BUILD_UNIT_TESTS)
   add_subdirectory(tests)
 endif()
+
+# Installation
+install(TARGETS teakra teakra_c EXPORT teakraTargets)
+install(EXPORT teakraTargets
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/teakra"
+    NAMESPACE "${PROJECT_NAME}"
+    FILE "teakraConfig.cmake"
+)
+
+install(DIRECTORY
+    "include/teakra"
+    TYPE INCLUDE
+)
