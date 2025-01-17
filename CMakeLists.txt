@@ -96,7 +96,7 @@ endif()
 install(TARGETS teakra teakra_c EXPORT teakraTargets)
 install(EXPORT teakraTargets
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/teakra"
-    NAMESPACE "${PROJECT_NAME}"
+    NAMESPACE "${PROJECT_NAME}::"
     FILE "teakraConfig.cmake"
 )
 
