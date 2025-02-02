@@ -58,7 +58,6 @@ public:
     std::array<DataChannel, 3> data_channels;
     u16 semaphore = 0;
     u16 semaphore_mask = 0;
-    bool semaphore_master_signal = false;
     mutable std::recursive_mutex semaphore_mutex;
     std::function<void()> semaphore_handler;
 
@@ -67,7 +66,6 @@ public:
             c.Reset();
         semaphore = 0;
         semaphore_mask = 0;
-        semaphore_master_signal = false;
     }
 };
 
@@ -108,18 +106,17 @@ void Apbp::SetDataHandler(unsigned channel, std::function<void()> handler) {
 
 void Apbp::SetSemaphore(u16 bits) {
     std::lock_guard lock(impl->semaphore_mutex);
-    impl->semaphore |= bits;
-    bool new_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
-    if (new_signal && impl->semaphore_handler) {
+    bool old_signal = IsSemaphoreSignaled();
+    impl->semaphore = bits;
+    bool new_signal = IsSemaphoreSignaled();
+    if (!old_signal && new_signal && impl->semaphore_handler) {
         impl->semaphore_handler();
     }
-    impl->semaphore_master_signal = impl->semaphore_master_signal || new_signal;
 }
 
 void Apbp::ClearSemaphore(u16 bits) {
     std::lock_guard lock(impl->semaphore_mutex);
     impl->semaphore &= ~bits;
-    impl->semaphore_master_signal = (impl->semaphore & ~impl->semaphore_mask) != 0;
 }
 
 u16 Apbp::GetSemaphore() const {
@@ -129,7 +126,12 @@ u16 Apbp::GetSemaphore() const {
 
 void Apbp::MaskSemaphore(u16 bits) {
     std::lock_guard lock(impl->semaphore_mutex);
+    bool old_signal = IsSemaphoreSignaled();
     impl->semaphore_mask = bits;
+    bool new_signal = IsSemaphoreSignaled();
+    if (!old_signal && new_signal && impl->semaphore_handler) {
+        impl->semaphore_handler();
+    }
 }
 
 u16 Apbp::GetSemaphoreMask() const {
@@ -144,6 +146,6 @@ void Apbp::SetSemaphoreHandler(std::function<void()> handler) {
 
 bool Apbp::IsSemaphoreSignaled() const {
     std::lock_guard lock(impl->semaphore_mutex);
-    return impl->semaphore_master_signal;
+    return (impl->semaphore & ~impl->semaphore_mask) != 0;
 }
 } // namespace Teakra
