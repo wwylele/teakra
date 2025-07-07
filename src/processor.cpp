@@ -31,4 +31,12 @@ void Processor::SignalVectoredInterrupt(u32 address, bool context_switch) {
     impl->interpreter.SignalVectoredInterrupt(address, context_switch);
 }
 
+Teakra::RegisterState& Processor::GetRegisterState() {
+    return impl->regs;
+}
+
+const Teakra::RegisterState& Processor::GetRegisterState() const {
+    return impl->regs;
+}
+
 } // namespace Teakra

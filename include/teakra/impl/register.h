@@ -4,9 +4,9 @@
 #include <array>
 #include <memory>
 #include <vector>
-#include "common_types.h"
-#include "crash.h"
-#include "operand.h"
+#include "../../../src/common_types.h"
+#include "../../../src/crash.h"
+#include "../../../src/operand.h"
 
 namespace Teakra {
 
@@ -167,7 +167,7 @@ struct RegisterState {
 
     /** Shadow registers **/
 
-    template <u16 RegisterState::*origin>
+    template <u16 RegisterState::* origin>
     class ShadowRegister {
     public:
         void Store(RegisterState* self) {
@@ -181,7 +181,7 @@ struct RegisterState {
         u16 shadow = 0;
     };
 
-    template <std::size_t size, std::array<u16, size> RegisterState::*origin>
+    template <std::size_t size, std::array<u16, size> RegisterState::* origin>
     class ShadowArrayRegister {
     public:
         void Store(RegisterState* self) {
@@ -206,7 +206,7 @@ struct RegisterState {
         }
     };
 
-    template <u16 RegisterState::*origin>
+    template <u16 RegisterState::* origin>
     class ShadowSwapRegister {
     public:
         void Swap(RegisterState* self) {
@@ -217,7 +217,7 @@ struct RegisterState {
         u16 shadow = 0;
     };
 
-    template <std::size_t size, std::array<u16, size> RegisterState::*origin>
+    template <std::size_t size, std::array<u16, size> RegisterState::* origin>
     class ShadowSwapArrayRegister {
     public:
         void Swap(RegisterState* self) {
@@ -410,7 +410,7 @@ struct RegisterState {
     }
 };
 
-template <u16 RegisterState::*target>
+template <u16 RegisterState::* target>
 struct Redirector {
     static u16 Get(const RegisterState* self) {
         return self->*target;
@@ -420,7 +420,7 @@ struct Redirector {
     }
 };
 
-template <std::size_t size, std::array<u16, size> RegisterState::*target, std::size_t index>
+template <std::size_t size, std::array<u16, size> RegisterState::* target, std::size_t index>
 struct ArrayRedirector {
     static u16 Get(const RegisterState* self) {
         return (self->*target)[index];
@@ -430,7 +430,7 @@ struct ArrayRedirector {
     }
 };
 
-template <u16 RegisterState::*target0, u16 RegisterState::*target1>
+template <u16 RegisterState::* target0, u16 RegisterState::* target1>
 struct DoubleRedirector {
     static u16 Get(const RegisterState* self) {
         return self->*target0 | self->*target1;
@@ -440,7 +440,7 @@ struct DoubleRedirector {
     }
 };
 
-template <u16 RegisterState::*target>
+template <u16 RegisterState::* target>
 struct RORedirector {
     static u16 Get(const RegisterState* self) {
         return self->*target;
@@ -450,7 +450,7 @@ struct RORedirector {
     }
 };
 
-template <std::size_t size, std::array<u16, size> RegisterState::*target, std::size_t index>
+template <std::size_t size, std::array<u16, size> RegisterState::* target, std::size_t index>
 struct ArrayRORedirector {
     static u16 Get(const RegisterState* self) {
         return (self->*target)[index];
