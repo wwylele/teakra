@@ -7,6 +7,7 @@
 namespace Teakra {
 
 class MemoryInterface;
+struct RegisterState;
 
 class Processor {
 public:
@@ -16,6 +17,9 @@ public:
     void Run(unsigned cycles);
     void SignalInterrupt(u32 i);
     void SignalVectoredInterrupt(u32 address, bool context_switch);
+
+    RegisterState& GetRegisterState();
+    const RegisterState& GetRegisterState() const;
 
 private:
     struct Impl;

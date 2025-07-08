@@ -3,6 +3,7 @@ include(CreateDirectoryGroups)
 add_library(teakra
     ../include/teakra/disassembler.h
     ../include/teakra/teakra.h
+    ../include/teakra/impl/register.h
     ahbm.cpp
     ahbm.h
     apbp.cpp
@@ -29,7 +30,6 @@ add_library(teakra
     parser.cpp
     processor.cpp
     processor.h
-    register.h
     shared_memory.h
     teakra.cpp
     test.h
@@ -44,7 +44,7 @@ target_include_directories(teakra
                            PUBLIC
                             "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
                             "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-                           PRIVATE .)
+                           PRIVATE . ../include/teakra/impl)
 target_compile_options(teakra PRIVATE ${TEAKRA_CXX_FLAGS})
 
 add_library(teakra_c
