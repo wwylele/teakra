@@ -6,6 +6,7 @@ add_executable(teakra_tests
     timer.cpp
 )
 
+target_include_directories(teakra_tests PRIVATE ../include/teakra/impl/)
 target_link_libraries(teakra_tests PRIVATE teakra catch)
 target_compile_options(teakra_tests PRIVATE ${TEAKRA_CXX_FLAGS})
 
