@@ -1,0 +1,135 @@
+segment p 0000
+br 0x00000000 always // reset vector
+data 0800
+reti always
+data 0000
+reti always
+data 0000
+br 0x00000000 always // int0
+data 5000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+reti always // int1
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+data 0000
+reti always // int2
+
+segment p 0800 // init
+mov 0x0000 sp // set stack pointer
+data 0xF000
+mov 0x0000 mod3 // enable interrupt
+data 0x0180
+load 0x0082u8 page // configure ICU
+mov 0x0000 r0
+data 0x4000
+mov r0 [page:0x000eu8]
+mov r0 [page:0x0010u8]
+mov r0 [page:0x0006u8] // enable apbp as int0
+br 0x00000000 always
+data 0x1000
+
+segment p 1000 // Main loop
+load 0x0000u8 page
+
+mov 0x0000 r0 // transfer APBP register
+data 0x80CC
+mov [r0++] r1
+mov r1 [page:0x0005u8]
+modr [r0++]
+mov [r0++] r1
+mov r1 [page:0x0006u8]
+modr [r0++]
+mov [r0++] r1
+mov r1 [page:0x0007u8]
+modr [r0++]
+mov [r0++] r1
+mov r1 [page:0x0008u8]
+modr [r0++]
+mov [r0++] r1
+mov r1 [page:0x0009u8]
+modr [r0++]
+mov [r0++] r1
+mov r1 [page:0x000au8]
+modr [r0++]
+mov [r0++] r1
+mov r1 [page:0x000bu8]
+modr [r0++]
+
+
+mov [page:0x0000u8] b0l // get signal
+br 0x00000000 eq // loop back if no signal
+data 1000
+
+mov [page:0x0001u8] b0l // get command type
+
+cmpv 0x0000 b0l
+data 0000
+br 0x00000000 eq
+data 2000
+
+cmpv 0x0000 b0l
+data 0001
+br 0x00000000 eq
+data 3000
+
+br 0x00000000 always
+data 4000
+
+segment p 2000 // read
+mov [page:0x0002u8] r0
+mov [r0] r1
+mov r1 [page:0x0003u8]
+br 0x00000000 always
+data 4000
+
+segment p 3000 // write
+mov [page:0x0002u8] r0
+mov [page:0x0003u8] r1
+mov r1 [r0]
+br 0x00000000 always
+data 4000
+
+segment p 4000 // end
+clr b0 always
+mov b0l [page:0x0000u8] // clear signal
+br 0x00000000 always
+data 1000 // loop back
+
+segment p 5000 // interrupt handler
+mov 0x0000 r5
+data 0x4000
+mov 0x0000 r4
+data 0x8202
+mov r5 [r4] // ack
+mov 0x0000 r4
+data 0x0004
+mov [r4] r5
+modr [r5++]
+mov r5 [r4]
+reti always
+
+
+
+
+segment d 0000 // signal area
+data 0000 // 0, Start signal
+data 0000 // 1, Operation type
+data 0000 // 2, Address
+data 0000 // 3, Data
+data 0000 // 4, interrupt counter
+data 0000 // 5, 80CC
+data 0000 // 6, 80CE
+data 0000 // 7, 80D0
+data 0000 // 8, 80D2
+data 0000 // 9, 80D4
+data 0000 // A, 80D6
+data 0000 // B, 80D8
