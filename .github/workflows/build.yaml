@@ -19,8 +19,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Cache test assets
+      uses: actions/cache@v4
+      with:
+        path: build/teaklite2_tests_result
+        enableCrossOsArchive: true
+        key: 'baffcd4f805a7480d969401792443a34aa39f813b4f0ae49c6365f1d1f3ce120'
+
     - name: Configure
-      run: cmake -B build
+      run: cmake -B build -DTEAKRA_RUN_TESTS=ON
 
     - name: Build
       run: cmake --build build --parallel
