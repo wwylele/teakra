@@ -1,0 +1,1 @@
+src/test_verifier/data/teaklite2_tests_result.bin filter=lfs diff=lfs merge=lfs -text
