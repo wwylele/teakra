@@ -7,9 +7,21 @@ Each opcode is one- or two-word wide. In this code base, two-word wide opcodes a
  - Some specific combination of arguments can be invalid for one opcode, and this specific pattern can be used for a totally different opcode.
  - Some opcodes have unused bits, where setting either 0 or 1 has no effect.
 
-## Comparison between `decoder.h` and gbatek
+## The format of the decoder table
 
-`decoder.h` contains the full table of the instruction set. It is derived from the table in gbatek, but rearranged a little according to the opcode families and patterns. The notation of the two table are comparable. For example:
+`decoder.h` contains the full table of the instruction set. Each entry in the table is in the form:
+```
+INST(name, pattern[, slot0[...]])[.EXCEPT(except_slot)[..]]
+```
+An entry represents match rules for an opcode family, in the following procedure:
+ - The opcode is matched against the pattern, with some bits masked out (i.e. not compared). The masked bits are provided by all the `slot`s. If the pattern doesn't match, try a different entry.
+ - Then the opcode is matched against each EXCEPT clause. A specific pattern and masked bits are provided by the `except_slot`. If any pattern in EXCEPT matches, try a different entry.
+ - Now this entry is successfully matched with the opcode. Each `slot` extract their relavent bits from the opcode and convert them into arguments.
+ - The function `Visitor::name` is called with the converted arguments.
+
+## Comparison between the decoder table and gbatek
+
+The decoder table is derived from the table in gbatek, but rearranged a little according to the opcode families and patterns. The notation of the two table are comparable. For example:
 
 ```
 teakra: INST(push, 0xD7C8, At<Abe, 1>, Unused<0>)

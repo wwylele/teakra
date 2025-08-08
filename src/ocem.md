@@ -2,7 +2,7 @@
 
 ## MMIO Layout
 
-The following MMIO definition is derived from Lauterbach's Teak debugger with  modification according to the Teak architecutre. The different layout around program address breakpoint is tested. Note that this is the only MMIO region that uses odd-address registers
+The following MMIO definition is derived from Lauterbach's Teak debugger with  modification according to the Teak architecture. The different layout around program address breakpoint is tested. Note that this is the only MMIO region that uses odd-address registers
 
 ```
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#

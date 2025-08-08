@@ -53,7 +53,7 @@ Transmit config registers
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 ...
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x02BE    |RT |                                                           |
+|+0x02BE    |TE |                                                           |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 
 TIR: enable IRQ for transmit if 1
@@ -61,7 +61,7 @@ TE:  enable transmit if 1
 
 Receive/transmit status and data registers
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x02C0    |                                               |RF |           |
+|+0x02C0    |                                           |RE |RF |           |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x02C2    |                                           |TE |TF |           |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
@@ -69,14 +69,16 @@ Receive/transmit status and data registers
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 |+0x02C6    |                         FIFO_TRANSMIT                         |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x02C8    |                               ?                               |
+|+0x02C8    |                               ?                   |RFL|       |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
-|+0x02CA    |                                                   |FL |       |
+|+0x02CA    |                                                   |TFL|       |
 +-----------#---+---+---+---#---+---+---+---#---+---+---+---#---+---+---+---#
 
 RF: 1 if receive buffer is full
-TF: 1 if receive buffer is full
-TE: 1 if receive buffer is empty
-FL: Application spin waits on this flag
+RE: 1 if receive buffer is empty
+TF: 1 if transmit buffer is full
+TE: 1 if transmit buffer is empty
+RFL: flush receive buffer
+TFL: flush transmit buffer. Application set and then spin waits on this flag
 
 ```
