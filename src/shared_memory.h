@@ -1,11 +1,13 @@
 #pragma once
-#include <array>
-#include <cstdio>
+
 #include "common_types.h"
 
 namespace Teakra {
 struct SharedMemory {
-    std::array<u8, 0x80000> raw{};
+    u8* raw;
+
+    SharedMemory(u8* mem) : raw{mem} {}
+
     u16 ReadWord(u32 word_address) const {
         u32 byte_address = word_address * 2;
         u8 low = raw[byte_address];

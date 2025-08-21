@@ -4,7 +4,8 @@
 extern "C" {
 
 struct TeakraObject {
-    Teakra::Teakra teakra;
+    Teakra::UserConfig config;
+    Teakra::Teakra teakra{config};
 };
 
 TeakraContext* Teakra_Create() {
@@ -17,10 +18,6 @@ void Teakra_Destroy(TeakraContext* context) {
 
 void Teakra_Reset(TeakraContext* context) {
     context->teakra.Reset();
-}
-
-uint8_t* Teakra_GetDspMemory(TeakraContext* context) {
-    return context->teakra.GetDspMemory().data();
 }
 
 int Teakra_SendDataIsEmpty(const TeakraContext* context, uint8_t index) {

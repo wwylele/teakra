@@ -1,5 +1,5 @@
 #include <array>
-#include <atomic>
+#include <cstring>
 #include "ahbm.h"
 #include "apbp.h"
 #include "btdmp.h"
@@ -30,7 +30,7 @@ struct Teakra::Impl {
     MemoryInterface memory_interface{shared_memory, miu};
     Processor processor{core_timing, memory_interface};
 
-    Impl() {
+    Impl(u8* dsp_memory) : shared_memory{dsp_memory} {
         memory_interface.SetMMIO(mmio);
         using namespace std::placeholders;
         icu.SetInterruptHandler(std::bind(&Processor::SignalInterrupt, &processor, _1),
@@ -51,7 +51,7 @@ struct Teakra::Impl {
     }
 
     void Reset() {
-        shared_memory.raw.fill(0);
+        std::memset(shared_memory.raw, 0, DspMemorySize);
         miu.Reset();
         apbp_from_cpu.Reset();
         apbp_from_dsp.Reset();
@@ -65,18 +65,18 @@ struct Teakra::Impl {
     }
 };
 
-Teakra::Teakra() : impl(new Impl) {}
+Teakra::Teakra(const UserConfig& config) : impl(std::make_unique<Impl>(config.dsp_memory)) {}
 Teakra::~Teakra() = default;
 
 void Teakra::Reset() {
     impl->Reset();
 }
 
-std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() {
+uint8_t* Teakra::GetDspMemory() {
     return impl->shared_memory.raw;
 }
 
-const std::array<std::uint8_t, 0x80000>& Teakra::GetDspMemory() const {
+const uint8_t* Teakra::GetDspMemory() const {
     return impl->shared_memory.raw;
 }
 
