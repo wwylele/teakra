@@ -5,8 +5,22 @@
 namespace Teakra {
 struct SharedMemory {
     u8* raw;
+    bool own_dsp_mem;
 
-    SharedMemory(u8* mem) : raw{mem} {}
+    SharedMemory(u8* mem = nullptr) : raw{mem} {
+        if (mem == nullptr) {
+            raw = new uint8_t[0x80000];
+            own_dsp_mem = true;
+        } else {
+            own_dsp_mem = false;
+        }
+    }
+
+    ~SharedMemory() {
+        if (own_dsp_mem) {
+            delete[] raw;
+        }
+    }
 
     u16 ReadWord(u32 word_address) const {
         u32 byte_address = word_address * 2;

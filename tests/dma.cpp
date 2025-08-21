@@ -33,13 +33,14 @@ TEST_CASE("DMA + AHBM test", "[dma]") {
         },
         [&fcram](u32 address) -> u32 {
             REQUIRE(address >= 0x20000000);
-            return fcram[address - 0x20000000] | ((u32)fcram[address - 0x20000000 + 1] << 8)
-                | ((u32)fcram[address - 0x20000000 + 2] << 16) | ((u32)fcram[address - 0x20000000 + 3] << 24);
+            return fcram[address - 0x20000000] | ((u32)fcram[address - 0x20000000 + 1] << 8) |
+                   ((u32)fcram[address - 0x20000000 + 2] << 16) |
+                   ((u32)fcram[address - 0x20000000 + 3] << 24);
         },
         [&fcram](u32 address, u32 v) {
             REQUIRE(address >= 0x20000000);
             fcram[address - 0x20000000 + 0] = (u8)v;
-            fcram[address - 0x20000000 + 1] = (u8)(v >>  8);
+            fcram[address - 0x20000000 + 1] = (u8)(v >> 8);
             fcram[address - 0x20000000 + 2] = (u8)(v >> 16);
             fcram[address - 0x20000000 + 3] = (u8)(v >> 24);
         });
@@ -50,8 +51,7 @@ TEST_CASE("DMA + AHBM test", "[dma]") {
     }
 
     auto GetDspTestArea = [&shared_memory]() {
-        return std::vector<u8>(shared_memory.raw.begin() + 0x40000,
-                               shared_memory.raw.begin() + 0x40000 + 0x80);
+        return std::vector<u8>(shared_memory.raw + 0x40000, shared_memory.raw + 0x40000 + 0x80);
     };
 
     auto GenerateExpected = [](const std::string& str, u8 base = 0) {
