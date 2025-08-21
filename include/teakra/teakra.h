@@ -19,15 +19,23 @@ struct AHBMCallback {
     std::function<void(std::uint32_t address, std::uint32_t value)> write32;
 };
 
+struct UserConfig {
+    // DSP memory. By default set to nullptr. If it stays nullptr then Teakra will create its own
+    // DSP memory and retain ownership of it. Otherwise, the user will own it.
+    std::uint8_t* dsp_memory = nullptr;
+};
+
+static constexpr std::uint32_t DspMemorySize = 0x80000;
+
 class Teakra {
 public:
-    Teakra();
+    Teakra(const UserConfig& config);
     ~Teakra();
 
     void Reset();
 
-    std::array<std::uint8_t, 0x80000>& GetDspMemory();
-    const std::array<std::uint8_t, 0x80000>& GetDspMemory() const;
+    uint8_t* GetDspMemory();
+    const uint8_t* GetDspMemory() const;
 
     RegisterState& GetRegisterState();
     const RegisterState& GetRegisterState() const;
