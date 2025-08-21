@@ -1,24 +1,20 @@
 #pragma once
-
+#include <array>
+#include <memory>
+#include <optional>
 #include "common_types.h"
 
 namespace Teakra {
 struct SharedMemory {
+    // We allocate our own memory if the user doesn't supply their own
+    std::unique_ptr<std::array<u8, 0x80000>> own_memory;
+    // Points to either own own memory or user-supplied memory
     u8* raw;
-    bool own_dsp_mem;
 
     SharedMemory(u8* mem = nullptr) : raw{mem} {
         if (mem == nullptr) {
-            raw = new uint8_t[0x80000];
-            own_dsp_mem = true;
-        } else {
-            own_dsp_mem = false;
-        }
-    }
-
-    ~SharedMemory() {
-        if (own_dsp_mem) {
-            delete[] raw;
+            own_memory = std::make_unique<std::array<u8, 0x80000>>();
+            raw = own_memory->data();
         }
     }
 
