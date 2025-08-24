@@ -82,7 +82,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 if (NOT TEAKRA_TEST_ASSETS_DIR)
-  set(TEAKRA_TEST_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  set(TEAKRA_TEST_ASSETS_DIR "${PROJECT_SOURCE_DIR}/src/test_verifier/data")
 endif()
 
 # External libraries

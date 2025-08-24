@@ -5,7 +5,11 @@ name: build
 
 on:
   push:
+    branches:
+    - master
   pull_request:
+    branches:
+    - master
   workflow_dispatch:
 
 permissions:
@@ -22,12 +26,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Cache test assets
+      uses: actions/cache@v4
+      with:
+        path: build/teaklite2_tests_result.bin
+        enableCrossOsArchive: true
+        key: 'baffcd4f805a7480d969401792443a34aa39f813b4f0ae49c6365f1d1f3ce120'
+
+    - name: Download test assets
+      if: "!hashFiles('build/teaklite2_tests_result.bin')"
+      run: |
+        git lfs pull --exclude='' --include='*'
+        mkdir -p build
+        mv src/test_verifier/data/teaklite2_tests_result.bin build/teaklite2_tests_result.bin
+
     - name: Configure
-      run: cmake -B build
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DTEAKRA_RUN_TESTS=ON -DTEAKRA_TEST_ASSETS_DIR="$PWD/build"
 
     - name: Build
-      run: cmake --build build --parallel
+      run: cmake --build build --config Debug --parallel
 
     - name: Test
       working-directory: build
-      run: ctest --verbose
+      run: ctest --build-config Debug --verbose
